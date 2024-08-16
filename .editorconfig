@@ -1,0 +1,52 @@
+root = true
+
+[*.{kt,kts}]
+
+# Comma-separated list of allowed wildcard imports that will override the no-wildcard-imports rule.
+# "**" applies to package and all subpackages
+ij_kotlin_packages_to_use_import_on_demand = io.ktor.**
+
+max_line_length = 120
+
+ij_kotlin_code_style_defaults = KOTLIN_OFFICIAL
+
+ij_kotlin_line_comment_at_first_column = false
+ij_kotlin_line_comment_add_space = true
+
+ij_kotlin_name_count_to_use_star_import = 2147483647
+ij_kotlin_name_count_to_use_star_import_for_members = 2147483647
+
+ij_kotlin_keep_blank_lines_in_declarations = 1
+ij_kotlin_keep_blank_lines_in_code = 1
+ij_kotlin_keep_blank_lines_before_right_brace = 0
+
+# optional but recommended
+ij_kotlin_align_multiline_parameters = false
+
+# optional but recommended
+ij_continuation_indent_size = 4
+
+ij_kotlin_allow_trailing_comma = false
+ij_kotlin_allow_trailing_comma_on_call_site = false
+
+# noinspection EditorConfigKeyCorrectness
+ktlint_code_style = intellij_idea
+
+# noinspection EditorConfigKeyCorrectness
+ktlint_standard_filename = disabled
+
+# noinspection EditorConfigKeyCorrectness
+ktlint_standard_no-empty-first-line-in-class-body = disabled
+
+# noinspection EditorConfigKeyCorrectness
+ktlint_standard_discouraged-comment-location = disabled
+
+# noinspection EditorConfigKeyCorrectness
+ktlint_standard_value-parameter-comment = disabled
+
+# noinspection EditorConfigKeyCorrectness
+ktlint_standard_function-naming = disabled
+
+[*.md]
+
+max_line_length = off
