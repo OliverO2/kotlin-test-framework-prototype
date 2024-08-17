@@ -1,7 +1,6 @@
 package testFramework.internal
 
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -14,14 +13,10 @@ internal suspend fun <Target> Collection<Target>.forEachWithParallelism(
             action(target)
         }
     } else {
-        chunked(parallelism).forEach { parallelTargets ->
-            withContext(dispatcherWithParallelism(parallelTargets.size)) {
-                coroutineScope {
-                    parallelTargets.forEach { target ->
-                        launch {
-                            action(target)
-                        }
-                    }
+        withContext(dispatcherWithParallelism(parallelism)) {
+            forEach { target ->
+                launch {
+                    action(target)
                 }
             }
         }
