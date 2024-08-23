@@ -1,13 +1,16 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.plugin.KotlinHierarchyTemplate
 import org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalWasmDsl
+import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 plugins {
     alias(libs.plugins.org.jetbrains.kotlin.multiplatform)
 }
 
+val jdkVersion = project.property("local.jdk.version").toString().toInt()
+
 kotlin {
-    jvmToolchain(11)
+    jvmToolchain(jdkVersion)
 
     jvm()
 
@@ -36,5 +39,15 @@ kotlin {
                 api(libs.org.jetbrains.kotlinx.coroutines.core)
             }
         }
+    }
+}
+
+tasks.withType<KotlinJvmCompile> {
+    compilerOptions {
+        freeCompilerArgs = listOf(
+            "-Xjdk-release=$jdkVersion",
+            // NOTE: The following option will leak memory – https://youtrack.jetbrains.com/issue/KT-48678
+            "-Xdebug" // Coroutine debugger: disable "was optimised out"
+        )
     }
 }

@@ -1,93 +1,96 @@
 import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
-import testFramework.Module
-import testFramework.Spec
-import testFramework.SpecGroup
-import kotlin.coroutines.coroutineContext
+import testFramework.TestModule
+import testFramework.TestScope
 import kotlin.time.Duration.Companion.seconds
 
-suspend fun runTests(module: Module) {
-    module.run {
-        registerSpecs(Spec1(), Spec2(), Spec3()) // <- A compiler plugin could generate this.
-        configuration {
-            specParallelism = 2
-        }
-        execute()
-    }
+suspend fun runTests() {
+    TestModule.execute(TestScope1(), TestScope2(), TestScope3()) // <- A compiler plugin could generate this.
 }
 
-class Spec1 :
-    Spec(
+class TestScope1 :
+    TestScope(
         {
-            beforeEachTest { println("$it: beforeEachTest") }
+            beforeFirstScope { log("$scopeName: beforeFirstScope TestScope1") }
 
-            aroundEachTest { test, invocation, testAction ->
-                withContext(CoroutineName("foo")) {
-                    testAction(test, invocation)
+            beforeEachScope { invocation -> log("$invocation: beforeEachScope TestScope1") }
+
+            aroundEachScope { invocation, scopeAction ->
+                log("$invocation: aroundEachScope TestScope1 start")
+                withContext(CoroutineName("aroundEachScope TestScope1")) {
+                    scopeAction(invocation)
                 }
+                log("$invocation: aroundEachScope TestScope1 end")
             }
 
-            afterLastTest { println("$testScopeName: afterLastTest") }
+            afterEachScope { invocation -> log("$invocation: afterEachScope TestScope1") }
 
-            test("test1") {
-                println("$it [${coroutineContext[CoroutineName]}]")
+            afterLastScope { log("$scopeName: afterLastScope TestScope1") }
+
+            scope("test1") { invocation ->
+                log("$invocation: in TestScope1.test1 [${currentCoroutineContext()[CoroutineName]}]")
                 // throw AssertionError("something wrong")
             }
 
-            test("test2", configuration = { invocationCount = 2 }) {
-                println("$it [${coroutineContext[CoroutineName]}]")
+            scope("test2", { invocationCount = 2 }) { invocation ->
+                log("$invocation: in TestScope1.test2 [${currentCoroutineContext()[CoroutineName]}]")
 
-                beforeEachTest { println("$it: beforeEachTest [nested]") }
+                beforeEachScope { subInvocation -> log("$subInvocation: beforeEachScope TestScope1.test2") }
 
-                test("nested") {
-                    println("$it [${coroutineContext[CoroutineName]}]")
+                scope("nested") { subInvocation ->
+                    log("$subInvocation: in TestScope1.test2.nested [${currentCoroutineContext()[CoroutineName]}]")
                 }
             }
 
             for (generationIndex in 1..3) {
-                test("test3.$generationIndex") {
-                    println("$it [${coroutineContext[CoroutineName]}]")
+                scope("test3.$generationIndex") { invocation ->
+                    log(
+                        "$invocation: in TestScope1.test3.$generationIndex [${currentCoroutineContext()[CoroutineName]}]"
+                    )
                 }
             }
         }
     )
 
-class Spec2 :
-    Spec(
+class TestScope2 :
+    TestScope(
         {
-            beforeEachTest { println("$testScopeName: beforeEachTest") }
+            beforeEachScope { log("$scopeName: beforeEachScope TestScope2") }
 
-            afterLastTest { println("$testScopeName: afterLastTest") }
+            afterLastScope { log("$scopeName: afterLastScope TestScope2") }
 
-            test("!test1") {
-                println("$it")
+            scope("!test1") { invocation ->
+                log("$invocation: in TestScope2.test1")
             }
 
-            test("test2", configuration = { timeout = 2.seconds }) {
-                println("$it – before delay")
+            scope("test2", configuration = { timeout = 2.seconds }) { invocation ->
+                log("$invocation: in TestScope2.test2 – before delay")
                 delay(1.seconds)
-                println("$it – after delay")
+                log("$invocation: in TestScope2.test2 – after delay")
             }
         }
     )
 
-class Spec3 :
-    Spec(
-        group = SpecGroup.singleThreaded,
+class TestScope3 :
+    TestScope(
+        module = TestModule.singleThreaded,
         {
-            beforeEachTest { println("$testScopeName: beforeEachTest") }
+            beforeEachScope { log("$scopeName: beforeEachScope TestScope3") }
 
-            afterLastTest { println("$testScopeName: afterLastTest") }
+            afterLastScope { log("$scopeName: afterLastScope TestScope3") }
 
-            test("!test1") {
-                println("$it")
+            scope("!test1") { invocation ->
+                log("$invocation: in TestScope3.test1")
             }
 
-            test("test2") {
-                println("$it – before delay")
+            scope("test2") { invocation ->
+                log("$invocation: in TestScope3.test2 – before delay")
                 delay(1)
-                println("$it – after delay")
+                log("$invocation: in TestScope3.test2 – after delay")
             }
         }
     )
+
+expect suspend fun log(message: String)

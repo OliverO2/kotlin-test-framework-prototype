@@ -1,27 +1,16 @@
 package testFramework.internal
 
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-internal suspend fun <Target> Collection<Target>.forEachWithParallelism(
-    parallelism: Int,
-    action: suspend (Target) -> Unit
-) {
-    if (parallelism == 1) {
-        forEach { target ->
-            action(target)
-        }
+internal suspend fun <Result> withParallelism(parallelism: Int?, action: suspend () -> Result): Result =
+    if (parallelism == null) {
+        action()
     } else {
         withContext(dispatcherWithParallelism(parallelism)) {
-            forEach { target ->
-                launch {
-                    action(target)
-                }
-            }
+            action()
         }
     }
-}
 
 internal expect fun dispatcherWithParallelism(parallelism: Int): CoroutineDispatcher
 
