@@ -23,3 +23,5 @@ org-jetbrains-kotlinx-coroutines = "1.8.1"
 
 org-jetbrains-kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "org-jetbrains-kotlinx-coroutines" }
 org-jetbrains-kotlinx-coroutines-debug = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-debug", version.ref = "org-jetbrains-kotlinx-coroutines" }
+org-jetbrains-kotlinx-datetime = "org.jetbrains.kotlinx:kotlinx-datetime:0.6.1"
+org-junit-platform-engine = "org.junit.platform:junit-platform-engine:1.10.2"

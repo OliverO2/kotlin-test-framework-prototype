@@ -1,7 +1,6 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.plugin.KotlinHierarchyTemplate
 import org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalWasmDsl
-import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 plugins {
     alias(libs.plugins.org.jetbrains.kotlin.multiplatform)
@@ -12,10 +11,16 @@ val jdkVersion = project.property("local.jdk.version").toString().toInt()
 kotlin {
     jvmToolchain(jdkVersion)
 
-    jvm()
+    jvm {
+        @OptIn(ExperimentalKotlinGradlePluginApi::class)
+        compilerOptions {
+            freeCompilerArgs = listOf("-Xjdk-release=$jdkVersion")
+        }
+    }
 
     js {
         nodejs()
+        browser()
     }
 
     @OptIn(ExperimentalWasmDsl::class)
@@ -37,17 +42,14 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 api(libs.org.jetbrains.kotlinx.coroutines.core)
+                implementation(libs.org.jetbrains.kotlinx.datetime)
             }
         }
-    }
-}
 
-tasks.withType<KotlinJvmCompile> {
-    compilerOptions {
-        freeCompilerArgs = listOf(
-            "-Xjdk-release=$jdkVersion",
-            // NOTE: The following option will leak memory – https://youtrack.jetbrains.com/issue/KT-48678
-            "-Xdebug" // Coroutine debugger: disable "was optimised out"
-        )
+        val jvmMain by getting {
+            dependencies {
+                implementation(libs.org.junit.platform.engine)
+            }
+        }
     }
 }

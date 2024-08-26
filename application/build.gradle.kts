@@ -1,7 +1,6 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.plugin.KotlinHierarchyTemplate
 import org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalWasmDsl
-import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 plugins {
     alias(libs.plugins.org.jetbrains.kotlin.multiplatform)
@@ -12,16 +11,20 @@ val jdkVersion = project.property("local.jdk.version").toString().toInt()
 kotlin {
     jvmToolchain(jdkVersion)
 
+    @OptIn(ExperimentalKotlinGradlePluginApi::class)
     jvm {
-        @OptIn(ExperimentalKotlinGradlePluginApi::class)
         mainRun {
             mainClass = "MainKt"
+        }
+        compilerOptions {
+            freeCompilerArgs = listOf("-Xjdk-release=$jdkVersion")
         }
     }
 
     js {
         binaries.executable()
         nodejs()
+        browser()
     }
 
     @OptIn(ExperimentalWasmDsl::class)
@@ -54,16 +57,28 @@ kotlin {
     }
 }
 
-tasks.withType<KotlinJvmCompile> {
-    compilerOptions {
-        freeCompilerArgs = listOf(
-            "-Xjdk-release=$jdkVersion",
-            // NOTE: The following option will leak memory – https://youtrack.jetbrains.com/issue/KT-48678
-            "-Xdebug" // Coroutine debugger: disable "was optimised out"
-        )
+tasks.withType<Test>().configureEach {
+    // https://docs.gradle.org/current/userguide/java_testing.html
+    useJUnitPlatform()
+
+    // Show stdout/stderr and stack traces on console – https://stackoverflow.com/q/65573633/2529022
+    testLogging {
+        events("PASSED", "FAILED", "SKIPPED")
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+        showStandardStreams = true
+        // showStackTraces = true
+    }
+
+    filter {
+        @Suppress("RemoveExplicitTypeArguments", "RedundantSuppression")
+        listOf<String>(
+            // "com.example.TestScope2*"
+        ).forEach {
+            includeTestsMatching(it)
+        }
     }
 }
 
-tasks.named { it.endsWith("Run") }.configureEach {
-    extensions.extraProperties.set("idea.internal.test", true)
-}
+// tasks.named { it.endsWith("Run") }.configureEach {
+//     extensions.extraProperties.set("idea.internal.test", true)
+// }
