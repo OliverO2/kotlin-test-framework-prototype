@@ -68,7 +68,7 @@ class TestScope2 :
                 log("$invocation: in TestScope2.test1")
             }
 
-            test("test2") { invocation ->
+            test("test2 with strange characters <&>'Ä\" and a –\t– tab") { invocation ->
                 log("$invocation: in TestScope2.test2 – before delay")
                 delay(1.seconds)
                 log("$invocation: in TestScope2.test2 – after delay")
