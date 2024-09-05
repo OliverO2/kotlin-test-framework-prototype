@@ -33,6 +33,10 @@ kotlin {
         nodejs()
     }
 
+    linuxX64 {
+        binaries.executable()
+    }
+
     @OptIn(ExperimentalKotlinGradlePluginApi::class)
     applyHierarchyTemplate(KotlinHierarchyTemplate.default) {
         group("common") {

@@ -14,19 +14,20 @@ This prototype aims to explore a flexible but concise test framework architectur
 
 ### Running Tests
 
+* `./gradlew -p application clean allTests`
 * `./gradlew -p application clean jvmTest`
 * `./gradlew -p application clean jsNodeTest`
 * `./gradlew -p application clean wasmJsNodeTest`
+* `./gradlew -p application clean linuxX64Test`
 
 ### Limitations
 
-* JS and Wasm/JS
+* Non-JVM test targets
     * must be configured with instantiated test classes,
-    * do not support browser-based tests.
+    * visualize the test status in the test run window, but
+    * do nothing more (see JVM integration below).
+* Browser-based tests are not supported.
 * Wasm/JS requires `@WasmExport fun startUnitTests() {}` in the Gradle module under test.
-* Node/JS and Wasm/Node/JS integration for IntelliJ IDEA
-    * visualizes the test status in the test run window, but
-    * does nothing more (see JVM integration below).
 * JVM integration for IntelliJ IDEA
     * visualizes the test status in the test run window, and
     * supports class-level actions (run, debug, jump to source) from the test run window, but
