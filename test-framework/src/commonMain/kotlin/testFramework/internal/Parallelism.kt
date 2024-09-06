@@ -14,6 +14,4 @@ internal suspend fun <Result> withParallelism(parallelism: Int?, action: suspend
 
 internal expect fun dispatcherWithParallelism(parallelism: Int): CoroutineDispatcher
 
-internal expect val platformParallelism: Int
-
 internal expect suspend fun withSingleThreading(action: suspend () -> Unit)

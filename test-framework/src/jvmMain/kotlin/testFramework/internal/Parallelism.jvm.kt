@@ -11,8 +11,6 @@ import kotlinx.coroutines.withContext
 actual fun dispatcherWithParallelism(parallelism: Int): CoroutineDispatcher =
     Dispatchers.IO.limitedParallelism(parallelism)
 
-actual val platformParallelism: Int = Runtime.getRuntime().availableProcessors()
-
 actual suspend fun withSingleThreading(action: suspend () -> Unit) {
     @OptIn(DelicateCoroutinesApi::class, ExperimentalCoroutinesApi::class)
     newSingleThreadContext("single-threading").use {

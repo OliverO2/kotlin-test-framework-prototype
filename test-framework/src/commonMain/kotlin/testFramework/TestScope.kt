@@ -13,9 +13,16 @@ open class TestScope internal constructor(
     configuration: TestScopeConfiguration.() -> Unit = {},
     private val definitionAction: TestScopeDefinitionAction? = null
 ) {
-    val simpleScopeName: String get() = simpleNameOrNull?.prefixesRemoved() ?: this::class.simpleName ?: "[TestScope]"
-    val scopeName: String get() =
-        (if (parent != null) "${parent?.scopeName}." else "") + simpleScopeName
+    val simpleScopeName: String by lazy {
+        // For proper reporting of multi-target test runs, `simpleScopeName` for top-level modules (children of `Root`)
+        // must be unique across platform targets.
+        fun String.withPlatformIfRootChild() =
+            if (parent != null && parent?.parent == null) "$this(${testPlatform.displayName})" else this
+
+        simpleNameOrNull?.prefixesRemoved() ?: (this::class.simpleName ?: "[TestScope]").withPlatformIfRootChild()
+    }
+
+    val scopeName: String get() = if (parent != null) "${parent?.scopeName}.$simpleScopeName" else simpleScopeName
 
     protected var effectiveConfiguration: TestScopeConfiguration = TestScopeConfiguration().apply {
         configuration()

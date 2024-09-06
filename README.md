@@ -20,6 +20,8 @@ This prototype aims to explore a flexible but concise test framework architectur
 * `./gradlew -p application clean wasmJsNodeTest`
 * `./gradlew -p application clean linuxX64Test`
 
+* `./gradlew -p application clean jsNodeTest linuxX64Test`
+
 ### Limitations
 
 * Non-JVM test targets

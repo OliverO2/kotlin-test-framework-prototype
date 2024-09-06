@@ -12,7 +12,11 @@ internal object IntellijTestLog {
         if (event.scope is TestModule.Root) return // ignore the root node
 
         val parentScope = event.scope.parent?.let { if (it.parent == null) null else it } // null if root is parent
-        val className = event.scope::class.simpleName
+
+        // Apparently, `className` must be unique, even across platform targets. Otherwise, IntelliJ's "run test"
+        // window will mix tests for different targets under common `className` hierarchy nodes.
+        // Therefore, we cannot use `event.scope::class.simpleName` here.
+        val className = event.scope.scopeName
 
         fun addBeforeEvent() {
             ijLog {

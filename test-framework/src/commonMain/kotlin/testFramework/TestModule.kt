@@ -1,13 +1,12 @@
 package testFramework
 
 import testFramework.internal.integration.IntellijTestLog
-import testFramework.internal.platformParallelism
 import testFramework.internal.withSingleThreading
 
 open class TestModule private constructor(parent: TestScope?, configuration: TestScopeConfiguration.() -> Unit = {}) :
     TestScope(parent = parent, configuration = configuration) {
 
-    class Root : TestModule(null) {
+    class Root : TestModule(parent = null) {
         override suspend fun execute(outerInvocation: Invocation) {
             withSingleThreading {
                 super.execute(outerInvocation)
@@ -15,9 +14,9 @@ open class TestModule private constructor(parent: TestScope?, configuration: Tes
         }
     }
 
-    class DefaultModule : TestModule(root, configuration = { parallelism = platformParallelism })
+    class DefaultModule : TestModule(parent = root, configuration = { parallelism = testPlatform.parallelism })
 
-    class SingleThreadedModule : TestModule(root)
+    class SingleThreadedModule : TestModule(parent = root)
 
     suspend fun execute(listener: (Invocation.Event) -> Unit) {
         execute(Invocation(this, listener))

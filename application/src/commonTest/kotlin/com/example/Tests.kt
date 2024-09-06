@@ -6,6 +6,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import testFramework.TestModule
 import testFramework.TestScope
+import testFramework.testPlatform
 import kotlin.time.Duration.Companion.seconds
 
 class TestScope1 :
@@ -102,4 +103,7 @@ class TestScope3 :
         }
     )
 
-expect suspend fun log(message: String)
+fun log(message: String) {
+    println("[${testPlatform.threadDisplayName()}] $message")
+    // println(message)
+}
