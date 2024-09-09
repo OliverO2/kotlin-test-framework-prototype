@@ -8,11 +8,13 @@ dependencyResolutionManagement {
     pluginManagement {
         repositories {
             mavenCentral()
+            specialRepositories()
             gradlePluginPortal()
         }
     }
     repositories {
         mavenCentral()
+        specialRepositories()
     }
 }
 
@@ -22,7 +24,15 @@ refreshVersions {
     }
 }
 
+fun RepositoryHandler.specialRepositories() {
+    maven("https://s01.oss.sonatype.org/content/repositories/snapshots/") {
+        name = "MavenCentralSnapshots"
+        mavenContent { snapshotsOnly() }
+    }
+}
+
 rootProject.name = "kotlin-test-framework-prototype"
 
 include(":test-framework")
-include(":application")
+include(":application-prototype")
+include(":application-kotest")

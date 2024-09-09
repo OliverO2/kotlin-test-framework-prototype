@@ -14,13 +14,14 @@ This prototype aims to explore a flexible but concise test framework architectur
 
 ### Running Tests
 
-* `./gradlew -p application clean allTests`
-* `./gradlew -p application clean jvmTest`
-* `./gradlew -p application clean jsNodeTest`
-* `./gradlew -p application clean wasmJsNodeTest`
-* `./gradlew -p application clean linuxX64Test`
+* `./gradlew -p application-prototype cleanAllTests allTests`
+* `./gradlew -p application-prototype cleanAllTests jvmTest`
+* `./gradlew -p application-prototype cleanAllTests jsNodeTest`
+* `./gradlew -p application-prototype cleanAllTests wasmJsNodeTest`
+* `./gradlew -p application-prototype cleanAllTests linuxX64Test`
 
-* `./gradlew -p application clean jsNodeTest linuxX64Test`
+* `./gradlew -p application-prototype cleanAllTests linuxX64Test`
+* `./gradlew -p application-kotest cleanAllTests linuxX64Test`
 
 ### Limitations
 
@@ -50,6 +51,6 @@ This prototype aims to explore a flexible but concise test framework architectur
 
 ### Considerations
 
-* Use dynamic tests (via `EngineExecutionListener.dynamicTestRegistered`)
+* Use dynamic tests (on JVM via `EngineExecutionListener.dynamicTestRegistered`)
     * for `TestScope`s with test logic _and_ sub-scopes, and/or
     * for lazy configuration?

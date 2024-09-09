@@ -1,6 +1,6 @@
 package testFramework
 
-import testFramework.internal.integration.TeamCityTestLog
+import testFramework.internal.integration.IntellijTestLog
 import testFramework.internal.withSingleThreading
 
 open class TestModule private constructor(parent: TestScope?, configuration: TestScopeConfiguration.() -> Unit = {}) :
