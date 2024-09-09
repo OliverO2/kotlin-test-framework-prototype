@@ -64,25 +64,4 @@ kotlin {
 tasks.withType<Test>().configureEach {
     // https://docs.gradle.org/current/userguide/java_testing.html
     useJUnitPlatform()
-
-    // Show stdout/stderr and stack traces on console – https://stackoverflow.com/q/65573633/2529022
-    testLogging {
-        events("PASSED", "FAILED", "SKIPPED")
-        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
-        showStandardStreams = true
-        // showStackTraces = true
-    }
-
-    filter {
-        @Suppress("RemoveExplicitTypeArguments", "RedundantSuppression")
-        listOf<String>(
-            // "com.example.TestScope2*"
-        ).forEach {
-            includeTestsMatching(it)
-        }
-    }
 }
-
-// tasks.named { it.endsWith("Run") }.configureEach {
-//     extensions.extraProperties.set("idea.internal.test", true)
-// }

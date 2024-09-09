@@ -3,7 +3,6 @@ package testFramework.internal.integration
 import testFramework.Test
 import testFramework.TestModule
 import testFramework.TestScope
-import testFramework.internal.integration.IntellijTestLog.IjLog.Event
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
@@ -35,7 +34,7 @@ internal object IntellijTestLog {
         fun addAfterEvent(
             resultType: String,
             startingEvent: TestScope.Invocation.Event = event,
-            content: Event.Test.Result.() -> Unit = {
+            content: IjLog.Event.Test.Result.() -> Unit = {
             }
         ) {
             ijLog {

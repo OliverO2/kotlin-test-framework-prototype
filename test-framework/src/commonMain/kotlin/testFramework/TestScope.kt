@@ -32,6 +32,7 @@ open class TestScope internal constructor(
 
     var scopeIsEnabled by effectiveConfiguration::isEnabled
     var scopeIsFocused by effectiveConfiguration::isFocused
+    var scopeIsSequential by effectiveConfiguration::isSequential
     var scopeParallelism by effectiveConfiguration::parallelism
 
     internal val subScopes: MutableList<TestScope> = mutableListOf()
@@ -132,8 +133,7 @@ open class TestScope internal constructor(
     }
 
     fun configure() {
-        // Inherit a 'disabled' mode from the parent.
-        if (parent?.scopeIsEnabled == false) scopeIsEnabled = false
+        effectiveConfiguration.inheritFrom(parent?.effectiveConfiguration)
 
         if (this is Test) {
             check(subScopes.isEmpty()) { "The test scope $scopeName must not have any sub-scope" }
@@ -189,8 +189,12 @@ open class TestScope internal constructor(
                                 }
                             }
 
-                        launch {
+                        if (effectiveConfiguration.isSequential == true || parent == null) {
                             wrappedAction.invoke(invocation)
+                        } else {
+                            launch {
+                                wrappedAction.invoke(invocation)
+                            }
                         }
                     }
                 }

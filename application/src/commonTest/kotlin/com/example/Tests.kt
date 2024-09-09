@@ -6,7 +6,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import testFramework.TestModule
 import testFramework.TestScope
-import testFramework.testPlatform
 import kotlin.time.Duration.Companion.seconds
 
 class TestScope1 :
@@ -30,7 +29,7 @@ class TestScope1 :
 
             test("test1") { invocation ->
                 log("$invocation: in TestScope1.test1 [${currentCoroutineContext()[CoroutineName]}]")
-                throw AssertionError("something wrong in TestScope1.test1")
+                fail("something wrong in TestScope1.test1")
             }
 
             scope("test2") {
@@ -44,15 +43,15 @@ class TestScope1 :
 
                 test("nested2") { subInvocation ->
                     log("$subInvocation: in TestScope1.test2.nested2")
-                    throw AssertionError("something wrong in TestScope1.test2.nested2")
+                    fail("something wrong in TestScope1.test2.nested2")
                 }
             }
 
             for (generationIndex in 1..3) {
-                test("test3.$generationIndex") { invocation ->
-                    log("$invocation: in TestScope1.test3.$generationIndex – before delay")
+                test("test3-$generationIndex") { invocation ->
+                    log("$invocation: in TestScope1.test3-$generationIndex – before delay")
                     delay(2.seconds)
-                    log("$invocation: in TestScope1.test3.$generationIndex – after delay")
+                    log("$invocation: in TestScope1.test3-$generationIndex – after delay")
                 }
             }
         }
@@ -60,6 +59,7 @@ class TestScope1 :
 
 class TestScope2 :
     TestScope(
+        module = TestModule.sequential,
         {
             beforeEachScope { log("$scopeName: beforeEachScope TestScope2") }
 
@@ -104,6 +104,10 @@ class TestScope3 :
     )
 
 fun log(message: String) {
-    println("[${testPlatform.threadDisplayName()}] $message")
-    // println(message)
+    // println("[${testPlatform.threadDisplayName()}] $message")
+    println(message)
+}
+
+fun fail(message: String) {
+    // throw AssertionError(message)
 }
