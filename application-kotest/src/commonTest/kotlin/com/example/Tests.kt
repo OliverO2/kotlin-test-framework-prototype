@@ -53,7 +53,7 @@ class TestScope1 :
 
                 test("nested1") {
                     log("in TestScope1.test2.nested1 – before delay")
-                    delay(3.seconds)
+                    delay(0.3.seconds)
                     log("in TestScope1.test2.nested1 – after delay")
                 }
 
@@ -66,7 +66,7 @@ class TestScope1 :
             for (generationIndex in 1..3) {
                 test("test3-$generationIndex") {
                     log("in TestScope1.test3-$generationIndex – before delay")
-                    delay(2.seconds)
+                    delay(0.2.seconds)
                     log("in TestScope1.test3-$generationIndex – after delay")
                 }
             }
@@ -86,7 +86,7 @@ class TestScope2 :
 
             test("test2 with strange characters <&>'Ä\" and a –\t– tab") {
                 log("in TestScope2.test2 – before delay")
-                delay(1.seconds)
+                delay(0.1.seconds)
                 log("in TestScope2.test2 – after delay")
             }
         }
@@ -105,13 +105,13 @@ class TestScope3 :
 
             test("test2") {
                 log("in TestScope3.test2 – before delay")
-                delay(2.seconds)
+                delay(0.2.seconds)
                 log("in TestScope3.test2 – after delay")
             }
 
             test("test3") {
                 log("in TestScope3.test3 – before delay")
-                delay(2.seconds)
+                delay(0.2.seconds)
                 log("in TestScope3.test3 – after delay")
             }
         }
@@ -122,6 +122,4 @@ fun log(message: String) {
     println(message)
 }
 
-fun fail(message: String) {
-    // throw AssertionError(message)
-}
+fun fail(message: String): Unit = throw AssertionError(message)

@@ -37,7 +37,7 @@ class TestScope1 :
 
                 test("nested1") { subInvocation ->
                     log("$subInvocation: in TestScope1.test2.nested1 – before delay")
-                    delay(3.seconds)
+                    delay(0.3.seconds)
                     log("$subInvocation: in TestScope1.test2.nested1 – after delay")
                 }
 
@@ -50,7 +50,7 @@ class TestScope1 :
             for (generationIndex in 1..3) {
                 test("test3-$generationIndex") { invocation ->
                     log("$invocation: in TestScope1.test3-$generationIndex – before delay")
-                    delay(2.seconds)
+                    delay(0.2.seconds)
                     log("$invocation: in TestScope1.test3-$generationIndex – after delay")
                 }
             }
@@ -71,7 +71,7 @@ class TestScope2 :
 
             test("test2 with strange characters <&>'Ä\" and a –\t– tab") { invocation ->
                 log("$invocation: in TestScope2.test2 – before delay")
-                delay(1.seconds)
+                delay(0.1.seconds)
                 log("$invocation: in TestScope2.test2 – after delay")
             }
         }
@@ -91,13 +91,13 @@ class TestScope3 :
 
             test("test2") { invocation ->
                 log("$invocation: in TestScope3.test2 – before delay")
-                delay(2.seconds)
+                delay(0.2.seconds)
                 log("$invocation: in TestScope3.test2 – after delay")
             }
 
             test("test3") { invocation ->
                 log("$invocation: in TestScope3.test3 – before delay")
-                delay(2.seconds)
+                delay(0.2.seconds)
                 log("$invocation: in TestScope3.test3 – after delay")
             }
         }
@@ -105,9 +105,7 @@ class TestScope3 :
 
 fun log(message: String) {
     // println("[${testPlatform.threadDisplayName()}] $message")
-    println(message)
+    println("$message\n")
 }
 
-fun fail(message: String) {
-    // throw AssertionError(message)
-}
+fun fail(message: String): Unit = throw AssertionError(message)
