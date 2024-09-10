@@ -29,8 +29,7 @@ This prototype aims to explore a flexible but concise test framework architectur
     * must be configured with instantiated test classes,
     * visualize the test status in the test run window, but
     * do nothing more (see JVM integration below).
-* Browser-based tests are not supported.
-* Wasm/JS requires `@WasmExport fun startUnitTests() {}` in the Gradle module under test.
+* Test using the Kotlin/JS infra do not report more than one level of suite nesting.
 * JVM integration for IntelliJ IDEA
     * visualizes the test status in the test run window, and
     * supports class-level actions (run, debug, jump to source) from the test run window, but

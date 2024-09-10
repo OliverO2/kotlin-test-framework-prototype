@@ -95,7 +95,7 @@ open class TestScope internal constructor(
         Test(this, name, configuration = configuration, invocationAction)
     }
 
-    class Invocation internal constructor(val scope: TestScope, val listener: (Event) -> Unit) {
+    class Invocation internal constructor(val scope: TestScope, val listener: ((Event) -> Unit)? = null) {
         sealed class Event(val scope: TestScope) {
             val instant = Clock.System.now()
 
@@ -110,6 +110,9 @@ open class TestScope internal constructor(
         }
 
         suspend fun withExecutionTracking(action: suspend () -> Unit) {
+            if (listener == null) return action()
+            val listener = listener // help the compiler accept non-nullability
+
             val startingEvent = Event.Starting(scope)
 
             listener(startingEvent)
@@ -126,7 +129,7 @@ open class TestScope internal constructor(
         }
 
         fun trackSkipping() {
-            listener(Event.Skipped(scope))
+            listener?.invoke(Event.Skipped(scope))
         }
 
         override fun toString(): String = scope.scopeName
