@@ -3,12 +3,16 @@ package testFramework
 import testFramework.internal.withParallelism
 
 class Test(
-    parent: TestScope,
+    parent: TestSuite,
     simpleName: String,
-    configuration: TestScopeConfiguration.() -> Unit = {
-    },
-    private val invocationAction: TestScopeInvocationAction
+    configuration: TestScopeConfiguration.() -> Unit = {},
+    private val action: TestAction
 ) : TestScope(parent, simpleName, configuration = configuration) {
+
+    init {
+        parent.registerChildScope(this)
+    }
+
     override suspend fun execute(listener: TestScopeEventListener?) {
         if (!scopeIsEnabled) {
             trackSkipping(listener)
@@ -17,8 +21,10 @@ class Test(
 
         withExecutionTracking(listener) {
             withParallelism(effectiveConfiguration.parallelism) {
-                invocationAction()
+                action()
             }
         }
     }
 }
+
+typealias TestAction = suspend Test.() -> Unit

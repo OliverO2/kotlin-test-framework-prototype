@@ -15,9 +15,10 @@ import org.junit.platform.engine.support.descriptor.EngineDescriptor
 import testFramework.Test
 import testFramework.TestModule
 import testFramework.TestScope
+import testFramework.TestSuite
 import java.util.concurrent.ConcurrentHashMap
 
-private lateinit var classLevelTestScopes: Set<TestScope>
+private lateinit var classLevelTestSuites: Set<TestSuite>
 private val scopeDescriptors = ConcurrentHashMap<TestScope, AbstractTestDescriptor>()
 
 internal class JUnitPlatformTestEngine : TestEngine {
@@ -26,12 +27,12 @@ internal class JUnitPlatformTestEngine : TestEngine {
     override fun discover(discoveryRequest: EngineDiscoveryRequest, uniqueId: UniqueId): TestDescriptor {
         val classSelectors = discoveryRequest.getSelectorsByType(ClassSelector::class.java)
 
-        // Instantiate all TestScope classes requested via class selectors
-        classLevelTestScopes = classSelectors
+        // Instantiate all TestSuite classes requested via class selectors
+        classLevelTestSuites = classSelectors
             .asSequence()
             .map { Class.forName(it.className, false, it.classLoader) } // classes, but not initialized yet
-            .filter { TestScope::class.java.isAssignableFrom(it) } // only TestScope classes from here
-            .map { Class.forName(it.name).getDeclaredConstructor().newInstance() as TestScope } // instantiate
+            .filter { TestSuite::class.java.isAssignableFrom(it) } // only TestSuite classes from here
+            .map { Class.forName(it.name).getDeclaredConstructor().newInstance() as TestSuite } // instantiate
             .toSet()
 
         // TODO: Check how IntelliJ IDEA runs failed tests
@@ -47,7 +48,7 @@ internal class JUnitPlatformTestEngine : TestEngine {
         ).apply {
             log("created EngineDescriptor(${this.uniqueId}, $displayName)")
             scopeDescriptors[TestModule.root] = this
-            TestModule.root.subScopes.forEach { addChild(it.newPlatformDescriptor(uniqueId)) }
+            TestModule.root.childScopes.forEach { addChild(it.newPlatformDescriptor(uniqueId)) }
         }
     }
 
@@ -86,8 +87,10 @@ private class TestScopeJUnitPlatformDescriptor(
     source: TestSource?,
     val scope: TestScope
 ) : AbstractTestDescriptor(uniqueId, displayName, source) {
-    override fun getType(): TestDescriptor.Type =
-        if (scope is Test) TestDescriptor.Type.TEST else TestDescriptor.Type.CONTAINER
+    override fun getType(): TestDescriptor.Type = when (scope) {
+        is Test -> TestDescriptor.Type.TEST
+        is TestSuite -> TestDescriptor.Type.CONTAINER
+    }
 
     override fun toString(): String = "PD(uId=$uniqueId, dN=\"$displayName\", t=$type)"
 }
@@ -97,7 +100,7 @@ private fun TestScope.newPlatformDescriptor(parentUniqueId: UniqueId): TestScope
     val uniqueId: UniqueId
     val scope = this
 
-    if (classLevelTestScopes.contains(this)) {
+    if (classLevelTestSuites.contains(this)) {
         uniqueId = parentUniqueId.append("class", scope::class.qualifiedName!!)
         source = ClassSource.from(scope::class.java)
     } else {
@@ -118,7 +121,9 @@ private fun TestScope.newPlatformDescriptor(parentUniqueId: UniqueId): TestScope
     ).apply {
         log("created TestDescriptor($uniqueId, $displayName)")
         scopeDescriptors[scope] = this
-        subScopes.forEach { addChild(it.newPlatformDescriptor(uniqueId)) }
+        if (this@newPlatformDescriptor is TestSuite) {
+            childScopes.forEach { addChild(it.newPlatformDescriptor(uniqueId)) }
+        }
     }
 }
 

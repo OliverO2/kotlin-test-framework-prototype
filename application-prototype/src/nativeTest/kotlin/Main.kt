@@ -1,6 +1,6 @@
-import com.example.TestScope1
-import com.example.TestScope2
-import com.example.TestScope3
+import com.example.TestSuite1
+import com.example.TestSuite2
+import com.example.TestSuite3
 import kotlinx.coroutines.runBlocking
 import testFramework.TestModule
 
@@ -13,5 +13,5 @@ private val main = runBlocking {
     // Kotlin/Native does not seem to supply an entry point for tests. So we use a simple property's initialization
     // to execute the test module. The property must be marked with @EagerInitialization, otherwise it would wait
     // for lazy initialization, which never happens as the property is not referenced anywhere.
-    TestModule.execute(TestScope1(), TestScope2(), TestScope3()) // <- A compiler plugin could generate this.
+    TestModule.execute(TestSuite1(), TestSuite2(), TestSuite3()) // <- A compiler plugin could generate this.
 }

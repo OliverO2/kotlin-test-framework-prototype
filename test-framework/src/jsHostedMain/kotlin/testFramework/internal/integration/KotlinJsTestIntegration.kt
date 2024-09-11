@@ -6,23 +6,27 @@ import kotlinx.coroutines.GlobalScope
 import testFramework.Test
 import testFramework.TestModule
 import testFramework.TestScope
+import testFramework.TestSuite
 
 suspend fun runTests(vararg scopes: TestScope) {
     // `scopes` is unused because top-level test scopes register themselves with their root scope
 
     if (kotlinJsTestFrameworkAvailable()) {
         fun TestScope.registerWithKotlinJsTestFramework() {
-            if (this is Test) {
-                kotlinJsTestFramework.test(simpleScopeName, ignored = !scopeIsEnabled) {
-                    @OptIn(DelicateCoroutinesApi::class)
-                    GlobalScope.testFunctionPromise {
-                        execute(listener = null)
+            when (this) {
+                is Test -> {
+                    kotlinJsTestFramework.test(simpleScopeName, ignored = !scopeIsEnabled) {
+                        @OptIn(DelicateCoroutinesApi::class)
+                        GlobalScope.testFunctionPromise {
+                            execute(listener = null)
+                        }
                     }
                 }
-            } else {
-                kotlinJsTestFramework.suite(simpleScopeName, ignored = !scopeIsEnabled) {
-                    subScopes.forEach {
-                        it.registerWithKotlinJsTestFramework()
+                is TestSuite -> {
+                    kotlinJsTestFramework.suite(simpleScopeName, ignored = !scopeIsEnabled) {
+                        childScopes.forEach {
+                            it.registerWithKotlinJsTestFramework()
+                        }
                     }
                 }
             }
@@ -63,7 +67,7 @@ internal interface KotlinJsTestFramework {
     /**
      * Declares a test suite. (Theoretically, suites may be nested and may contain tests at each level.)
      *
-     * [suiteFn] declares one or more tests (and/or sub-suites, theoretically).
+     * [suiteFn] declares one or more tests (and/or child suites, theoretically).
      * Due to [limitations of JS test frameworks](https://github.com/mochajs/mocha/issues/2975) supported by
      * Kotlin's test infra, [suiteFn] cannot handle asynchronous invocations.
      */

@@ -3,8 +3,8 @@ package testFramework
 import testFramework.internal.integration.IntellijTestLog
 import testFramework.internal.withSingleThreading
 
-open class TestModule private constructor(parent: TestScope?, configuration: TestScopeConfiguration.() -> Unit = {}) :
-    TestScope(parent = parent, configuration = configuration) {
+open class TestModule private constructor(parent: TestSuite?, configuration: TestScopeConfiguration.() -> Unit = {}) :
+    TestSuite(parent = parent, configuration = configuration) {
 
     class Root : TestModule(parent = null)
 
@@ -28,7 +28,10 @@ open class TestModule private constructor(parent: TestScope?, configuration: Tes
         val singleThreaded: TestModule by lazy { SingleThreadedModule() }
         val sequential: TestModule by lazy { SequentialModule() }
 
-        suspend fun execute(listener: TestScopeEventListener?, @Suppress("UNUSED_PARAMETER") vararg scopes: TestScope) {
+        internal suspend fun execute(
+            listener: TestScopeEventListener?,
+            @Suppress("UNUSED_PARAMETER") vararg scopes: TestScope
+        ) {
             // `scopes` is unused because top-level test scopes register themselves with their root scope
             root.configure()
             root.execute(listener)

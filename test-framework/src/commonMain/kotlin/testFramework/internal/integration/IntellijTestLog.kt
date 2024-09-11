@@ -34,8 +34,7 @@ internal object IntellijTestLog {
         fun addAfterEvent(
             resultType: String,
             startingEvent: TestScope.Event = event,
-            content: IjLog.Event.Test.Result.() -> Unit = {
-            }
+            content: IjLog.Event.Test.Result.() -> Unit = {}
         ) {
             ijLog {
                 event(type = if (event.scope is Test) "afterTest" else "afterSuite") {
@@ -117,8 +116,7 @@ internal object IntellijTestLog {
                     resultType: String,
                     startTime: Long? = null,
                     endTime: Long? = null,
-                    content: Result.() -> Unit = {
-                    }
+                    content: Result.() -> Unit = {}
                 ) {
                     entry.append(
                         "<result resultType='$resultType' startTime='${startTime?.toString() ?: ""}'" +

@@ -1,17 +1,11 @@
 package testFramework
 
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
-import testFramework.internal.withParallelism
 
-typealias TestScopeDefinitionAction = TestScope.() -> Unit
-
-open class TestScope internal constructor(
-    internal open val parent: TestScope?,
-    private val simpleNameOrNull: String? = null,
-    configuration: TestScopeConfiguration.() -> Unit = {},
-    private val definitionAction: TestScopeDefinitionAction? = null
+sealed class TestScope(
+    internal open val parent: TestSuite?,
+    private val simpleNameOrNull: String?,
+    configuration: TestScopeConfiguration.() -> Unit = {}
 ) {
     val simpleScopeName: String by lazy {
         // For proper reporting of multi-target test runs, `simpleScopeName` for top-level modules (children of `Root`)
@@ -35,162 +29,13 @@ open class TestScope internal constructor(
     var scopeIsSequential by effectiveConfiguration::isSequential
     var scopeParallelism by effectiveConfiguration::parallelism
 
-    internal val subScopes: MutableList<TestScope> = mutableListOf()
-
-    init {
-        @Suppress("LeakingThis")
-        parent?.registerSubScope(this)
-    }
-
-    protected constructor(module: TestModule, definitionAction: TestScopeDefinitionAction) :
-        this(parent = module, definitionAction = definitionAction)
-
-    protected constructor(definitionAction: TestScopeDefinitionAction) :
-        this(parent = TestModule.default, definitionAction = definitionAction)
-
-    private fun registerSubScope(subScope: TestScope) {
-        require(this !is Test) { "the test $scopeName must not have sub-scopes" }
-        subScopes.add(subScope)
-    }
-
-    fun beforeFirstScope(action: TestScopeInvocationAction) {
-        requireAcceptsSubScopeAction()
-        effectiveConfiguration.beforeFirstScopeAction = action
-    }
-
-    fun beforeEachScope(action: TestScopeInvocationAction) {
-        requireAcceptsSubScopeAction()
-        effectiveConfiguration.beforeEachScopeAction = action
-    }
-
-    fun aroundEachScope(action: TestScopeWrappingAction) {
-        requireAcceptsSubScopeAction()
-        effectiveConfiguration.aroundEachScopeAction = action
-    }
-
-    fun afterEachScope(action: TestScopeInvocationAction) {
-        requireAcceptsSubScopeAction()
-        effectiveConfiguration.afterEachScopeAction = action
-    }
-
-    fun afterLastScope(action: TestScopeInvocationAction) {
-        requireAcceptsSubScopeAction()
-        effectiveConfiguration.afterLastScopeAction = action
-    }
-
-    private fun requireAcceptsSubScopeAction() {
-        require(this !is Test) { "the test $scopeName must not have sub-scope actions" }
-    }
-
-    fun scope(name: String, definitionAction: TestScopeDefinitionAction) {
-        TestScope(this, name, definitionAction = definitionAction)
-    }
-
-    fun test(
-        name: String,
-        configuration: TestScopeConfiguration.() -> Unit = {
-        },
-        invocationAction: TestScopeInvocationAction
-    ) {
-        Test(this, name, configuration = configuration, invocationAction)
-    }
-
-    fun configure() {
+    internal open fun configure() {
         effectiveConfiguration.inheritFrom(parent?.effectiveConfiguration)
-
-        if (this is Test) {
-            check(subScopes.isEmpty()) { "The test scope $scopeName must not have any sub-scope" }
-            return
-        }
-
-        definitionAction?.invoke(this)
-        require(subScopes.isNotEmpty()) { "The non-test scope $scopeName must have at least one sub-scope" }
-
-        subScopes.forEach { it.configure() }
-
-        if (scopeIsEnabled && subScopes.isNotEmpty()) {
-            if (subScopes.any { it.scopeIsFocused }) {
-                // Disable all non-focused sub-scopes (disabling does not propagate to transitive sub-scopes).
-                subScopes.forEach {
-                    it.scopeIsEnabled = it.scopeIsFocused
-                }
-            } else {
-                // Disable this scope if none of its sub-scopes are enabled.
-                if (!subScopes.any { it.scopeIsEnabled }) {
-                    scopeIsEnabled = false
-                }
-            }
-        }
     }
 
-    open suspend fun execute(listener: TestScopeEventListener?) {
-        if (!scopeIsEnabled) {
-            trackSkipping(listener)
-            // This is opinionated, following JUnit Platform TestEngine guidelines in
-            // https://junit.org/junit5/docs/current/user-guide/#test-engines-custom:
-            // > If a node is reported as skipped, there must not be any events reported for its descendants.
-            return
-        }
+    internal abstract suspend fun execute(listener: TestScopeEventListener?)
 
-        withExecutionTracking(listener) {
-            withParallelism(effectiveConfiguration.parallelism) {
-                effectiveConfiguration.beforeFirstScopeAction?.invoke(this)
-
-                val subScopeWrappingActions = subScopeWrappingActions()
-
-                coroutineScope {
-                    for (subScope in subScopes) {
-                        // WORKAROUND: KT-51067 Function for creating suspending lambdas doesn't allow lambda parameters
-                        val wrappedAction =
-                            subScopeWrappingActions.fold<TestScopeWrappingAction, TestScopeInvocationAction>(
-                                { subScope.execute(listener) }
-                            ) { innerAction, wrappingAction ->
-                                {
-                                    wrappingAction(innerAction)
-                                }
-                            }
-
-                        if (effectiveConfiguration.isSequential == true || parent == null) {
-                            wrappedAction()
-                        } else {
-                            launch {
-                                wrappedAction()
-                            }
-                        }
-                    }
-                }
-
-                effectiveConfiguration.afterLastScopeAction?.invoke(this)
-            }
-        }
-    }
-
-    /** Returns actions wrapping around a sub-scope's execution, innermost first. */
-    private fun subScopeWrappingActions(): List<TestScopeWrappingAction> {
-        // WORKAROUND: KT-51067 Function for creating suspending lambdas doesn't allow lambda parameters
-
-        fun beforeAfterWrappingAction(): TestScopeWrappingAction? {
-            if (effectiveConfiguration.beforeEachScopeAction == null &&
-                effectiveConfiguration.afterEachScopeAction == null
-            ) {
-                return null
-            }
-
-            return { innerAction: TestScopeInvocationAction ->
-                effectiveConfiguration.beforeEachScopeAction?.invoke(this)
-                innerAction()
-                effectiveConfiguration.afterEachScopeAction?.invoke(this)
-            }
-        }
-
-        // Return a list of wrapping actions from innermost to outermost.
-        return listOfNotNull(
-            effectiveConfiguration.aroundEachScopeAction,
-            beforeAfterWrappingAction()
-        )
-    }
-
-    sealed class Event(val scope: TestScope) {
+    internal sealed class Event(val scope: TestScope) {
         val instant = Clock.System.now()
 
         class Starting(scope: TestScope) : Event(scope)
@@ -205,7 +50,7 @@ open class TestScope internal constructor(
         override fun toString(): String = "$scope: ${this::class.simpleName}"
     }
 
-    protected suspend fun withExecutionTracking(listener: TestScopeEventListener?, action: suspend () -> Unit) {
+    internal suspend fun withExecutionTracking(listener: TestScopeEventListener?, action: suspend () -> Unit) {
         if (listener == null) return action()
 
         val startingEvent = Event.Starting(this)
@@ -223,12 +68,14 @@ open class TestScope internal constructor(
         }
     }
 
-    protected fun trackSkipping(listener: TestScopeEventListener?) {
+    internal fun trackSkipping(listener: TestScopeEventListener?) {
         listener?.invoke(Event.Skipped(this))
     }
 
-    override fun toString(): String = scopeName
+    override fun toString(): String = "${this::class.simpleName}($scopeName)"
 }
+
+internal typealias TestScopeEventListener = (TestScope.Event) -> Unit
 
 private fun String.prefixesRemoved(): String = when {
     startsWith("f:") -> this.substring(2)

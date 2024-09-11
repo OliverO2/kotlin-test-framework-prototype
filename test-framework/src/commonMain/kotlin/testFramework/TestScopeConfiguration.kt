@@ -1,19 +1,15 @@
 package testFramework
 
-typealias TestScopeEventListener = (TestScope.Event) -> Unit
-typealias TestScopeInvocationAction = suspend TestScope.() -> Unit
-typealias TestScopeWrappingAction = suspend (TestScopeInvocationAction) -> Unit
-
 class TestScopeConfiguration(
     var isEnabled: Boolean = true, // children inherit a disabled state
     var isFocused: Boolean = false,
     var isSequential: Boolean? = null, // inheritable
     var parallelism: Int? = null, // inheritable (via coroutines dispatcher)
-    var beforeFirstScopeAction: TestScopeInvocationAction? = null,
-    var beforeEachScopeAction: TestScopeInvocationAction? = null,
+    var beforeFirstScopeAction: TestSuiteAction? = null,
+    var beforeEachScopeAction: TestSuiteAction? = null,
     var aroundEachScopeAction: TestScopeWrappingAction? = null,
-    var afterEachScopeAction: TestScopeInvocationAction? = null,
-    var afterLastScopeAction: TestScopeInvocationAction? = null
+    var afterEachScopeAction: TestSuiteAction? = null,
+    var afterLastScopeAction: TestSuiteAction? = null
 ) {
     fun inheritFrom(parent: TestScopeConfiguration?) {
         if (parent != null) {
@@ -22,3 +18,6 @@ class TestScopeConfiguration(
         }
     }
 }
+
+typealias TestScopeAction = suspend TestScope.() -> Unit
+typealias TestScopeWrappingAction = suspend (TestScopeAction) -> Unit

@@ -5,9 +5,9 @@ This prototype aims to explore a flexible but concise test framework architectur
 ### Features
 
 * A test hierarchy represented by nestable `TestScope`s.
-    * `Test`s are TestScopes containing actual test logic with assertions, they cannot have sub-scopes.
-    * `TestScopes` which are not `Test`s cannot contain test logic.
-    * `TestModule`s are TestScopes used to bootstrap the framework and provide a top-level grouping.
+    * `Test`s are test scopes containing actual test logic with assertions, they cannot have child scopes.
+    * `TestSuite`s are test scopes grouping child scopes, they cannot contain test logic.
+    * `TestModule`s are test suites used to bootstrap the framework and provide a top-level grouping.
 * Coroutine contexts mirror the test hierarchy.
 * The entire framework is platform independent with almost zero redundancy.
 * The architecture favors simplicity and aims to avoid implicit constructs and indirection.
@@ -16,11 +16,18 @@ This prototype aims to explore a flexible but concise test framework architectur
 
 * `./gradlew -p application-prototype cleanAllTests allTests`
 * `./gradlew -p application-prototype cleanAllTests jvmTest`
+* `./gradlew -p application-prototype cleanAllTests jsBrowserTest`
 * `./gradlew -p application-prototype cleanAllTests jsNodeTest`
+* `./gradlew -p application-prototype cleanAllTests wasmJsBrowserTest`
 * `./gradlew -p application-prototype cleanAllTests wasmJsNodeTest`
 * `./gradlew -p application-prototype cleanAllTests linuxX64Test`
 
-* `./gradlew -p application-prototype cleanAllTests linuxX64Test`
+* `./gradlew -p application-kotest cleanAllTests allTests`
+* `./gradlew -p application-kotest cleanAllTests jvmTest`
+* `./gradlew -p application-kotest cleanAllTests jsBrowserTest`
+* `./gradlew -p application-kotest cleanAllTests jsNodeTest`
+* `./gradlew -p application-kotest cleanAllTests wasmJsBrowserTest`
+* `./gradlew -p application-kotest cleanAllTests wasmJsNodeTest`
 * `./gradlew -p application-kotest cleanAllTests linuxX64Test`
 
 ### Limitations
@@ -29,7 +36,7 @@ This prototype aims to explore a flexible but concise test framework architectur
     * must be configured with instantiated test classes,
     * visualize the test status in the test run window, but
     * do nothing more (see JVM integration below).
-* Test using the Kotlin/JS infra do not report more than one level of suite nesting.
+* Test using the Kotlin/JS infra do not report more than one level of suite nesting (intermediate levels are cut out).
 * JVM integration for IntelliJ IDEA
     * visualizes the test status in the test run window, and
     * supports class-level actions (run, debug, jump to source) from the test run window, but
