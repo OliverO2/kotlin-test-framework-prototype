@@ -46,7 +46,7 @@ open class TestScope internal constructor(
         this(parent = module, definitionAction = definitionAction)
 
     protected constructor(definitionAction: TestScopeDefinitionAction) :
-        this(TestModule.default, definitionAction = definitionAction)
+        this(parent = TestModule.default, definitionAction = definitionAction)
 
     private fun registerSubScope(subScope: TestScope) {
         require(this !is Test) { "the test $scopeName must not have sub-scopes" }
@@ -95,46 +95,6 @@ open class TestScope internal constructor(
         Test(this, name, configuration = configuration, invocationAction)
     }
 
-    class Invocation internal constructor(val scope: TestScope, val listener: ((Event) -> Unit)? = null) {
-        sealed class Event(val scope: TestScope) {
-            val instant = Clock.System.now()
-
-            class Starting(scope: TestScope) : Event(scope)
-            class Finished(scope: TestScope, val startingEvent: Starting, val throwable: Throwable? = null) :
-                Event(scope) {
-                override fun toString(): String = "${super.toString()} – throwable=$throwable"
-            }
-            class Skipped(scope: TestScope) : Event(scope)
-
-            override fun toString(): String = "$scope: ${this::class.simpleName}"
-        }
-
-        suspend fun withExecutionTracking(action: suspend () -> Unit) {
-            if (listener == null) return action()
-            val listener = listener // help the compiler accept non-nullability
-
-            val startingEvent = Event.Starting(scope)
-
-            listener(startingEvent)
-
-            try {
-                action()
-                listener(Event.Finished(scope, startingEvent))
-            } catch (assertionError: AssertionError) {
-                listener(Event.Finished(scope, startingEvent, assertionError))
-            } catch (throwable: Throwable) {
-                listener(Event.Finished(scope, startingEvent, throwable))
-                throw throwable
-            }
-        }
-
-        fun trackSkipping() {
-            listener?.invoke(Event.Skipped(scope))
-        }
-
-        override fun toString(): String = scope.scopeName
-    }
-
     fun configure() {
         effectiveConfiguration.inheritFrom(parent?.effectiveConfiguration)
 
@@ -163,20 +123,18 @@ open class TestScope internal constructor(
         }
     }
 
-    open suspend fun execute(outerInvocation: Invocation) {
-        val invocation = Invocation(this, outerInvocation.listener)
-
+    open suspend fun execute(listener: TestScopeEventListener?) {
         if (!scopeIsEnabled) {
-            invocation.trackSkipping()
+            trackSkipping(listener)
             // This is opinionated, following JUnit Platform TestEngine guidelines in
             // https://junit.org/junit5/docs/current/user-guide/#test-engines-custom:
             // > If a node is reported as skipped, there must not be any events reported for its descendants.
             return
         }
 
-        invocation.withExecutionTracking {
+        withExecutionTracking(listener) {
             withParallelism(effectiveConfiguration.parallelism) {
-                effectiveConfiguration.beforeFirstScopeAction?.invoke(invocation)
+                effectiveConfiguration.beforeFirstScopeAction?.invoke(this)
 
                 val subScopeWrappingActions = subScopeWrappingActions()
 
@@ -185,24 +143,24 @@ open class TestScope internal constructor(
                         // WORKAROUND: KT-51067 Function for creating suspending lambdas doesn't allow lambda parameters
                         val wrappedAction =
                             subScopeWrappingActions.fold<TestScopeWrappingAction, TestScopeInvocationAction>(
-                                subScope::execute
+                                { subScope.execute(listener) }
                             ) { innerAction, wrappingAction ->
                                 {
-                                    wrappingAction(invocation, innerAction)
+                                    wrappingAction(innerAction)
                                 }
                             }
 
                         if (effectiveConfiguration.isSequential == true || parent == null) {
-                            wrappedAction.invoke(invocation)
+                            wrappedAction()
                         } else {
                             launch {
-                                wrappedAction.invoke(invocation)
+                                wrappedAction()
                             }
                         }
                     }
                 }
 
-                effectiveConfiguration.afterLastScopeAction?.invoke(invocation)
+                effectiveConfiguration.afterLastScopeAction?.invoke(this)
             }
         }
     }
@@ -218,10 +176,10 @@ open class TestScope internal constructor(
                 return null
             }
 
-            return { invocation: Invocation, innerAction: TestScopeInvocationAction ->
-                effectiveConfiguration.beforeEachScopeAction?.invoke(invocation)
-                innerAction(invocation)
-                effectiveConfiguration.afterEachScopeAction?.invoke(invocation)
+            return { innerAction: TestScopeInvocationAction ->
+                effectiveConfiguration.beforeEachScopeAction?.invoke(this)
+                innerAction()
+                effectiveConfiguration.afterEachScopeAction?.invoke(this)
             }
         }
 
@@ -230,6 +188,43 @@ open class TestScope internal constructor(
             effectiveConfiguration.aroundEachScopeAction,
             beforeAfterWrappingAction()
         )
+    }
+
+    sealed class Event(val scope: TestScope) {
+        val instant = Clock.System.now()
+
+        class Starting(scope: TestScope) : Event(scope)
+
+        class Finished(scope: TestScope, val startingEvent: Starting, val throwable: Throwable? = null) :
+            Event(scope) {
+            override fun toString(): String = "${super.toString()} – throwable=$throwable"
+        }
+
+        class Skipped(scope: TestScope) : Event(scope)
+
+        override fun toString(): String = "$scope: ${this::class.simpleName}"
+    }
+
+    protected suspend fun withExecutionTracking(listener: TestScopeEventListener?, action: suspend () -> Unit) {
+        if (listener == null) return action()
+
+        val startingEvent = Event.Starting(this)
+
+        listener(startingEvent)
+
+        try {
+            action()
+            listener(Event.Finished(this, startingEvent))
+        } catch (assertionError: AssertionError) {
+            listener(Event.Finished(this, startingEvent, assertionError))
+        } catch (throwable: Throwable) {
+            listener(Event.Finished(this, startingEvent, throwable))
+            throw throwable
+        }
+    }
+
+    protected fun trackSkipping(listener: TestScopeEventListener?) {
+        listener?.invoke(Event.Skipped(this))
     }
 
     override fun toString(): String = scopeName

@@ -55,14 +55,14 @@ internal class JUnitPlatformTestEngine : TestEngine {
         val listener = request.engineExecutionListener
 
         runBlocking {
-            TestModule.root.execute { event: TestScope.Invocation.Event ->
+            TestModule.root.execute { event: TestScope.Event ->
                 when (event) {
-                    is TestScope.Invocation.Event.Starting -> {
+                    is TestScope.Event.Starting -> {
                         log("${event.scope.platformDescriptor}: ${event.scope} starting")
                         listener.executionStarted(event.scope.platformDescriptor)
                     }
 
-                    is TestScope.Invocation.Event.Finished -> {
+                    is TestScope.Event.Finished -> {
                         log(
                             "${event.scope.platformDescriptor}: ${event.scope} finished," +
                                 " result=${event.executionResult})"
@@ -70,7 +70,7 @@ internal class JUnitPlatformTestEngine : TestEngine {
                         listener.executionFinished(event.scope.platformDescriptor, event.executionResult)
                     }
 
-                    is TestScope.Invocation.Event.Skipped -> {
+                    is TestScope.Event.Skipped -> {
                         log("${event.scope.platformDescriptor}: ${event.scope} skipped")
                         listener.executionSkipped(event.scope.platformDescriptor, "disabled")
                     }
@@ -125,7 +125,7 @@ private fun TestScope.newPlatformDescriptor(parentUniqueId: UniqueId): TestScope
 private val TestScope.platformDescriptor: AbstractTestDescriptor get() =
     checkNotNull(scopeDescriptors[this]) { "Scope $this is missing its TestDescriptor" }
 
-private val TestScope.Invocation.Event.Finished.executionResult: TestExecutionResult get() =
+private val TestScope.Event.Finished.executionResult: TestExecutionResult get() =
     when (throwable) {
         null -> TestExecutionResult.successful()
         is AssertionError -> TestExecutionResult.failed(throwable)

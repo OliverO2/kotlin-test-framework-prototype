@@ -16,9 +16,7 @@ suspend fun runTests(vararg scopes: TestScope) {
                 kotlinJsTestFramework.test(simpleScopeName, ignored = !scopeIsEnabled) {
                     @OptIn(DelicateCoroutinesApi::class)
                     GlobalScope.testFunctionPromise {
-                        execute(outerInvocation = TestScope.Invocation(this))
-                        // TODO: Invocation is not needed here. JS-based test frameworks do not use a
-                        //     listener for test reporting.
+                        execute(listener = null)
                     }
                 }
             } else {
@@ -33,7 +31,7 @@ suspend fun runTests(vararg scopes: TestScope) {
         TestModule.root.configure()
         TestModule.root.registerWithKotlinJsTestFramework()
     } else {
-        TestModule.execute(*scopes)
+        TestModule.execute(IntellijTestLog::add, *scopes)
     }
 }
 

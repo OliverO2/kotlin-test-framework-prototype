@@ -1,8 +1,8 @@
 package testFramework
 
-typealias TestScopeInvocationAction = suspend (TestScope.Invocation) -> Unit
-
-typealias TestScopeWrappingAction = suspend (TestScope.Invocation, TestScopeInvocationAction) -> Unit
+typealias TestScopeEventListener = (TestScope.Event) -> Unit
+typealias TestScopeInvocationAction = suspend TestScope.() -> Unit
+typealias TestScopeWrappingAction = suspend (TestScopeInvocationAction) -> Unit
 
 class TestScopeConfiguration(
     var isEnabled: Boolean = true, // children inherit a disabled state

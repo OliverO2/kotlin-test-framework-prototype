@@ -7,7 +7,7 @@ import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
 internal object IntellijTestLog {
-    fun add(event: TestScope.Invocation.Event) {
+    fun add(event: TestScope.Event) {
         if (event.scope is TestModule.Root) return // ignore the root node
 
         val parentScope = event.scope.parent?.let { if (it.parent == null) null else it } // null if root is parent
@@ -33,7 +33,7 @@ internal object IntellijTestLog {
 
         fun addAfterEvent(
             resultType: String,
-            startingEvent: TestScope.Invocation.Event = event,
+            startingEvent: TestScope.Event = event,
             content: IjLog.Event.Test.Result.() -> Unit = {
             }
         ) {
@@ -57,11 +57,11 @@ internal object IntellijTestLog {
         }
 
         when (event) {
-            is TestScope.Invocation.Event.Starting -> {
+            is TestScope.Event.Starting -> {
                 addBeforeEvent()
             }
 
-            is TestScope.Invocation.Event.Finished -> {
+            is TestScope.Event.Finished -> {
                 val resultType = if (event.throwable == null) "SUCCESS" else "FAILURE"
                 addAfterEvent(resultType = resultType, startingEvent = event.startingEvent) {
                     event.throwable?.let { throwable ->
@@ -72,7 +72,7 @@ internal object IntellijTestLog {
                 }
             }
 
-            is TestScope.Invocation.Event.Skipped -> {
+            is TestScope.Event.Skipped -> {
                 addBeforeEvent()
                 addAfterEvent(resultType = "SKIPPED")
             }

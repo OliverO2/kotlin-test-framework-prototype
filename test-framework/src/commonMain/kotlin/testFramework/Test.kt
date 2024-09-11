@@ -8,18 +8,16 @@ class Test(
     configuration: TestScopeConfiguration.() -> Unit = {
     },
     private val invocationAction: TestScopeInvocationAction
-) : TestScope(parent, simpleName, configuration) {
-    override suspend fun execute(outerInvocation: Invocation) {
-        val invocation = Invocation(this, outerInvocation.listener)
-
+) : TestScope(parent, simpleName, configuration = configuration) {
+    override suspend fun execute(listener: TestScopeEventListener?) {
         if (!scopeIsEnabled) {
-            invocation.trackSkipping()
+            trackSkipping(listener)
             return
         }
 
-        invocation.withExecutionTracking {
+        withExecutionTracking(listener) {
             withParallelism(effectiveConfiguration.parallelism) {
-                invocationAction.invoke(invocation)
+                invocationAction()
             }
         }
     }

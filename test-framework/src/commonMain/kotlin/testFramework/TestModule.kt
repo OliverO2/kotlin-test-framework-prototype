@@ -11,18 +11,14 @@ open class TestModule private constructor(parent: TestScope?, configuration: Tes
     class DefaultModule : TestModule(parent = root, configuration = { parallelism = testPlatform.parallelism })
 
     class SingleThreadedModule : TestModule(parent = root) {
-        override suspend fun execute(outerInvocation: Invocation) {
+        override suspend fun execute(listener: TestScopeEventListener?) {
             withSingleThreading {
-                super.execute(outerInvocation)
+                super.execute(listener)
             }
         }
     }
 
     class SequentialModule : TestModule(parent = root, configuration = { isSequential = true })
-
-    suspend fun execute(listener: (Invocation.Event) -> Unit) {
-        execute(Invocation(this, listener))
-    }
 
     companion object {
         // Create only those modules at the top of the hierarchy, which are used by actual test scopes.
@@ -32,10 +28,14 @@ open class TestModule private constructor(parent: TestScope?, configuration: Tes
         val singleThreaded: TestModule by lazy { SingleThreadedModule() }
         val sequential: TestModule by lazy { SequentialModule() }
 
-        suspend fun execute(@Suppress("UNUSED_PARAMETER") vararg scopes: TestScope) {
+        suspend fun execute(listener: TestScopeEventListener?, @Suppress("UNUSED_PARAMETER") vararg scopes: TestScope) {
             // `scopes` is unused because top-level test scopes register themselves with their root scope
             root.configure()
-            root.execute(IntellijTestLog::add)
+            root.execute(listener)
+        }
+
+        suspend fun execute(vararg scopes: TestScope) {
+            execute(IntellijTestLog::add, *scopes)
         }
     }
 }
