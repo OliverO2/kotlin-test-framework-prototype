@@ -13,6 +13,12 @@ class TestSuite1 :
         {
             beforeFirstScope { log("beforeFirstScope TestSuite1") }
 
+            aroundAllScopes { scopeAction ->
+                log("aroundAllScopes TestSuite1 start")
+                scopeAction()
+                log("aroundAllScopes TestSuite1 end")
+            }
+
             beforeEachScope { log("beforeEachScope TestSuite1") }
 
             aroundEachScope { scopeAction ->

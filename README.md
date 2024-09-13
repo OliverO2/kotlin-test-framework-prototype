@@ -46,10 +46,9 @@ This prototype aims to explore a flexible but concise test framework architectur
 
 ### What could be done
 
-* Add an `aroundScopes` action.
 * Add (a Gradle plugin with) headless browser execution for `jsBrowserTest` and `wasmJsBrowserTest`.
     * [Browser-based testing POC by Adam](https://kotlinlang.slack.com/archives/CT0G9SD7Z/p1712480969939969?thread_ts=1710849669.379249&cid=CT0G9SD7Z)
-* Add a compiler plugin for automatic test generation on non-JVM targets.
+* Add a compiler plugin for automatic test discovery on non-JVM targets.
 * Add an IntelliJ plugin to
     * run individual tests from editor run gutters
     * support non-class scope and method-level actions from the test run window

@@ -5,6 +5,8 @@ import kotlinx.coroutines.launch
 import testFramework.internal.withParallelism
 
 typealias TestSuiteAction = TestSuite.() -> Unit
+typealias TestScopeAction = suspend TestScope.() -> Unit
+typealias TestScopeWrappingAction = suspend (TestScopeAction) -> Unit
 
 open class TestSuite internal constructor(
     parent: TestSuite?,
@@ -12,7 +14,15 @@ open class TestSuite internal constructor(
     configuration: TestScopeConfiguration.() -> Unit = {},
     private val configurationAction: TestSuiteAction? = null
 ) : TestScope(parent, simpleNameOrNull, configuration) {
+
     internal val childScopes: MutableList<TestScope> = mutableListOf()
+
+    private var beforeFirstScopeAction: TestSuiteAction? = null
+    private var aroundAllScopesAction: TestScopeWrappingAction? = null
+    private var beforeEachScopeAction: TestSuiteAction? = null
+    private var aroundEachScopeAction: TestScopeWrappingAction? = null
+    private var afterEachScopeAction: TestSuiteAction? = null
+    private var afterLastScopeAction: TestSuiteAction? = null
 
     init {
         @Suppress("LeakingThis")
@@ -30,23 +40,27 @@ open class TestSuite internal constructor(
     }
 
     fun beforeFirstScope(action: TestSuiteAction) {
-        effectiveConfiguration.beforeFirstScopeAction = action
+        beforeFirstScopeAction = action
+    }
+
+    fun aroundAllScopes(action: TestScopeWrappingAction) {
+        aroundAllScopesAction = action
     }
 
     fun beforeEachScope(action: TestSuiteAction) {
-        effectiveConfiguration.beforeEachScopeAction = action
+        beforeEachScopeAction = action
     }
 
     fun aroundEachScope(action: TestScopeWrappingAction) {
-        effectiveConfiguration.aroundEachScopeAction = action
+        aroundEachScopeAction = action
     }
 
     fun afterEachScope(action: TestSuiteAction) {
-        effectiveConfiguration.afterEachScopeAction = action
+        afterEachScopeAction = action
     }
 
     fun afterLastScope(action: TestSuiteAction) {
-        effectiveConfiguration.afterLastScopeAction = action
+        afterLastScopeAction = action
     }
 
     fun suite(name: String, configurationAction: TestSuiteAction) {
@@ -90,61 +104,68 @@ open class TestSuite internal constructor(
             return
         }
 
-        withExecutionTracking(listener) {
-            withParallelism(effectiveConfiguration.parallelism) {
-                effectiveConfiguration.beforeFirstScopeAction?.invoke(this)
+        val childScopeActions = allChildScopesWrappingActions().wrappedAround {
+            val eachChildScopeWrappingActions = eachChildScopeWrappingActions()
 
-                val childScopeWrappingActions = childScopeWrappingActions()
+            coroutineScope {
+                for (childScope in childScopes) {
+                    val wrappedAction = eachChildScopeWrappingActions.wrappedAround {
+                        childScope.execute(listener)
+                    }
 
-                coroutineScope {
-                    for (childScope in childScopes) {
-                        // WORKAROUND: KT-51067 Function for creating suspending lambdas doesn't allow lambda parameters
-                        val wrappedAction =
-                            childScopeWrappingActions.fold<TestScopeWrappingAction, TestScopeAction>(
-                                { childScope.execute(listener) }
-                            ) { innerAction, wrappingAction ->
-                                {
-                                    wrappingAction(innerAction)
-                                }
-                            }
-
-                        if (effectiveConfiguration.isSequential == true || parent == null) {
+                    if (effectiveConfiguration.isSequential == true || parent == null) {
+                        wrappedAction()
+                    } else {
+                        launch {
                             wrappedAction()
-                        } else {
-                            launch {
-                                wrappedAction()
-                            }
                         }
                     }
                 }
+            }
+        }
 
-                effectiveConfiguration.afterLastScopeAction?.invoke(this)
+        withExecutionTracking(listener) {
+            withParallelism(effectiveConfiguration.parallelism) {
+                childScopeActions()
             }
         }
     }
 
-    /** Returns actions wrapping around a child scope's execution, innermost first. */
-    private fun childScopeWrappingActions(): List<TestScopeWrappingAction> {
+    private fun List<TestScopeWrappingAction>.wrappedAround(innermostAction: TestScopeAction): TestScopeAction {
         // WORKAROUND: KT-51067 Function for creating suspending lambdas doesn't allow lambda parameters
 
-        fun beforeAfterWrappingAction(): TestScopeWrappingAction? {
-            if (effectiveConfiguration.beforeEachScopeAction == null &&
-                effectiveConfiguration.afterEachScopeAction == null
-            ) {
-                return null
-            }
-
-            return { innerAction: TestScopeAction ->
-                effectiveConfiguration.beforeEachScopeAction?.invoke(this)
-                innerAction()
-                effectiveConfiguration.afterEachScopeAction?.invoke(this)
+        return fold<TestScopeWrappingAction, TestScopeAction>(
+            { innermostAction() }
+        ) { innerAction, wrappingAction ->
+            {
+                wrappingAction(innerAction)
             }
         }
+    }
 
-        // Return a list of wrapping actions from innermost to outermost.
-        return listOfNotNull(
-            effectiveConfiguration.aroundEachScopeAction,
-            beforeAfterWrappingAction()
-        )
+    /** Returns actions wrapping around each child scope's execution, innermost first. */
+    private fun eachChildScopeWrappingActions(): List<TestScopeWrappingAction> = listOfNotNull(
+        aroundEachScopeAction,
+        beforeAfterWrappingAction(beforeEachScopeAction, afterEachScopeAction)
+    )
+
+    /** Returns actions wrapping around all child scope's execution, innermost first. */
+    private fun allChildScopesWrappingActions(): List<TestScopeWrappingAction> = listOfNotNull(
+        aroundAllScopesAction,
+        beforeAfterWrappingAction(beforeFirstScopeAction, afterLastScopeAction)
+    )
+
+    /** Returns a wrapping action for a before/after action pair, or null if both are null. */
+    private fun beforeAfterWrappingAction(
+        beforeAction: TestSuiteAction?,
+        afterAction: TestSuiteAction?
+    ): TestScopeWrappingAction? {
+        if (beforeAction == null && afterAction == null) return null
+
+        return { innerAction: TestScopeAction ->
+            beforeAction?.invoke(this)
+            innerAction()
+            afterAction?.invoke(this)
+        }
     }
 }

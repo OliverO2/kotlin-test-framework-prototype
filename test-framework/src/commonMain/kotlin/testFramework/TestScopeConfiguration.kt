@@ -4,12 +4,7 @@ class TestScopeConfiguration(
     var isEnabled: Boolean = true, // children inherit a disabled state
     var isFocused: Boolean = false,
     var isSequential: Boolean? = null, // inheritable
-    var parallelism: Int? = null, // inheritable (via coroutines dispatcher)
-    var beforeFirstScopeAction: TestSuiteAction? = null,
-    var beforeEachScopeAction: TestSuiteAction? = null,
-    var aroundEachScopeAction: TestScopeWrappingAction? = null,
-    var afterEachScopeAction: TestSuiteAction? = null,
-    var afterLastScopeAction: TestSuiteAction? = null
+    var parallelism: Int? = null // inheritable (via coroutines dispatcher)
 ) {
     fun inheritFrom(parent: TestScopeConfiguration?) {
         if (parent != null) {
@@ -18,6 +13,3 @@ class TestScopeConfiguration(
         }
     }
 }
-
-typealias TestScopeAction = suspend TestScope.() -> Unit
-typealias TestScopeWrappingAction = suspend (TestScopeAction) -> Unit
