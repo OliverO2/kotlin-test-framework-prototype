@@ -18,7 +18,7 @@ import testFramework.TestScope
 import testFramework.TestSuite
 import java.util.concurrent.ConcurrentHashMap
 
-private lateinit var classLevelTestSuites: Set<TestSuite>
+private lateinit var classLevelTestSuites: Set<TestSuite<*>>
 private val scopeDescriptors = ConcurrentHashMap<TestScope, AbstractTestDescriptor>()
 
 internal class JUnitPlatformTestEngine : TestEngine {
@@ -32,7 +32,7 @@ internal class JUnitPlatformTestEngine : TestEngine {
             .asSequence()
             .map { Class.forName(it.className, false, it.classLoader) } // classes, but not initialized yet
             .filter { TestSuite::class.java.isAssignableFrom(it) } // only TestSuite classes from here
-            .map { Class.forName(it.name).getDeclaredConstructor().newInstance() as TestSuite } // instantiate
+            .map { Class.forName(it.name).getDeclaredConstructor().newInstance() as TestSuite<*> } // instantiate
             .toSet()
 
         // TODO: Check how IntelliJ IDEA runs failed tests
@@ -88,8 +88,8 @@ private class TestScopeJUnitPlatformDescriptor(
     val scope: TestScope
 ) : AbstractTestDescriptor(uniqueId, displayName, source) {
     override fun getType(): TestDescriptor.Type = when (scope) {
-        is Test -> TestDescriptor.Type.TEST
-        is TestSuite -> TestDescriptor.Type.CONTAINER
+        is Test<*> -> TestDescriptor.Type.TEST
+        is TestSuite<*> -> TestDescriptor.Type.CONTAINER
     }
 
     override fun toString(): String = "PD(uId=$uniqueId, dN=\"$displayName\", t=$type)"
@@ -105,9 +105,9 @@ private fun TestScope.newPlatformDescriptor(parentUniqueId: UniqueId): TestScope
         source = ClassSource.from(scope::class.java)
     } else {
         val segmentType = when (scope) {
-            is Test -> "test"
+            is Test<*> -> "test"
             is TestModule -> "module"
-            else -> "scope"
+            is TestSuite<*> -> "suite"
         }
         uniqueId = parentUniqueId.append(segmentType, simpleScopeName)
         source = null
@@ -121,7 +121,7 @@ private fun TestScope.newPlatformDescriptor(parentUniqueId: UniqueId): TestScope
     ).apply {
         log("created TestDescriptor($uniqueId, $displayName)")
         scopeDescriptors[scope] = this
-        if (this@newPlatformDescriptor is TestSuite) {
+        if (this@newPlatformDescriptor is TestSuite<*>) {
             childScopes.forEach { addChild(it.newPlatformDescriptor(uniqueId)) }
         }
     }

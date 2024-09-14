@@ -14,7 +14,7 @@ suspend fun runTests(vararg scopes: TestScope) {
     if (kotlinJsTestFrameworkAvailable()) {
         fun TestScope.registerWithKotlinJsTestFramework() {
             when (this) {
-                is Test -> {
+                is Test<*> -> {
                     kotlinJsTestFramework.test(simpleScopeName, ignored = !scopeIsEnabled) {
                         @OptIn(DelicateCoroutinesApi::class)
                         GlobalScope.testFunctionPromise {
@@ -22,7 +22,7 @@ suspend fun runTests(vararg scopes: TestScope) {
                         }
                     }
                 }
-                is TestSuite -> {
+                is TestSuite<*> -> {
                     kotlinJsTestFramework.suite(simpleScopeName, ignored = !scopeIsEnabled) {
                         childScopes.forEach {
                             it.registerWithKotlinJsTestFramework()

@@ -3,7 +3,7 @@ package testFramework
 import kotlinx.datetime.Clock
 
 sealed class TestScope(
-    internal open val parent: TestSuite?,
+    internal open val parent: TestSuite<*>?,
     private val simpleNameOrNull: String?,
     configuration: TestScopeConfiguration.() -> Unit = {}
 ) {

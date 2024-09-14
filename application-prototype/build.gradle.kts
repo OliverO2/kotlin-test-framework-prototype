@@ -4,6 +4,7 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinHierarchyTemplate
 
 plugins {
     alias(libs.plugins.org.jetbrains.kotlin.multiplatform)
+    alias(libs.plugins.org.jetbrains.kotlin.atomicfu)
 }
 
 val jdkVersion = project.property("local.jdk.version").toString().toInt()
@@ -52,6 +53,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation(project(":test-framework"))
+                implementation(libs.org.jetbrains.kotlinx.atomicfu)
             }
         }
         val jvmMain by getting {

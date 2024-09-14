@@ -2,72 +2,116 @@ package testFramework
 
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import testFramework.internal.withParallelism
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.coroutineContext
 
-typealias TestSuiteAction = TestSuite.() -> Unit
-typealias TestScopeAction = suspend TestScope.() -> Unit
-typealias TestScopeWrappingAction = suspend (TestScopeAction) -> Unit
+typealias TestSuiteConfigurationAction<Fixture> = TestSuite<Fixture>.() -> Unit
+typealias TestSuiteAction<Fixture> = suspend TestSuite<Fixture>.() -> Unit
+typealias TestSuiteWrappingAction<Fixture> = suspend (TestSuiteAction<Fixture>) -> Unit
+typealias TestSuiteNewFixtureAction<Fixture> = suspend TestSuite<Fixture>.() -> Fixture
 
-open class TestSuite internal constructor(
-    parent: TestSuite?,
+typealias BasicTestSuite = TestSuite<Nothing>
+
+open class TestSuite<Fixture : Any> internal constructor(
+    parent: TestSuite<*>?,
     simpleNameOrNull: String? = null,
     configuration: TestScopeConfiguration.() -> Unit = {},
-    private val configurationAction: TestSuiteAction? = null
+    private val configurationAction: TestSuiteConfigurationAction<Fixture>? = null
 ) : TestScope(parent, simpleNameOrNull, configuration) {
 
     internal val childScopes: MutableList<TestScope> = mutableListOf()
 
-    private var beforeFirstScopeAction: TestSuiteAction? = null
-    private var aroundAllScopesAction: TestScopeWrappingAction? = null
-    private var beforeEachScopeAction: TestSuiteAction? = null
-    private var aroundEachScopeAction: TestScopeWrappingAction? = null
-    private var afterEachScopeAction: TestSuiteAction? = null
-    private var afterLastScopeAction: TestSuiteAction? = null
+    private var allScopesFixtureSetup: TestSuiteWrappingAction<Fixture>? = null
+    private var beforeFirstScopeAction: TestSuiteAction<Fixture>? = null
+    private var aroundAllScopesAction: TestSuiteWrappingAction<Fixture>? = null
+    private var eachScopeFixtureSetup: TestSuiteWrappingAction<Fixture>? = null
+    private var beforeEachScopeAction: TestSuiteAction<Fixture>? = null
+    private var aroundEachScopeAction: TestSuiteWrappingAction<Fixture>? = null
+    private var afterEachScopeAction: TestSuiteAction<Fixture>? = null
+    private var afterLastScopeAction: TestSuiteAction<Fixture>? = null
 
     init {
         @Suppress("LeakingThis")
         parent?.registerChildScope(this)
     }
 
-    protected constructor(module: TestModule, configurationAction: TestSuiteAction) :
+    protected constructor(module: TestModule, configurationAction: TestSuiteConfigurationAction<Fixture>) :
         this(parent = module, configurationAction = configurationAction)
 
-    protected constructor(configurationAction: TestSuiteAction) :
+    protected constructor(configurationAction: TestSuiteConfigurationAction<Fixture>) :
         this(parent = TestModule.default, configurationAction = configurationAction)
 
     internal fun registerChildScope(childScope: TestScope) {
         childScopes.add(childScope)
     }
 
-    fun beforeFirstScope(action: TestSuiteAction) {
+    class FixtureContextElement<Fixture>(val fixture: Fixture) : CoroutineContext.Element {
+        companion object : CoroutineContext.Key<FixtureContextElement<*>>
+
+        override val key: CoroutineContext.Key<*>
+            get() = FixtureContextElement
+    }
+
+    fun fixtureForAll(fixture: TestSuiteNewFixtureAction<Fixture>) {
+        allScopesFixtureSetup = fixtureWrappingAction(fixture)
+    }
+
+    fun fixtureForEach(fixture: TestSuiteNewFixtureAction<Fixture>) {
+        eachScopeFixtureSetup = fixtureWrappingAction(fixture)
+    }
+
+    private fun fixtureWrappingAction(fixture: TestSuiteNewFixtureAction<Fixture>): TestSuiteWrappingAction<Fixture> =
+        { innerAction: TestSuiteAction<Fixture> ->
+            @Suppress("NAME_SHADOWING")
+            val fixture = fixture.invoke(this)
+            withContext(FixtureContextElement(fixture)) {
+                if (fixture is AutoCloseable) {
+                    fixture.use {
+                        innerAction()
+                    }
+                } else {
+                    innerAction()
+                }
+            }
+        }
+
+    @Suppress("UNCHECKED_CAST")
+    suspend fun fixture(): Fixture = (
+        coroutineContext[FixtureContextElement]?.fixture
+            ?: throw IllegalArgumentException("A fixture has not been registered: $coroutineContext")
+        ) as Fixture
+
+    fun beforeFirstScope(action: TestSuiteAction<Fixture>) {
         beforeFirstScopeAction = action
     }
 
-    fun aroundAllScopes(action: TestScopeWrappingAction) {
+    fun aroundAllScopes(action: TestSuiteWrappingAction<Fixture>) {
         aroundAllScopesAction = action
     }
 
-    fun beforeEachScope(action: TestSuiteAction) {
+    fun beforeEachScope(action: TestSuiteAction<Fixture>) {
         beforeEachScopeAction = action
     }
 
-    fun aroundEachScope(action: TestScopeWrappingAction) {
+    fun aroundEachScope(action: TestSuiteWrappingAction<Fixture>) {
         aroundEachScopeAction = action
     }
 
-    fun afterEachScope(action: TestSuiteAction) {
+    fun afterEachScope(action: TestSuiteAction<Fixture>) {
         afterEachScopeAction = action
     }
 
-    fun afterLastScope(action: TestSuiteAction) {
+    fun afterLastScope(action: TestSuiteAction<Fixture>) {
         afterLastScopeAction = action
     }
 
-    fun suite(name: String, configurationAction: TestSuiteAction) {
+    fun suite(name: String, configurationAction: TestSuiteConfigurationAction<Fixture>) {
         TestSuite(this, name, configurationAction = configurationAction)
     }
 
-    fun test(name: String, configuration: TestScopeConfiguration.() -> Unit = {}, action: TestAction) {
+    fun test(name: String, configuration: TestScopeConfiguration.() -> Unit = {}, action: TestAction<Fixture>) {
         Test(this, name, configuration = configuration, action)
     }
 
@@ -131,38 +175,34 @@ open class TestSuite internal constructor(
         }
     }
 
-    private fun List<TestScopeWrappingAction>.wrappedAround(innermostAction: TestScopeAction): TestScopeAction {
-        // WORKAROUND: KT-51067 Function for creating suspending lambdas doesn't allow lambda parameters
-
-        return fold<TestScopeWrappingAction, TestScopeAction>(
-            { innermostAction() }
-        ) { innerAction, wrappingAction ->
-            {
-                wrappingAction(innerAction)
-            }
-        }
+    private fun List<TestSuiteWrappingAction<Fixture>>.wrappedAround(
+        innermostAction: TestSuiteAction<Fixture>
+    ): TestSuiteAction<Fixture> = fold(innermostAction) { innerAction, wrappingAction ->
+        { wrappingAction(innerAction) }
     }
 
     /** Returns actions wrapping around each child scope's execution, innermost first. */
-    private fun eachChildScopeWrappingActions(): List<TestScopeWrappingAction> = listOfNotNull(
+    private fun eachChildScopeWrappingActions(): List<TestSuiteWrappingAction<Fixture>> = listOfNotNull(
         aroundEachScopeAction,
-        beforeAfterWrappingAction(beforeEachScopeAction, afterEachScopeAction)
+        beforeAfterWrappingAction(beforeEachScopeAction, afterEachScopeAction),
+        eachScopeFixtureSetup
     )
 
     /** Returns actions wrapping around all child scope's execution, innermost first. */
-    private fun allChildScopesWrappingActions(): List<TestScopeWrappingAction> = listOfNotNull(
+    private fun allChildScopesWrappingActions(): List<TestSuiteWrappingAction<Fixture>> = listOfNotNull(
         aroundAllScopesAction,
-        beforeAfterWrappingAction(beforeFirstScopeAction, afterLastScopeAction)
+        beforeAfterWrappingAction(beforeFirstScopeAction, afterLastScopeAction),
+        allScopesFixtureSetup
     )
 
     /** Returns a wrapping action for a before/after action pair, or null if both are null. */
     private fun beforeAfterWrappingAction(
-        beforeAction: TestSuiteAction?,
-        afterAction: TestSuiteAction?
-    ): TestScopeWrappingAction? {
+        beforeAction: TestSuiteAction<Fixture>?,
+        afterAction: TestSuiteAction<Fixture>?
+    ): TestSuiteWrappingAction<Fixture>? {
         if (beforeAction == null && afterAction == null) return null
 
-        return { innerAction: TestScopeAction ->
+        return { innerAction: TestSuiteAction<Fixture> ->
             beforeAction?.invoke(this)
             innerAction()
             afterAction?.invoke(this)

@@ -3,8 +3,8 @@ package testFramework
 import testFramework.internal.integration.IntellijTestLog
 import testFramework.internal.withSingleThreading
 
-open class TestModule private constructor(parent: TestSuite?, configuration: TestScopeConfiguration.() -> Unit = {}) :
-    TestSuite(parent = parent, configuration = configuration) {
+open class TestModule private constructor(parent: TestModule?, configuration: TestScopeConfiguration.() -> Unit = {}) :
+    TestSuite<Nothing>(parent = parent, configuration = configuration) {
 
     class Root : TestModule(parent = null)
 
