@@ -1,5 +1,7 @@
 package testFramework.internal.integration
 
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import testFramework.Test
 import testFramework.TestModule
 import testFramework.TestScope
@@ -7,7 +9,9 @@ import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
 internal object IntellijTestLog {
-    fun add(event: TestScope.Event) {
+    private val outputMutex = Mutex()
+
+    suspend fun add(event: TestScope.Event) {
         if (event.scope is TestModule.Root) return // ignore the root node
 
         val parentScope = event.scope.parent?.let { if (it.parent == null) null else it } // null if root is parent
@@ -17,9 +21,9 @@ internal object IntellijTestLog {
         // Therefore, we cannot use `event.scope::class.simpleName` here.
         val className = event.scope.scopeName
 
-        fun addBeforeEvent() {
+        suspend fun addBeforeEvent() {
             ijLog {
-                event(type = if (event.scope is Test) "beforeTest" else "beforeSuite") {
+                event(type = if (event.scope is Test<*>) "beforeTest" else "beforeSuite") {
                     test(id = event.scope.scopeName, parentId = parentScope?.scopeName) {
                         descriptor(
                             name = event.scope.scopeName,
@@ -31,13 +35,13 @@ internal object IntellijTestLog {
             }
         }
 
-        fun addAfterEvent(
+        suspend fun addAfterEvent(
             resultType: String,
             startingEvent: TestScope.Event = event,
             content: IjLog.Event.Test.Result.() -> Unit = {}
         ) {
             ijLog {
-                event(type = if (event.scope is Test) "afterTest" else "afterSuite") {
+                event(type = if (event.scope is Test<*>) "afterTest" else "afterSuite") {
                     test(id = event.scope.scopeName, parentId = parentScope?.scopeName) {
                         descriptor(
                             name = event.scope.scopeName,
@@ -78,10 +82,12 @@ internal object IntellijTestLog {
         }
     }
 
-    private fun ijLog(content: IjLog.() -> Unit) {
+    private suspend fun ijLog(content: IjLog.() -> Unit) {
         val entry = StringBuilder()
         IjLog(entry).content()
-        println("<ijLog>$entry</ijLog>")
+        outputMutex.withLock {
+            println("<ijLog>$entry</ijLog>")
+        }
     }
 
     private class IjLog(private val entry: StringBuilder) {

@@ -68,14 +68,14 @@ sealed class TestScope(
         }
     }
 
-    internal fun trackSkipping(listener: TestScopeEventListener?) {
+    internal suspend fun trackSkipping(listener: TestScopeEventListener?) {
         listener?.invoke(Event.Skipped(this))
     }
 
     override fun toString(): String = "${this::class.simpleName}($scopeName)"
 }
 
-internal typealias TestScopeEventListener = (TestScope.Event) -> Unit
+internal typealias TestScopeEventListener = suspend (TestScope.Event) -> Unit
 
 private fun String.prefixesRemoved(): String = when {
     startsWith("f:") -> this.substring(2)
