@@ -9,10 +9,6 @@ class Test<Fixture : Any> internal constructor(
     private val action: TestAction<Fixture>
 ) : TestScope(parent, simpleName, configuration = configuration) {
 
-    init {
-        parent.registerChildScope(this)
-    }
-
     override suspend fun execute(listener: TestScopeEventListener?) {
         if (!scopeIsEnabled) {
             trackSkipping(listener)

@@ -32,11 +32,6 @@ open class TestSuite<Fixture : Any> internal constructor(
     private var afterEachScopeAction: TestSuiteAction<Fixture>? = null
     private var afterLastScopeAction: TestSuiteAction<Fixture>? = null
 
-    init {
-        @Suppress("LeakingThis")
-        parent?.registerChildScope(this)
-    }
-
     protected constructor(module: TestModule, configurationAction: TestSuiteConfigurationAction<Fixture>) :
         this(parent = module, configurationAction = configurationAction)
 

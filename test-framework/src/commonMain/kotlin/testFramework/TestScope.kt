@@ -29,6 +29,11 @@ sealed class TestScope(
     var scopeIsSequential by effectiveConfiguration::isSequential
     var scopeParallelism by effectiveConfiguration::parallelism
 
+    init {
+        @Suppress("LeakingThis")
+        parent?.registerChildScope(this)
+    }
+
     internal open fun configure() {
         effectiveConfiguration.inheritFrom(parent?.effectiveConfiguration)
     }
