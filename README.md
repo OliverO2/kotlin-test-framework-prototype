@@ -36,7 +36,9 @@ This prototype aims to explore a flexible but concise test framework architectur
     * must be configured with instantiated test classes,
     * visualize the test status in the test run window, but
     * do nothing more (see JVM integration below).
-* Test using the Kotlin/JS infra do not report more than one level of suite nesting (intermediate levels are cut out).
+* Test using the Kotlin/JS infra (JS/Browser, JS/Node, Wasm/JS/Browser)
+    * do not report more than one level of suite nesting (intermediate levels are cut out)
+    * do not execute scope-level functions and fixtures. 
 * JVM integration for IntelliJ IDEA
     * visualizes the test status in the test run window, and
     * supports class-level actions (run, debug, jump to source) from the test run window, but
@@ -54,8 +56,13 @@ This prototype aims to explore a flexible but concise test framework architectur
     * support non-class scope and method-level actions from the test run window
     * support "rerun failed tests" from the test run window
 
+### Limitations of the Kotlin/JS test infra 
+
+The Kotlin/JS test infrastructure delegates running tests to JS frameworks (Jasmine/Mocha/Jest), except for Wasm/JS on Node. With the JS test frameworks in control, there is currently no support for proper coroutines nesting between suites and tests.
+
 ### Considerations
 
-* Use dynamic tests (on JVM via `EngineExecutionListener.dynamicTestRegistered`)
-    * for `TestScope`s with test logic _and_ sub-scopes, and/or
-    * for lazy configuration?
+* Omit `*Each` functions and fixtures in favor of having users define their own test/suite functions? 
+* Check why only the first module is reported on JVM.
+* Check whether TeamCity reporting improves missing test times on JS.
+* Check whether to use @DslMarker to avoid suite functions being available in tests.
