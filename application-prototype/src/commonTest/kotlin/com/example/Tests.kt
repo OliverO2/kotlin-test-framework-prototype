@@ -39,21 +39,21 @@ internal class TestSuite1 :
 
             test("test1") {
                 log("in TestSuite1.test1 [${currentCoroutineContext()[CoroutineName]}], ${fixture()}")
-                fail("something wrong in TestSuite1RE.test1")
+                fail("something wrong in TestSuite1.test1")
             }
 
             suite("child-suite2") {
-                beforeEachScope { log("beforeEachScope TestSuite1.test2") }
+                beforeEachScope { log("beforeEachScope TestSuite1.child-suite2") }
 
                 test("nested1") {
-                    log("in TestSuite1.test2.nested1 – before delay, ${fixture()}")
+                    log("in TestSuite1.child-suite2.nested1 – before delay, ${fixture()}")
                     delay(0.3.seconds)
-                    log("in TestSuite1.test2.nested1 – after delay")
+                    log("in TestSuite1.child-suite2.nested1 – after delay")
                 }
 
                 test("nested2") {
-                    log("in TestSuite1.test2.nested2, ${fixture()}")
-                    fail("something wrong in TestSuite1.test2.nested2")
+                    log("in TestSuite1.child-suite2.nested2, ${fixture()}")
+                    fail("something wrong in TestSuite1.child-suite2.nested2")
                 }
             }
 
