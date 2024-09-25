@@ -22,6 +22,8 @@ This prototype aims to explore a flexible but concise test framework architectur
 * `./gradlew -p application cleanAllTests wasmJsNodeTest`
 * `./gradlew -p application cleanAllTests linuxX64Test`
 
+* `./gradlew --continue -p application cleanAllTests jvmTest wasmJsNodeTest linuxX64Test`
+
 ### Limitations
 
 * Non-JVM test targets
@@ -54,7 +56,6 @@ The Kotlin/JS test infrastructure delegates running tests to JS frameworks (Jasm
 
 ### Considerations
 
-* Omit `*Each` functions and fixtures in favor of having users define their own test/suite functions? 
 * Check why only the first module is reported on JVM.
 * Check whether TeamCity reporting improves missing test times on JS.
 * Check whether to use @DslMarker to avoid suite functions being available in tests.

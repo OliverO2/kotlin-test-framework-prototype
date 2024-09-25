@@ -12,30 +12,17 @@ import kotlin.time.Duration.Companion.seconds
 
 internal class TestSuite1 :
     TestSuite<MyFixture>(
+        module = TestModule.sequential,
         {
-            fixtureForEach { MyFixture("TestSuite1") }
+            fixtureForAll { MyFixture(this) }
 
-            beforeFirstScope { log("beforeFirstScope TestSuite1") }
-
-            aroundAllScopes { scopeAction ->
-                log("aroundAllScopes TestSuite1 start")
-                scopeAction()
-                log("aroundAllScopes TestSuite1 end")
-            }
-
-            beforeEachScope { log("beforeEachScope TestSuite1") }
-
-            aroundEachScope { scopeAction ->
-                log("aroundEachScope TestSuite1 start")
-                withContext(CoroutineName("aroundEachScope TestSuite1")) {
+            aroundAll { scopeAction ->
+                log("aroundAll TestSuite1 start")
+                withContext(CoroutineName("aroundAll TestSuite1")) {
                     scopeAction()
                 }
-                log("aroundEachScope TestSuite1 end")
+                log("aroundAll TestSuite1 end")
             }
-
-            afterEachScope { log("afterEachScope TestSuite1") }
-
-            afterLastScope { log("afterLastScope TestSuite1") }
 
             test("test1") {
                 log("in TestSuite1.test1 [${currentCoroutineContext()[CoroutineName]}], ${fixture()}")
@@ -43,7 +30,15 @@ internal class TestSuite1 :
             }
 
             suite("child-suite2") {
-                beforeEachScope { log("beforeEachScope TestSuite1.child-suite2") }
+                fixtureForAll { MyFixture(this) }
+
+                aroundAll { scopeAction ->
+                    log("aroundAll TestSuite1.child-suite2 start")
+                    withContext(CoroutineName("aroundAll TestSuite1")) {
+                        scopeAction()
+                    }
+                    log("aroundAll TestSuite1.child-suite2 end")
+                }
 
                 test("nested1") {
                     log("in TestSuite1.child-suite2.nested1 – before delay, ${fixture()}")
@@ -71,10 +66,6 @@ internal class TestSuite2 :
     BasicTestSuite(
         module = TestModule.sequential,
         {
-            beforeEachScope { log("beforeEachScope TestSuite2") }
-
-            afterLastScope { log("afterLastScope TestSuite2") }
-
             test("!test1") {
                 log("in TestSuite2.test1")
             }
@@ -89,38 +80,35 @@ internal class TestSuite2 :
 
 internal class TestSuite3 :
     TestSuite<MyFixture>(
-        module = TestModule.singleThreaded,
+        module = TestModule.sequential,
         {
-            fixtureForAll { MyFixture("TestSuite3") }
-
-            afterLastScope { log("afterLastScope TestSuite3, ${fixture()}") }
+            fixtureForAll { MyFixture(this) }
 
             test("!test1") {
                 log("in TestSuite3.test1, ${fixture()}")
             }
 
-            test("test2") {
-                log("in TestSuite3.test2 – before delay, ${fixture()}")
-                delay(0.2.seconds)
-                log("in TestSuite3.test2 – after delay, ${fixture()}")
-            }
-
-            test("test3") {
-                log("in TestSuite3.test3 – before delay, ${fixture()}")
-                delay(0.2.seconds)
-                log("in TestSuite3.test3 – after delay, ${fixture()}")
+            test("!test2") {
+                log("in TestSuite3.test2, ${fixture()}")
             }
         }
     )
 
 internal data class MyFixture(
-    val name: String,
+    val suite: TestSuite<*>,
     var state: String = "open",
     val incarnation: Int = incarnationCount.incrementAndGet()
 ) : AutoCloseable {
+    init {
+        suite.log("$this initializing")
+    }
+
     override fun close() {
+        suite.log("$this closing")
         state = "closed"
     }
+
+    override fun toString(): String = "${this::class.simpleName}(${suite.simpleScopeName}, i=$incarnation, s=$state)"
 
     companion object {
         val incarnationCount = atomic(0)

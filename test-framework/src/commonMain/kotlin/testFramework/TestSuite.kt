@@ -24,13 +24,7 @@ open class TestSuite<Fixture : Any> internal constructor(
     internal val childScopes: MutableList<TestScope> = mutableListOf()
 
     private var allScopesFixtureSetup: TestSuiteWrappingAction<Fixture>? = null
-    private var beforeFirstScopeAction: TestSuiteAction<Fixture>? = null
-    private var aroundAllScopesAction: TestSuiteWrappingAction<Fixture>? = null
-    private var eachScopeFixtureSetup: TestSuiteWrappingAction<Fixture>? = null
-    private var beforeEachScopeAction: TestSuiteAction<Fixture>? = null
-    private var aroundEachScopeAction: TestSuiteWrappingAction<Fixture>? = null
-    private var afterEachScopeAction: TestSuiteAction<Fixture>? = null
-    private var afterLastScopeAction: TestSuiteAction<Fixture>? = null
+    private var aroundAllAction: TestSuiteWrappingAction<Fixture>? = null
 
     protected constructor(module: TestModule, configurationAction: TestSuiteConfigurationAction<Fixture>) :
         this(parent = module, configurationAction = configurationAction)
@@ -51,10 +45,6 @@ open class TestSuite<Fixture : Any> internal constructor(
 
     fun fixtureForAll(fixture: TestSuiteNewFixtureAction<Fixture>) {
         allScopesFixtureSetup = fixtureWrappingAction(fixture)
-    }
-
-    fun fixtureForEach(fixture: TestSuiteNewFixtureAction<Fixture>) {
-        eachScopeFixtureSetup = fixtureWrappingAction(fixture)
     }
 
     private fun fixtureWrappingAction(fixture: TestSuiteNewFixtureAction<Fixture>): TestSuiteWrappingAction<Fixture> =
@@ -78,28 +68,8 @@ open class TestSuite<Fixture : Any> internal constructor(
             ?: throw IllegalArgumentException("A fixture has not been registered: $coroutineContext")
         ) as Fixture
 
-    fun beforeFirstScope(action: TestSuiteAction<Fixture>) {
-        beforeFirstScopeAction = action
-    }
-
-    fun aroundAllScopes(action: TestSuiteWrappingAction<Fixture>) {
-        aroundAllScopesAction = action
-    }
-
-    fun beforeEachScope(action: TestSuiteAction<Fixture>) {
-        beforeEachScopeAction = action
-    }
-
-    fun aroundEachScope(action: TestSuiteWrappingAction<Fixture>) {
-        aroundEachScopeAction = action
-    }
-
-    fun afterEachScope(action: TestSuiteAction<Fixture>) {
-        afterEachScopeAction = action
-    }
-
-    fun afterLastScope(action: TestSuiteAction<Fixture>) {
-        afterLastScopeAction = action
+    fun aroundAll(action: TestSuiteWrappingAction<Fixture>) {
+        aroundAllAction = action
     }
 
     fun suite(name: String, configurationAction: TestSuiteConfigurationAction<Fixture>) {
@@ -144,19 +114,13 @@ open class TestSuite<Fixture : Any> internal constructor(
         }
 
         val childScopeActions = allChildScopesWrappingActions().wrappedAround {
-            val eachChildScopeWrappingActions = eachChildScopeWrappingActions()
-
             coroutineScope {
                 for (childScope in childScopes) {
-                    val wrappedAction = eachChildScopeWrappingActions.wrappedAround {
-                        childScope.execute(listener)
-                    }
-
                     if (effectiveConfiguration.isSequential == true || parent == null) {
-                        wrappedAction()
+                        childScope.execute(listener)
                     } else {
                         launch {
-                            wrappedAction()
+                            childScope.execute(listener)
                         }
                     }
                 }
@@ -176,31 +140,9 @@ open class TestSuite<Fixture : Any> internal constructor(
         { wrappingAction(innerAction) }
     }
 
-    /** Returns actions wrapping around each child scope's execution, innermost first. */
-    private fun eachChildScopeWrappingActions(): List<TestSuiteWrappingAction<Fixture>> = listOfNotNull(
-        aroundEachScopeAction,
-        beforeAfterWrappingAction(beforeEachScopeAction, afterEachScopeAction),
-        eachScopeFixtureSetup
-    )
-
     /** Returns actions wrapping around all child scope's execution, innermost first. */
     private fun allChildScopesWrappingActions(): List<TestSuiteWrappingAction<Fixture>> = listOfNotNull(
-        aroundAllScopesAction,
-        beforeAfterWrappingAction(beforeFirstScopeAction, afterLastScopeAction),
+        aroundAllAction,
         allScopesFixtureSetup
     )
-
-    /** Returns a wrapping action for a before/after action pair, or null if both are null. */
-    private fun beforeAfterWrappingAction(
-        beforeAction: TestSuiteAction<Fixture>?,
-        afterAction: TestSuiteAction<Fixture>?
-    ): TestSuiteWrappingAction<Fixture>? {
-        if (beforeAction == null && afterAction == null) return null
-
-        return { innerAction: TestSuiteAction<Fixture> ->
-            beforeAction?.invoke(this)
-            innerAction()
-            afterAction?.invoke(this)
-        }
-    }
 }
