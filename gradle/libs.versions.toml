@@ -10,15 +10,7 @@ org-jetbrains-kotlinx-coroutines = "1.8.1"
 ##                            ⬆ = "1.9.0-RC"
 ##                            ⬆ = "1.9.0-RC.2"
 
-# https://github.com/kotest/kotest/releases
-io-kotest = "5.9.1"
-io-kotest-gradle-plugin = "6.0.0-20240905.065253-61"
-
 [libraries]
-
-io-kotest-kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "io-kotest" }
-io-kotest-kotest-framework-engine = { module = "io.kotest:kotest-framework-engine", version.ref = "io-kotest" }
-io-kotest-kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "io-kotest" }
 
 # https://github.com/Kotlin/kotlinx-atomicfu/releases
 org-jetbrains-kotlinx-atomicfu = "org.jetbrains.kotlinx:atomicfu:0.25.0"
@@ -38,8 +30,6 @@ org-junit-platform-engine = "org.junit.platform:junit-platform-engine:1.10.2"
 ##                                                                ⬆ :1.11.0"
 
 [plugins]
-
-io-kotest-multiplatform = { id = "io.kotest.multiplatform", version.ref = "io-kotest-gradle-plugin" }
 
 org-jetbrains-kotlin-atomicfu = { id = "org.jetbrains.kotlin.plugin.atomicfu", version.ref = "org-jetbrains-kotlin" }
 

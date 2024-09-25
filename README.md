@@ -14,21 +14,13 @@ This prototype aims to explore a flexible but concise test framework architectur
 
 ### Running Tests
 
-* `./gradlew -p application-prototype cleanAllTests allTests`
-* `./gradlew -p application-prototype cleanAllTests jvmTest`
-* `./gradlew -p application-prototype cleanAllTests jsBrowserTest`
-* `./gradlew -p application-prototype cleanAllTests jsNodeTest`
-* `./gradlew -p application-prototype cleanAllTests wasmJsBrowserTest`
-* `./gradlew -p application-prototype cleanAllTests wasmJsNodeTest`
-* `./gradlew -p application-prototype cleanAllTests linuxX64Test`
-
-* `./gradlew -p application-kotest cleanAllTests allTests`
-* `./gradlew -p application-kotest cleanAllTests jvmTest`
-* `./gradlew -p application-kotest cleanAllTests jsBrowserTest`
-* `./gradlew -p application-kotest cleanAllTests jsNodeTest`
-* `./gradlew -p application-kotest cleanAllTests wasmJsBrowserTest`
-* `./gradlew -p application-kotest cleanAllTests wasmJsNodeTest`
-* `./gradlew -p application-kotest cleanAllTests linuxX64Test`
+* `./gradlew -p application cleanAllTests allTests`
+* `./gradlew -p application cleanAllTests jvmTest`
+* `./gradlew -p application cleanAllTests jsBrowserTest`
+* `./gradlew -p application cleanAllTests jsNodeTest`
+* `./gradlew -p application cleanAllTests wasmJsBrowserTest`
+* `./gradlew -p application cleanAllTests wasmJsNodeTest`
+* `./gradlew -p application cleanAllTests linuxX64Test`
 
 ### Limitations
 

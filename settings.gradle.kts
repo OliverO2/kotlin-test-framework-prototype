@@ -34,5 +34,4 @@ fun RepositoryHandler.specialRepositories() {
 rootProject.name = "kotlin-test-framework-prototype"
 
 include(":test-framework")
-include(":application-prototype")
-include(":application-kotest")
+include(":application")
