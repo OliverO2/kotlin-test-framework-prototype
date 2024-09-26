@@ -68,3 +68,17 @@ tasks.withType<Test>().configureEach {
     // https://docs.gradle.org/current/userguide/java_testing.html
     useJUnitPlatform()
 }
+
+tasks {
+    val orderedTaskPrefixes = listOf("jvm", "jsNode", "jsBrowser", "wasmJsNode", "wasmJsBrowser", "linuxX64")
+    var lastTaskName: String? = null
+    orderedTaskPrefixes.forEach {
+        val taskName = "${it}Test"
+        lastTaskName?.let {
+            named(taskName).configure {
+                mustRunAfter(it)
+            }
+        }
+        lastTaskName = taskName
+    }
+}
