@@ -16,6 +16,8 @@ internal object IntellijTestLog {
         // Apparently, `className` must be unique, even across platform targets. Otherwise, IntelliJ's "run test"
         // window will mix tests for different targets under common `className` hierarchy nodes.
         // Therefore, we cannot use `event.scope::class.simpleName` here.
+        // Unfortunately, if IntelliJ is not given a correct fully qualified class name, it does not offer to run a
+        // single tests class via its run window.
         val className = event.scope.scopeName
 
         suspend fun addBeforeEvent() {

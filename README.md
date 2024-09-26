@@ -58,3 +58,57 @@ The Kotlin/JS test infrastructure delegates running tests to JS frameworks (Jasm
 
 * Check whether TeamCity reporting improves missing test times on JS.
 * Check whether to use @DslMarker to avoid suite functions being available in tests.
+
+### IDE and Build Tool Interoperability
+
+#### JUnit Platform
+
+##### General
+
+[Test Engines](https://junit.org/junit5/docs/current/user-guide/#test-engines) must
+* discover tests from an [`EngineDiscoveryRequest`](https://junit.org/junit5/docs/current/api/org.junit.platform.engine/org/junit/platform/engine/EngineDiscoveryRequest.html), yielding a tree of test descriptors, and
+* execute tests according to an [`ExecutionRequest`](https://junit.org/junit5/docs/current/api/org.junit.platform.engine/org/junit/platform/engine/ExecutionRequest.html), starting at the root test descriptor and observing tests events via a listener (which also observes the discovery of new tests, if these are dynamically registered during execution).
+
+A [test descriptor](https://junit.org/junit5/docs/current/api/org.junit.platform.engine/org/junit/platform/engine/TestDescriptor.html) describes a node in the test tree (a suite or a test). Each node has a [unique identifier](https://junit.org/junit5/docs/current/api/org.junit.platform.engine/org/junit/platform/engine/UniqueId.html), comprised of a list of type/value segments. Segment type and value are non-empty strings. Typical segment types are "test", "class", "engine", but there appears to be no defined scheme and "engine" [seems to be the only stable name](https://github.com/junit-team/junit5/discussions/3551).
+
+##### Test Discovery
+
+An [`EngineDiscoveryRequest`](https://junit.org/junit5/docs/current/api/org.junit.platform.engine/org/junit/platform/engine/EngineDiscoveryRequest.html)
+* selects test nodes via
+    * ClassSelector: named class,
+    * MethodSelector: named method (plus optional signature),
+    * UniqueIdSelector: unique identifier,
+    * [others, e.g.](https://junit.org/junit5/docs/current/api/org.junit.platform.engine/org/junit/platform/engine/DiscoverySelector.html): classpath, directory, file, module, package, URI.
+* filters test nodes via
+    * ClassNameFilter: list of class name RE patterns to include and/or exclude
+    * PackageNameFilter: list of package name RE patterns to include and/or exclude
+ 
+The [Gradle test task](https://docs.gradle.org/current/userguide/java_testing.html) uses
+* these selectors:
+    * ClassSelector (Gradle passes a selector for every class it finds, not knowing which ones are test classes)
+    * UniqueIdSelector (Gradle Enterprise: distribute tests across processes)
+* these filters:
+    * ClassNameFilter (if [test filtering](https://docs.gradle.org/current/userguide/java_testing.html#test_filtering) is used)
+
+Kotest supports
+* these selectors:
+    * PackageSelector
+    * ClassSelector
+    * UniqueIdSelector (added by a Gradle member to support distributing tests across processes in Gradle Enterprise)
+* these filters:
+    * ClassNameFilter
+    * PackageNameFilter
+
+##### Source Code Test Discovery (IDE Support)
+
+[The Testable annotation](https://junit.org/junit5/docs/current/api/org.junit.platform.commons/org/junit/platform/commons/annotation/Testable.html) exists to make IDEs aware of elements which can be executed as a test or test container. It is intended for use cases where full discovery via compiled code is unavailable.
+
+#### IntelliJ IDEA
+
+The IDE runs tests via regular Gradle invocations.
+
+When selecting a single test in the run window, the IDE runs it via a `--tests` filter, e.g. `--tests "com.example.TestSuite2"`, if
+* the test ran via JUnit Platform, or
+* the IntelliJ XML log contains a `descriptor` tag with a `classname` attribute supplying a fully qualified class name _and_ the test run respects the `--tests` filter.
+
+The IDE [re-runs failed tests](https://github.com/JetBrains/intellij-community/blob/8032aef848d1edf5771e442cb749e047b885876c/plugins/gradle/java/src/action/GradleRerunFailedTestsAction.kt) by analyzing the test files' source code and [creating a Gradle invocation with filters](https://github.com/JetBrains/intellij-community/blob/8032aef848d1edf5771e442cb749e047b885876c/plugins/gradle/java/src/execution/test/runner/TestGradleConfigurationProducerUtil.kt#L15).
