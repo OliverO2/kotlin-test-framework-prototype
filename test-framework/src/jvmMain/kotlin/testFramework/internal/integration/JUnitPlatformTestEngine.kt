@@ -13,9 +13,9 @@ import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
 import org.junit.platform.engine.support.descriptor.ClassSource
 import org.junit.platform.engine.support.descriptor.EngineDescriptor
 import testFramework.Test
-import testFramework.TestModule
 import testFramework.TestScope
 import testFramework.TestSuite
+import testFramework.internal.TestSession
 import java.util.concurrent.ConcurrentHashMap
 
 private lateinit var classLevelTestSuites: Set<TestSuite<*>>
@@ -40,15 +40,15 @@ internal class JUnitPlatformTestEngine : TestEngine {
         // - Check how to deal with getSelectorsByType(UniqueIdSelector::class.java)
         //   see kotest-runner/kotest-runner-junit5/src/jvmMain/kotlin/io/kotest/runner/junit/platform/discoveryRequest.kt
 
-        TestModule.root.configure()
+        TestSession.configure()
 
         return EngineDescriptor(
             UniqueId.forEngine(id),
             "${this::class.qualifiedName}"
         ).apply {
             log("created EngineDescriptor(${this.uniqueId}, $displayName)")
-            scopeDescriptors[TestModule.root] = this
-            TestModule.root.childScopes.forEach { addChild(it.newPlatformDescriptor(uniqueId)) }
+            scopeDescriptors[TestSession] = this
+            addChild(TestSession.newPlatformDescriptor(uniqueId))
         }
     }
 
@@ -56,7 +56,7 @@ internal class JUnitPlatformTestEngine : TestEngine {
         val listener = request.engineExecutionListener
 
         runBlocking {
-            TestModule.root.execute { event: TestScope.Event ->
+            TestSession.execute { event: TestScope.Event ->
                 when (event) {
                     is TestScope.Event.Starting -> {
                         log("${event.scope.platformDescriptor}: ${event.scope} starting")
@@ -106,7 +106,7 @@ private fun TestScope.newPlatformDescriptor(parentUniqueId: UniqueId): TestScope
     } else {
         val segmentType = when (scope) {
             is Test<*> -> "test"
-            is TestModule -> "module"
+            is TestSession -> "session"
             is TestSuite<*> -> "suite"
         }
         uniqueId = parentUniqueId.append(segmentType, simpleScopeName)

@@ -7,7 +7,7 @@ This prototype aims to explore a flexible but concise test framework architectur
 * A test hierarchy represented by nestable `TestScope`s.
     * `Test`s are test scopes containing actual test logic with assertions, they cannot have child scopes.
     * `TestSuite`s are test scopes grouping child scopes, they cannot contain test logic.
-    * `TestModule`s are test suites used to bootstrap the framework and provide a top-level grouping.
+    * A `TestSession` is the root of the test hierarchy for an individual test run.
 * Coroutine contexts mirror the test hierarchy.
 * The entire framework is platform independent with almost zero redundancy.
 * The architecture favors simplicity and aims to avoid implicit constructs and indirection.
@@ -30,7 +30,7 @@ This prototype aims to explore a flexible but concise test framework architectur
     * must be configured with instantiated test classes,
     * visualize the test status in the test run window, but
     * do nothing more (see JVM integration below).
-* Test using the Kotlin/JS infra (JS/Browser, JS/Node, Wasm/JS/Browser)
+* Tests using the Kotlin/JS infra (JS/Browser, JS/Node, Wasm/JS/Browser)
     * do not report more than one level of suite nesting (intermediate levels are cut out)
     * do not execute scope-level functions and fixtures. 
 * JVM integration for IntelliJ IDEA
@@ -56,6 +56,5 @@ The Kotlin/JS test infrastructure delegates running tests to JS frameworks (Jasm
 
 ### Considerations
 
-* Check why only the first module is reported on JVM.
 * Check whether TeamCity reporting improves missing test times on JS.
 * Check whether to use @DslMarker to avoid suite functions being available in tests.

@@ -3,11 +3,12 @@ package testFramework
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import testFramework.internal.TestSession
 import testFramework.internal.withParallelism
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
 
-typealias TestSuiteConfigurationAction<Fixture> = TestSuite<Fixture>.() -> Unit
+typealias TestSuiteComponentsDefinition<Fixture> = TestSuite<Fixture>.() -> Unit
 typealias TestSuiteAction<Fixture> = suspend TestSuite<Fixture>.() -> Unit
 typealias TestSuiteWrappingAction<Fixture> = suspend (TestSuiteAction<Fixture>) -> Unit
 typealias TestSuiteNewFixtureAction<Fixture> = suspend TestSuite<Fixture>.() -> Fixture
@@ -18,7 +19,7 @@ open class TestSuite<Fixture : Any> internal constructor(
     parent: TestSuite<*>?,
     simpleNameOrNull: String? = null,
     configuration: TestScopeConfiguration.() -> Unit = {},
-    private val configurationAction: TestSuiteConfigurationAction<Fixture>? = null
+    private val componentsDefinition: TestSuiteComponentsDefinition<Fixture>? = null
 ) : TestScope(parent, simpleNameOrNull, configuration) {
 
     internal val childScopes: MutableList<TestScope> = mutableListOf()
@@ -26,11 +27,8 @@ open class TestSuite<Fixture : Any> internal constructor(
     private var allScopesFixtureSetup: TestSuiteWrappingAction<Fixture>? = null
     private var aroundAllAction: TestSuiteWrappingAction<Fixture>? = null
 
-    protected constructor(module: TestModule, configurationAction: TestSuiteConfigurationAction<Fixture>) :
-        this(parent = module, configurationAction = configurationAction)
-
-    protected constructor(configurationAction: TestSuiteConfigurationAction<Fixture>) :
-        this(parent = TestModule.default, configurationAction = configurationAction)
+    protected constructor(componentsDefinition: TestSuiteComponentsDefinition<Fixture>) :
+        this(parent = TestSession, componentsDefinition = componentsDefinition)
 
     internal fun registerChildScope(childScope: TestScope) {
         childScopes.add(childScope)
@@ -72,8 +70,8 @@ open class TestSuite<Fixture : Any> internal constructor(
         aroundAllAction = action
     }
 
-    fun suite(name: String, configurationAction: TestSuiteConfigurationAction<Fixture>) {
-        TestSuite(this, name, configurationAction = configurationAction)
+    fun suite(name: String, componentsDefinition: TestSuiteComponentsDefinition<Fixture>) {
+        TestSuite(this, name, componentsDefinition = componentsDefinition)
     }
 
     fun test(name: String, configuration: TestScopeConfiguration.() -> Unit = {}, action: TestAction<Fixture>) {
@@ -83,7 +81,7 @@ open class TestSuite<Fixture : Any> internal constructor(
     override fun configure() {
         super.configure()
 
-        configurationAction?.invoke(this)
+        componentsDefinition?.invoke(this)
 
         childScopes.forEach {
             it.configure()
@@ -116,7 +114,7 @@ open class TestSuite<Fixture : Any> internal constructor(
         val childScopeActions = allChildScopesWrappingActions().wrappedAround {
             coroutineScope {
                 for (childScope in childScopes) {
-                    if (effectiveConfiguration.isSequential == true || parent == null) {
+                    if (effectiveConfiguration.isSequential == true) {
                         childScope.execute(listener)
                     } else {
                         launch {

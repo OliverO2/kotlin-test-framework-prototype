@@ -8,12 +8,7 @@ sealed class TestScope(
     configuration: TestScopeConfiguration.() -> Unit = {}
 ) {
     val simpleScopeName: String by lazy {
-        // For proper reporting of multi-target test runs, `simpleScopeName` for top-level modules (children of `Root`)
-        // must be unique across platform targets.
-        fun String.withPlatformIfRootChild() =
-            if (parent != null && parent?.parent == null) "$this(${testPlatform.displayName})" else this
-
-        simpleNameOrNull?.prefixesRemoved() ?: (this::class.simpleName ?: "[TestScope]").withPlatformIfRootChild()
+        simpleNameOrNull?.prefixesRemoved() ?: this::class.simpleName ?: "[TestScope]"
     }
 
     val scopeName: String get() = if (parent != null) "${parent?.scopeName}.$simpleScopeName" else simpleScopeName

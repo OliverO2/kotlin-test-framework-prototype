@@ -6,14 +6,14 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import testFramework.BasicTestSuite
-import testFramework.TestModule
 import testFramework.TestSuite
 import kotlin.time.Duration.Companion.seconds
 
 internal class TestSuite1 :
     TestSuite<MyFixture>(
-        module = TestModule.sequential,
         {
+            // scopeParallelism = testPlatform.parallelism
+
             fixtureForAll { MyFixture(this) }
 
             aroundAll { scopeAction ->
@@ -64,7 +64,6 @@ internal class TestSuite1 :
 
 internal class TestSuite2 :
     BasicTestSuite(
-        module = TestModule.sequential,
         {
             test("!test1") {
                 log("in TestSuite2.test1")
@@ -80,7 +79,6 @@ internal class TestSuite2 :
 
 internal class TestSuite3 :
     TestSuite<MyFixture>(
-        module = TestModule.sequential,
         {
             fixtureForAll { MyFixture(this) }
 

@@ -3,7 +3,6 @@ package testFramework.internal.integration
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import testFramework.Test
-import testFramework.TestModule
 import testFramework.TestScope
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
@@ -12,9 +11,7 @@ internal object IntellijTestLog {
     private val outputMutex = Mutex()
 
     suspend fun add(event: TestScope.Event) {
-        if (event.scope is TestModule.Root) return // ignore the root node
-
-        val parentScope = event.scope.parent?.let { if (it.parent == null) null else it } // null if root is parent
+        val parentScope = event.scope.parent
 
         // Apparently, `className` must be unique, even across platform targets. Otherwise, IntelliJ's "run test"
         // window will mix tests for different targets under common `className` hierarchy nodes.

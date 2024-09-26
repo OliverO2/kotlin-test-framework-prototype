@@ -4,38 +4,39 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import testFramework.Test
-import testFramework.TestModule
 import testFramework.TestScope
 import testFramework.TestSuite
+import testFramework.internal.TestSession
 
-suspend fun runTests(vararg scopes: TestScope) {
+suspend fun runTests(@Suppress("UNUSED_PARAMETER") vararg scopes: TestScope) {
     // `scopes` is unused because top-level test scopes register themselves with their root scope
 
-    if (kotlinJsTestFrameworkAvailable()) {
-        fun TestScope.registerWithKotlinJsTestFramework() {
-            when (this) {
-                is Test<*> -> {
-                    kotlinJsTestFramework.test(simpleScopeName, ignored = !scopeIsEnabled) {
-                        @OptIn(DelicateCoroutinesApi::class)
-                        GlobalScope.testFunctionPromise {
-                            execute(listener = null)
-                        }
+    fun TestScope.registerWithKotlinJsTestFramework() {
+        when (this) {
+            is Test<*> -> {
+                kotlinJsTestFramework.test(simpleScopeName, ignored = !scopeIsEnabled) {
+                    @OptIn(DelicateCoroutinesApi::class)
+                    GlobalScope.testFunctionPromise {
+                        execute(listener = null)
                     }
                 }
-                is TestSuite<*> -> {
-                    kotlinJsTestFramework.suite(simpleScopeName, ignored = !scopeIsEnabled) {
-                        childScopes.forEach {
-                            it.registerWithKotlinJsTestFramework()
-                        }
+            }
+            is TestSuite<*> -> {
+                kotlinJsTestFramework.suite(simpleScopeName, ignored = !scopeIsEnabled) {
+                    childScopes.forEach {
+                        it.registerWithKotlinJsTestFramework()
                     }
                 }
             }
         }
+    }
 
-        TestModule.root.configure()
-        TestModule.root.registerWithKotlinJsTestFramework()
+    TestSession.configure()
+
+    if (kotlinJsTestFrameworkAvailable()) {
+        TestSession.registerWithKotlinJsTestFramework()
     } else {
-        TestModule.execute(IntellijTestLog::add, *scopes)
+        TestSession.execute(IntellijTestLog::add)
     }
 }
 
