@@ -35,11 +35,6 @@ internal class JUnitPlatformTestEngine : TestEngine {
             .map { Class.forName(it.name).getDeclaredConstructor().newInstance() as TestSuite<*> } // instantiate
             .toSet()
 
-        // TODO: Check how IntelliJ IDEA runs failed tests
-        // - Check which selectors are included in discoveryRequest in this case.
-        // - Check how to deal with getSelectorsByType(UniqueIdSelector::class.java)
-        //   see kotest-runner/kotest-runner-junit5/src/jvmMain/kotlin/io/kotest/runner/junit/platform/discoveryRequest.kt
-
         TestSession.configure()
 
         return EngineDescriptor(
