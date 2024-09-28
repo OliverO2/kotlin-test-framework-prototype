@@ -8,7 +8,10 @@ This prototype aims to explore a flexible but concise test framework architectur
     * `Test`s are test scopes containing actual test logic with assertions, they cannot have child scopes.
     * `TestSuite`s are test scopes grouping child scopes, they cannot contain test logic.
     * A `TestSession` is the root of the test hierarchy for an individual test run.
-* Coroutine contexts mirror the test hierarchy.
+* Tests are fully coroutine-aware, coroutine contexts mirror the suites/tests hierarchy.
+* Suites support lazily initialized test fixtures with `AutoCloseable` support. Fixture initialization and tear-down (auto-close) functions can suspend.
+* Suites support a suspending `aroundAll` action.
+* Suite nesting and suspending suite-level actions are fully supported on JavaScript engines, using the Kotlin/JS test infra.
 * The entire framework is platform independent with almost zero redundancy.
 * The architecture favors simplicity and aims to avoid implicit constructs and indirection.
 
@@ -22,41 +25,27 @@ This prototype aims to explore a flexible but concise test framework architectur
 * `./gradlew -p application cleanAllTests wasmJsNodeTest`
 * `./gradlew -p application cleanAllTests linuxX64Test`
 
-* `./gradlew --continue -p application cleanAllTests jvmTest wasmJsNodeTest linuxX64Test`
-
 ### Limitations
 
-* Non-JVM test targets
-    * must be configured with instantiated test classes,
-    * visualize the test status in the test run window, but
-    * do nothing more (see JVM integration below).
-* Tests using the Kotlin/JS infra (JS/Browser, JS/Node, Wasm/JS/Browser)
-    * do not report more than one level of suite nesting (intermediate levels are cut out)
-    * do not execute scope-level functions and fixtures. 
-* JVM integration for IntelliJ IDEA
-    * visualizes the test status in the test run window, and
-    * supports class-level actions (run, debug, jump to source) from the test run window, but
+* Non-JVM test targets must be configured with instantiated test classes.
+* Tests using the Kotlin/JS infra (JS/Browser, JS/Node, Wasm/JS/Browser) do not report more than one level of suite nesting (intermediate levels are cut out).
+* Integration for IntelliJ IDEA
+    * supports class-level actions (run, debug, jump to source) from the test run window for JVM tests only,
     * does not support non-class scope and method-level actions from the test run window,
     * does not support running individual tests via editor gutters or the test run window,
     * does not support "rerun failed tests" (this is a limitation of the [IJ Gradle plugin](https://github.com/JetBrains/intellij-community/blob/b68794b5d030e424e4e58cfd57e9f3e08bcacac4/plugins/gradle/java/src/action/GradleRerunFailedTestsAction.kt#L89) and the [Gradle Java test task](https://github.com/gradle/gradle/issues/19897))
 
 ### What could be done
 
-* Add (a Gradle plugin with) headless browser execution for `jsBrowserTest` and `wasmJsBrowserTest`.
-    * [Browser-based testing POC by Adam](https://kotlinlang.slack.com/archives/CT0G9SD7Z/p1712480969939969?thread_ts=1710849669.379249&cid=CT0G9SD7Z)
 * Add a compiler plugin for automatic test discovery on non-JVM targets.
 * Add an IntelliJ plugin to
     * run individual tests from editor run gutters
     * support non-class scope and method-level actions from the test run window
     * support "rerun failed tests" from the test run window
 
-### Limitations of the Kotlin/JS test infra 
-
-The Kotlin/JS test infrastructure delegates running tests to JS frameworks (Jasmine/Mocha/Jest), except for Wasm/JS on Node. With the JS test frameworks in control, there is currently no support for proper coroutines nesting between suites and tests.
-
 ### Considerations
 
-* Check whether TeamCity reporting improves missing test times on JS.
+* Combine sequential execution and parallelism into one settings class.
 * Check whether to use @DslMarker to avoid suite functions being available in tests.
 
 ### IDE and Build Tool Interoperability
@@ -89,7 +78,7 @@ The [Gradle test task](https://docs.gradle.org/current/userguide/java_testing.ht
     * UniqueIdSelector (Gradle Enterprise: distribute tests across processes)
 * these filters:
     * ClassNameFilter (if [test filtering](https://docs.gradle.org/current/userguide/java_testing.html#test_filtering) is used)
-
+    
 Kotest supports
 * these selectors:
     * PackageSelector
@@ -101,7 +90,7 @@ Kotest supports
 
 ##### Source Code Test Discovery (IDE Support)
 
-[The Testable annotation](https://junit.org/junit5/docs/current/api/org.junit.platform.commons/org/junit/platform/commons/annotation/Testable.html) exists to make IDEs aware of elements which can be executed as a test or test container. It is intended for use cases where full discovery via compiled code is unavailable.
+[The Testable annotation](https://junit.org/junit5/docs/current/api/org.junit.platform.commons/org/junit/platform/commons/annotation/Testable.html) exists to make IDEs aware of elements which can be executed as a test or test container. It is intended for use cases where full discovery via compiled code is unavailable. (IntelliJ IDEA [contains some support](https://github.com/JetBrains/intellij-community/blob/65cf881f35eea8a594b9375651a7a03823f09723/java/execution/impl/src/com/intellij/execution/junit/JUnitUtil.java#L42) for it. Is this is actually used for Kotlin?) 
 
 #### IntelliJ IDEA
 

@@ -3,10 +3,14 @@ package testFramework.internal.integration
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
 import testFramework.Test
 import testFramework.TestScope
 import testFramework.TestSuite
 import testFramework.internal.TestSession
+
+typealias JsPromiseLike = Any
 
 suspend fun runTests(@Suppress("UNUSED_PARAMETER") vararg scopes: TestScope) {
     // `scopes` is unused because top-level test scopes register themselves with their root scope
@@ -15,10 +19,7 @@ suspend fun runTests(@Suppress("UNUSED_PARAMETER") vararg scopes: TestScope) {
         when (this) {
             is Test -> {
                 kotlinJsTestFramework.test(simpleScopeName, ignored = !scopeIsEnabled) {
-                    @OptIn(DelicateCoroutinesApi::class)
-                    GlobalScope.testFunctionPromise {
-                        execute(listener = null)
-                    }
+                    TestSessionAdapter.produceTestResult(this)
                 }
             }
             is TestSuite -> {
@@ -40,6 +41,38 @@ suspend fun runTests(@Suppress("UNUSED_PARAMETER") vararg scopes: TestScope) {
     }
 }
 
+private object TestSessionAdapter {
+    private var sessionIsExecuting = false
+    private val testResults = mutableMapOf<Test, Channel<Throwable?>>()
+
+    private fun testResults(test: Test): Channel<Throwable?> =
+        testResults[test] ?: Channel<Throwable?>(capacity = 1).also { testResults[test] = it }
+
+    fun produceTestResult(test: Test): JsPromiseLike? {
+        if (!sessionIsExecuting) {
+            // Execute the entire test session top-down, independently of the JS framework's invocations,
+            // storing results for each test in its own channel.
+
+            sessionIsExecuting = true
+
+            @OptIn(DelicateCoroutinesApi::class)
+            GlobalScope.launch {
+                TestSession.execute { event: TestScope.Event ->
+                    if (event.scope is Test && event is TestScope.Event.Finished) {
+                        testResults(event.scope).send(event.throwable)
+                    }
+                }
+            }
+        }
+
+        // Produce the test result, waiting for it to arrive from the concurrently executing session.
+        @OptIn(DelicateCoroutinesApi::class)
+        return GlobalScope.testFunctionPromise {
+            testResults(test).receive()?.let { throw(it) }
+        }
+    }
+}
+
 internal expect fun kotlinJsTestFrameworkAvailable(): Boolean
 
 internal expect val kotlinJsTestFramework: KotlinJsTestFramework
@@ -51,7 +84,7 @@ internal expect val kotlinJsTestFramework: KotlinJsTestFramework
  * The Promise is passed to the type-agnostic JS test framework, which discovers a Promise-like object by
  * [probing for a `then` method](https://jasmine.github.io/tutorials/async).
  */
-internal expect fun CoroutineScope.testFunctionPromise(testFunction: suspend () -> Unit): Any?
+internal expect fun CoroutineScope.testFunctionPromise(testFunction: suspend () -> Unit): JsPromiseLike?
 
 /**
  * A view of the test infrastructure API provided by the Kotlin Gradle plugins.
@@ -80,5 +113,5 @@ internal interface KotlinJsTestFramework {
      * [testFn] may return a `Promise`-like object for asynchronous invocation. Otherwise, the underlying JS test
      * framework will invoke [testFn] synchronously.
      */
-    fun test(name: String, ignored: Boolean, testFn: () -> Any?)
+    fun test(name: String, ignored: Boolean, testFn: () -> JsPromiseLike?)
 }

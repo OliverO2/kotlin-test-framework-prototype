@@ -11,12 +11,12 @@ internal actual val kotlinJsTestFramework: KotlinJsTestFramework = object : Kotl
         frameworkAdapter.suite(name, ignored, suiteFn)
     }
 
-    override fun test(name: String, ignored: Boolean, testFn: () -> Any?) {
+    override fun test(name: String, ignored: Boolean, testFn: () -> JsPromiseLike?) {
         frameworkAdapter.test(name, ignored, testFn)
     }
 }
 
-internal actual fun CoroutineScope.testFunctionPromise(testFunction: suspend () -> Unit): Any? =
+internal actual fun CoroutineScope.testFunctionPromise(testFunction: suspend () -> Unit): JsPromiseLike? =
     promise { testFunction() }
 
 /**
@@ -35,7 +35,7 @@ private external interface FrameworkAdapter {
     fun suite(name: String, ignored: Boolean, suiteFn: () -> Unit)
 
     /** Declares a test. */
-    fun test(name: String, ignored: Boolean, testFn: () -> Any?)
+    fun test(name: String, ignored: Boolean, testFn: () -> JsPromiseLike?)
 }
 
 // Conditional transformation required by the Kotlin/JS test infra.
@@ -66,7 +66,7 @@ private class JasmineLikeAdapter : FrameworkAdapter {
         }
     }
 
-    override fun test(name: String, ignored: Boolean, testFn: () -> Any?) {
+    override fun test(name: String, ignored: Boolean, testFn: () -> JsPromiseLike?) {
         if (ignored) {
             xit(name, testFn)
         } else {
@@ -86,5 +86,5 @@ private fun describe(description: String, suiteFn: () -> Unit) {
 }
 
 private external fun xdescribe(name: String, testFn: () -> Unit)
-private external fun it(name: String, testFn: () -> Any?)
-private external fun xit(name: String, testFn: () -> Any?)
+private external fun it(name: String, testFn: () -> JsPromiseLike?)
+private external fun xit(name: String, testFn: () -> JsPromiseLike?)

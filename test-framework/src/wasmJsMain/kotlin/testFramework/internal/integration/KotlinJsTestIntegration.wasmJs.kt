@@ -16,7 +16,7 @@ internal actual val kotlinJsTestFramework: KotlinJsTestFramework = object : Kotl
         }
     }
 
-    override fun test(name: String, ignored: Boolean, testFn: () -> Any?) {
+    override fun test(name: String, ignored: Boolean, testFn: () -> JsPromiseLike?) {
         if (ignored) {
             xit(name) {
                 callTest(testFn)
@@ -28,7 +28,7 @@ internal actual val kotlinJsTestFramework: KotlinJsTestFramework = object : Kotl
         }
     }
 
-    private fun callTest(testFn: () -> Any?): Promise<*>? = try {
+    private fun callTest(testFn: () -> JsPromiseLike?): Promise<*>? = try {
         (testFn() as? Promise<*>)?.catch { exception ->
             val jsException = exception
                 .toThrowableOrNull()
@@ -41,7 +41,7 @@ internal actual val kotlinJsTestFramework: KotlinJsTestFramework = object : Kotl
     }
 }
 
-internal actual fun CoroutineScope.testFunctionPromise(testFunction: suspend () -> Unit): Any? =
+internal actual fun CoroutineScope.testFunctionPromise(testFunction: suspend () -> Unit): JsPromiseLike? =
     promise { testFunction() }
 
 @Suppress("UNUSED_PARAMETER")
