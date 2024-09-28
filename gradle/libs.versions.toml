@@ -4,11 +4,10 @@
 
 # https://github.com/JetBrains/kotlin/releases
 org-jetbrains-kotlin = "2.0.20"
+##                ⬆ = "2.1.0-Beta1"
 
 # https://github.com/Kotlin/kotlinx.coroutines/releases
-org-jetbrains-kotlinx-coroutines = "1.8.1"
-##                            ⬆ = "1.9.0-RC"
-##                            ⬆ = "1.9.0-RC.2"
+org-jetbrains-kotlinx-coroutines = "1.9.0"
 
 [libraries]
 
@@ -19,15 +18,17 @@ org-jetbrains-kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlin
 org-jetbrains-kotlinx-coroutines-debug = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-debug", version.ref = "org-jetbrains-kotlinx-coroutines" }
 
 # https://github.com/Kotlin/kotlinx-datetime/blob/master/CHANGELOG.md
-org-jetbrains-kotlinx-datetime = "org.jetbrains.kotlinx:kotlinx-datetime:0.6.1"
+org-jetbrains-kotlinx-datetime = "org.jetbrains.kotlinx:kotlinx-datetime:0.5.0-wasm0"
 
 # https://github.com/junit-team/junit5/releases
 org-junit-platform-engine = "org.junit.platform:junit-platform-engine:1.10.2"
 ##                                                                ⬆ :1.10.3"
+##                                                                ⬆ :1.10.4"
 ##                                                                ⬆ :1.11.0-M1"
 ##                                                                ⬆ :1.11.0-M2"
 ##                                                                ⬆ :1.11.0-RC1"
 ##                                                                ⬆ :1.11.0"
+##                                                                ⬆ :1.11.1"
 
 [plugins]
 

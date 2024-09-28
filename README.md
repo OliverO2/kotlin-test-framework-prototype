@@ -19,10 +19,11 @@ This prototype aims to explore a flexible but concise test framework architectur
 
 * `./gradlew -p application cleanAllTests allTests`
 * `./gradlew -p application cleanAllTests jvmTest`
-* `./gradlew -p application cleanAllTests jsBrowserTest`
 * `./gradlew -p application cleanAllTests jsNodeTest`
-* `./gradlew -p application cleanAllTests wasmJsBrowserTest`
+* `./gradlew -p application cleanAllTests jsBrowserTest`
 * `./gradlew -p application cleanAllTests wasmJsNodeTest`
+* `./gradlew -p application cleanAllTests wasmJsBrowserTest`
+* `./gradlew -p application cleanAllTests wasmWasiNodeTest`
 * `./gradlew -p application cleanAllTests linuxX64Test`
 
 ### Limitations

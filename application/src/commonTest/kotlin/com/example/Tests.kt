@@ -4,10 +4,11 @@ import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import testFramework.TestSuite
+import testFramework.testPlatform
 import kotlin.coroutines.coroutineContext
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 internal class TestSuite1 :
@@ -143,3 +144,9 @@ private fun TestSuite.log(message: String) {
 }
 
 private fun fail(message: String): Unit = throw AssertionError(message)
+
+private suspend fun delay(duration: Duration) {
+    // FIXME: Workaround for https://github.com/Kotlin/kotlinx.coroutines/issues/4239
+    //     Wasm/WASI: calling delay() silently exits wasmWasiNodeRun
+    if (testPlatform.displayName != "Wasm/WASI") kotlinx.coroutines.delay(duration)
+}

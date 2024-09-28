@@ -29,6 +29,11 @@ kotlin {
         browser()
     }
 
+    @OptIn(ExperimentalWasmDsl::class)
+    wasmWasi {
+        nodejs()
+    }
+
     linuxX64 {
         binaries.sharedLib()
     }

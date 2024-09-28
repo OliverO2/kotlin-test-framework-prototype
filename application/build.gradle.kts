@@ -35,6 +35,12 @@ kotlin {
         browser()
     }
 
+    @OptIn(ExperimentalWasmDsl::class)
+    wasmWasi {
+        binaries.executable()
+        nodejs()
+    }
+
     linuxX64 {
         binaries.executable()
     }
@@ -70,7 +76,8 @@ tasks.withType<Test>().configureEach {
 }
 
 tasks {
-    val orderedTaskPrefixes = listOf("jvm", "jsNode", "jsBrowser", "wasmJsNode", "wasmJsBrowser", "linuxX64")
+    val orderedTaskPrefixes =
+        listOf("jvm", "jsNode", "jsBrowser", "wasmJsNode", "wasmJsBrowser", "wasmWasiNode", "linuxX64")
     var lastTaskName: String? = null
     orderedTaskPrefixes.forEach {
         val taskName = "${it}Test"
