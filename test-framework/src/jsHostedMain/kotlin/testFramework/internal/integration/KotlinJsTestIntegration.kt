@@ -13,7 +13,7 @@ suspend fun runTests(@Suppress("UNUSED_PARAMETER") vararg scopes: TestScope) {
 
     fun TestScope.registerWithKotlinJsTestFramework() {
         when (this) {
-            is Test<*> -> {
+            is Test -> {
                 kotlinJsTestFramework.test(simpleScopeName, ignored = !scopeIsEnabled) {
                     @OptIn(DelicateCoroutinesApi::class)
                     GlobalScope.testFunctionPromise {
@@ -21,7 +21,7 @@ suspend fun runTests(@Suppress("UNUSED_PARAMETER") vararg scopes: TestScope) {
                     }
                 }
             }
-            is TestSuite<*> -> {
+            is TestSuite -> {
                 kotlinJsTestFramework.suite(simpleScopeName, ignored = !scopeIsEnabled) {
                     childScopes.forEach {
                         it.registerWithKotlinJsTestFramework()

@@ -1,80 +1,46 @@
 package testFramework
 
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import testFramework.internal.TestSession
 import testFramework.internal.withParallelism
-import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.coroutineContext
 
-typealias TestSuiteComponentsDefinition<Fixture> = TestSuite<Fixture>.() -> Unit
-typealias TestSuiteAction<Fixture> = suspend TestSuite<Fixture>.() -> Unit
-typealias TestSuiteWrappingAction<Fixture> = suspend (TestSuiteAction<Fixture>) -> Unit
-typealias TestSuiteNewFixtureAction<Fixture> = suspend TestSuite<Fixture>.() -> Fixture
+typealias TestSuiteComponentsDefinition = TestSuite.() -> Unit
+typealias TestSuiteAction = suspend TestSuite.() -> Unit
+typealias TestSuiteWrappingAction = suspend (TestSuiteAction) -> Unit
 
-typealias BasicTestSuite = TestSuite<Nothing>
-
-open class TestSuite<Fixture : Any> internal constructor(
-    parent: TestSuite<*>?,
+open class TestSuite internal constructor(
+    parent: TestSuite?,
     simpleNameOrNull: String? = null,
     configuration: TestScopeConfiguration.() -> Unit = {},
-    private val componentsDefinition: TestSuiteComponentsDefinition<Fixture>? = null
+    private val componentsDefinition: TestSuiteComponentsDefinition? = null
 ) : TestScope(parent, simpleNameOrNull, configuration) {
 
     internal val childScopes: MutableList<TestScope> = mutableListOf()
 
-    private var allScopesFixtureSetup: TestSuiteWrappingAction<Fixture>? = null
-    private var aroundAllAction: TestSuiteWrappingAction<Fixture>? = null
+    private var aroundAllAction: TestSuiteWrappingAction? = null
 
-    protected constructor(componentsDefinition: TestSuiteComponentsDefinition<Fixture>) :
+    /** Fixtures created while executing this suite, in reverse order of fixture creation. */
+    private val fixtures = mutableListOf<Fixture<*>>()
+
+    protected constructor(componentsDefinition: TestSuiteComponentsDefinition) :
         this(parent = TestSession, componentsDefinition = componentsDefinition)
 
     internal fun registerChildScope(childScope: TestScope) {
         childScopes.add(childScope)
     }
 
-    class FixtureContextElement<Fixture>(val fixture: Fixture) : CoroutineContext.Element {
-        companion object : CoroutineContext.Key<FixtureContextElement<*>>
-
-        override val key: CoroutineContext.Key<*>
-            get() = FixtureContextElement
-    }
-
-    fun fixtureForAll(fixture: TestSuiteNewFixtureAction<Fixture>) {
-        allScopesFixtureSetup = fixtureWrappingAction(fixture)
-    }
-
-    private fun fixtureWrappingAction(fixture: TestSuiteNewFixtureAction<Fixture>): TestSuiteWrappingAction<Fixture> =
-        { innerAction: TestSuiteAction<Fixture> ->
-            @Suppress("NAME_SHADOWING")
-            val fixture = fixture.invoke(this)
-            withContext(FixtureContextElement(fixture)) {
-                if (fixture is AutoCloseable) {
-                    fixture.use {
-                        innerAction()
-                    }
-                } else {
-                    innerAction()
-                }
-            }
-        }
-
-    @Suppress("UNCHECKED_CAST")
-    suspend fun fixture(): Fixture = (
-        coroutineContext[FixtureContextElement]?.fixture
-            ?: throw IllegalArgumentException("A fixture has not been registered: $coroutineContext")
-        ) as Fixture
-
-    fun aroundAll(action: TestSuiteWrappingAction<Fixture>) {
+    fun aroundAll(action: TestSuiteWrappingAction) {
         aroundAllAction = action
     }
 
-    fun suite(name: String, componentsDefinition: TestSuiteComponentsDefinition<Fixture>) {
+    fun suite(name: String, componentsDefinition: TestSuiteComponentsDefinition) {
         TestSuite(this, name, componentsDefinition = componentsDefinition)
     }
 
-    fun test(name: String, configuration: TestScopeConfiguration.() -> Unit = {}, action: TestAction<Fixture>) {
+    fun test(name: String, configuration: TestScopeConfiguration.() -> Unit = {}, action: TestAction) {
         Test(this, name, configuration = configuration, action)
     }
 
@@ -132,15 +98,66 @@ open class TestSuite<Fixture : Any> internal constructor(
         }
     }
 
-    private fun List<TestSuiteWrappingAction<Fixture>>.wrappedAround(
-        innermostAction: TestSuiteAction<Fixture>
-    ): TestSuiteAction<Fixture> = fold(innermostAction) { innerAction, wrappingAction ->
-        { wrappingAction(innerAction) }
-    }
+    private fun List<TestSuiteWrappingAction>.wrappedAround(innermostAction: TestSuiteAction): TestSuiteAction =
+        fold(innermostAction) { innerAction, wrappingAction ->
+            { wrappingAction(innerAction) }
+        }
 
     /** Returns actions wrapping around all child scope's execution, innermost first. */
-    private fun allChildScopesWrappingActions(): List<TestSuiteWrappingAction<Fixture>> = listOfNotNull(
+    private fun allChildScopesWrappingActions(): List<TestSuiteWrappingAction> = listOfNotNull(
         aroundAllAction,
-        allScopesFixtureSetup
+        fixtureLifecycleAction()
     )
+
+    fun <Value : Any> fixture(value: TestSuite.() -> Value): Fixture<Value> = Fixture(this, value)
+
+    class Fixture<Value : Any>(private val suite: TestSuite, private val newValue: suspend TestSuite.() -> Value) {
+        private var value: Value? = null
+        private var close: suspend Value.() -> Unit = { (this as? AutoCloseable)?.close() }
+
+        suspend operator fun invoke(): Value {
+            if (value == null) {
+                value = suite.newValue()
+                suite.fixtures.add(0, this)
+            }
+            return value!!
+        }
+
+        infix fun closeWith(action: suspend Value.() -> Unit): Fixture<Value> {
+            close = action
+            return this
+        }
+
+        internal suspend fun close() {
+            value?.let {
+                value = null
+                it.close()
+            }
+        }
+    }
+
+    private fun fixtureLifecycleAction(): TestSuiteWrappingAction = { innerAction: TestSuiteAction ->
+        var actionException: Throwable? = null
+
+        try {
+            innerAction()
+        } catch (exception: Throwable) {
+            actionException = exception
+            throw exception
+        } finally {
+            withContext(NonCancellable) {
+                fixtures.forEach {
+                    try {
+                        it.close()
+                    } catch (closeException: Throwable) {
+                        if (actionException == null) {
+                            throw closeException
+                        } else {
+                            actionException.addSuppressed(closeException)
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

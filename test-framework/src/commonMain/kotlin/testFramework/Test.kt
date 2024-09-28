@@ -2,11 +2,11 @@ package testFramework
 
 import testFramework.internal.withParallelism
 
-class Test<Fixture : Any> internal constructor(
-    parent: TestSuite<Fixture>,
+class Test internal constructor(
+    parent: TestSuite,
     simpleName: String,
     configuration: TestScopeConfiguration.() -> Unit = {},
-    private val action: TestAction<Fixture>
+    private val action: TestAction
 ) : TestScope(parent, simpleName, configuration = configuration) {
 
     override suspend fun execute(listener: TestScopeEventListener?) {
@@ -23,4 +23,4 @@ class Test<Fixture : Any> internal constructor(
     }
 }
 
-typealias TestAction<Fixture> = suspend Test<Fixture>.() -> Unit
+typealias TestAction = suspend Test.() -> Unit

@@ -3,7 +3,7 @@ package testFramework.internal
 import testFramework.TestSuite
 import testFramework.testPlatform
 
-internal object TestSession : TestSuite<Nothing>(
+internal object TestSession : TestSuite(
     parent = null,
     simpleNameOrNull = "${testPlatform.displayName} session",
     configuration = { isSequential = true }

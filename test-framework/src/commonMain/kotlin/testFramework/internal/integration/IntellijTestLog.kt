@@ -22,7 +22,7 @@ internal object IntellijTestLog {
 
         suspend fun addBeforeEvent() {
             ijLog {
-                event(type = if (event.scope is Test<*>) "beforeTest" else "beforeSuite") {
+                event(type = if (event.scope is Test) "beforeTest" else "beforeSuite") {
                     test(id = event.scope.scopeName, parentId = parentScope?.scopeName) {
                         descriptor(
                             name = event.scope.scopeName,
@@ -40,7 +40,7 @@ internal object IntellijTestLog {
             content: IjLog.Event.Test.Result.() -> Unit = {}
         ) {
             ijLog {
-                event(type = if (event.scope is Test<*>) "afterTest" else "afterSuite") {
+                event(type = if (event.scope is Test) "afterTest" else "afterSuite") {
                     test(id = event.scope.scopeName, parentId = parentScope?.scopeName) {
                         descriptor(
                             name = event.scope.scopeName,
