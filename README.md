@@ -4,6 +4,8 @@ This prototype aims to explore a flexible but concise Kotlin Multiplatform test 
 
 The goal: Testing Kotlin like Kotlin – native everywhere, productive, fun. Will this help us get there?
 
+![Test Run.png](documentation/images/Test%20Run.png)
+
 ### Features
 
 * A **test hierarchy** represented by **nestable `TestScope`s**.

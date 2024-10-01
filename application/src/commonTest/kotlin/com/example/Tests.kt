@@ -37,7 +37,7 @@ internal class TestSuite1 :
 
                 aroundAll { scopeAction ->
                     log("aroundAll TestSuite1.child-suite2 start")
-                    withContext(CoroutineName("aroundAll TestSuite1")) {
+                    withContext(CoroutineName("aroundAll TestSuite1.child-suite2")) {
                         scopeAction()
                     }
                     log("aroundAll TestSuite1.child-suite2 end")
@@ -46,7 +46,9 @@ internal class TestSuite1 :
                 test("nested1") {
                     log("in TestSuite1.child-suite2.nested1 – before delay, A=${fixtureA()}, B=${fixtureB()}")
                     delay(0.3.seconds)
-                    log("in TestSuite1.child-suite2.nested1 – after delay")
+                    log(
+                        "in TestSuite1.child-suite2.nested1 – after delay [${currentCoroutineContext()[CoroutineName]}]"
+                    )
                 }
 
                 test("nested2") {
@@ -59,7 +61,9 @@ internal class TestSuite1 :
                 test("test3-$generationIndex") {
                     log("in TestSuite1.test3-$generationIndex – before delay, A=${fixtureA()}")
                     delay(0.2.seconds)
-                    log("in TestSuite1.test3-$generationIndex – after delay")
+                    log(
+                        "in TestSuite1.test3-$generationIndex – after delay [${currentCoroutineContext()[CoroutineName]}]"
+                    )
                 }
             }
         }
