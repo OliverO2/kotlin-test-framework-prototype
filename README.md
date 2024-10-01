@@ -1,6 +1,8 @@
-## A Kotlin Test Framework Prototype
+## A Kotlin Multiplatform Test Framework Prototype
 
-This prototype aims to explore a flexible but concise test framework architecture.
+This prototype aims to explore a flexible but concise Kotlin Multiplatform test framework architecture.
+
+The goal: Testing Kotlin like Kotlin – native everywhere, productive, fun. Will this help us get there?
 
 ### Features
 
@@ -20,7 +22,7 @@ This prototype aims to explore a flexible but concise test framework architectur
 
 ### Bootstrapping A Local Build
 
-This project builds a Gradle plugin and its sample application depends on accessing the Gradle plugin from a repository. Initially, it will not be there. To bootstrap this project using a local repository:
+This project builds a Gradle plugin. Its sample application depends on accessing the Gradle plugin from a repository. Initially, it will not be there. To bootstrap this project using a local repository:
 
 1. In `application/build.gradle.kts`: comment out the line `alias(libs.plugins.test.framework.prototype)`.
 2. `./gradlew clean publishAllPublicationsToLocalRepository`
@@ -61,11 +63,11 @@ This project builds a Gradle plugin and its sample application depends on access
     * support "rerun failed tests" from the test run window.
     * support "rerun failed tests" from the inspections window.
 
-### IDE and Build Tool Interoperability
+## IDE and Build Tool Interoperability
 
-#### JUnit Platform
+### JUnit Platform
 
-##### General
+#### General
 
 [Test Engines](https://junit.org/junit5/docs/current/user-guide/#test-engines) must
 * discover tests from an [`EngineDiscoveryRequest`](https://junit.org/junit5/docs/current/api/org.junit.platform.engine/org/junit/platform/engine/EngineDiscoveryRequest.html), yielding a tree of test descriptors, and
@@ -73,39 +75,39 @@ This project builds a Gradle plugin and its sample application depends on access
 
 A [test descriptor](https://junit.org/junit5/docs/current/api/org.junit.platform.engine/org/junit/platform/engine/TestDescriptor.html) describes a node in the test tree (a suite or a test). Each node has a [unique identifier](https://junit.org/junit5/docs/current/api/org.junit.platform.engine/org/junit/platform/engine/UniqueId.html), comprised of a list of type/value segments. Segment type and value are non-empty strings. Typical segment types are "test", "class", "engine", but there appears to be no defined scheme and "engine" [seems to be the only stable name](https://github.com/junit-team/junit5/discussions/3551).
 
-##### Test Discovery
+#### Test Discovery
 
 An [`EngineDiscoveryRequest`](https://junit.org/junit5/docs/current/api/org.junit.platform.engine/org/junit/platform/engine/EngineDiscoveryRequest.html)
 * selects test nodes via
-    * ClassSelector: named class,
-    * MethodSelector: named method (plus optional signature),
-    * UniqueIdSelector: unique identifier,
-    * [others, e.g.](https://junit.org/junit5/docs/current/api/org.junit.platform.engine/org/junit/platform/engine/DiscoverySelector.html): classpath, directory, file, module, package, URI.
+    * `ClassSelector`: named class,
+    * `MethodSelector`: named method (plus optional signature),
+    * `UniqueIdSelector`: unique identifier,
+    * [others, e.g.](https://junit.org/junit5/docs/current/api/org.junit.platform.engine/org/junit/platform/engine/DiscoverySelector.html): classpath, directory, file, module, package, URI, and
 * filters test nodes via
-    * ClassNameFilter: list of class name RE patterns to include and/or exclude
-    * PackageNameFilter: list of package name RE patterns to include and/or exclude
+    * `ClassNameFilter`: list of class name RE patterns to include and/or exclude,
+    * `PackageNameFilter`: list of package name RE patterns to include and/or exclude.
  
 The [Gradle test task](https://docs.gradle.org/current/userguide/java_testing.html) uses
-* these selectors:
-    * ClassSelector (Gradle passes a selector for every class it finds, not knowing which ones are test classes)
-    * UniqueIdSelector (Gradle Enterprise: distribute tests across processes)
-* these filters:
-    * ClassNameFilter (if [test filtering](https://docs.gradle.org/current/userguide/java_testing.html#test_filtering) is used)
+* the selectors
+    * `ClassSelector` (Gradle passes a selector for every class it finds, not knowing which ones are test classes),
+    * `UniqueIdSelector` (Gradle Enterprise: distribute tests across processes), and
+* the filter
+    * `ClassNameFilter` (if [test filtering](https://docs.gradle.org/current/userguide/java_testing.html#test_filtering) is used).
     
 Kotest supports
-* these selectors:
-    * PackageSelector
-    * ClassSelector
-    * UniqueIdSelector (added by a Gradle member to support distributing tests across processes in Gradle Enterprise)
-* these filters:
-    * ClassNameFilter
-    * PackageNameFilter
+* the selectors
+    * `PackageSelector`,
+    * `ClassSelector`,
+    * `UniqueIdSelector` (added by a Gradle member to support distributing tests across processes in Gradle Enterprise), and
+* the filters
+    * `ClassNameFilter`,
+    * `PackageNameFilter`.
 
-##### Source Code Test Discovery (IDE Support)
+#### Source Code Test Discovery (IDE Support)
 
 [The Testable annotation](https://junit.org/junit5/docs/current/api/org.junit.platform.commons/org/junit/platform/commons/annotation/Testable.html) exists to make IDEs aware of elements which can be executed as a test or test container. It is intended for use cases where full discovery via compiled code is unavailable. (IntelliJ IDEA [contains some support](https://github.com/JetBrains/intellij-community/blob/65cf881f35eea8a594b9375651a7a03823f09723/java/execution/impl/src/com/intellij/execution/junit/JUnitUtil.java#L42) for it. Is this is actually used for Kotlin?) 
 
-#### IntelliJ IDEA
+### IntelliJ IDEA
 
 The IDE runs tests via regular Gradle invocations.
 
