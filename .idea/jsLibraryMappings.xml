@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="JavaScriptLibraryMappings">
+    <excludedPredefinedLibrary name="kotlin-test-framework-prototype/build/js/node_modules" />
+    <excludedPredefinedLibrary name="kotlin-test-framework-prototype/build/js/packages/kotlin-test-framework-prototype-application-test/node_modules" />
+    <excludedPredefinedLibrary name="kotlin-test-framework-prototype/build/js/packages/kotlin-test-framework-prototype-application-wasm-js-test/node_modules" />
+    <excludedPredefinedLibrary name="kotlin-test-framework-prototype/build/js/packages/kotlin-test-framework-prototype-application-wasm-js/node_modules" />
+    <excludedPredefinedLibrary name="kotlin-test-framework-prototype/build/js/packages/kotlin-test-framework-prototype-application/node_modules" />
+    <excludedPredefinedLibrary name="kotlin-test-framework-prototype/build/js/packages/kotlin-test-framework-prototype-test-framework-test/node_modules" />
+    <excludedPredefinedLibrary name="kotlin-test-framework-prototype/build/js/packages/kotlin-test-framework-prototype-test-framework-wasm-js-test/node_modules" />
+  </component>
+</project>

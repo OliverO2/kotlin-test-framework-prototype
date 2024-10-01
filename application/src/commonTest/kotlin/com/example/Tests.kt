@@ -4,13 +4,14 @@ import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import testFramework.TestSuite
-import testFramework.testPlatform
+import testFramework.annotations.TestDeclaration
 import kotlin.coroutines.coroutineContext
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
+@TestDeclaration
 internal class TestSuite1 :
     TestSuite(
         {
@@ -64,6 +65,7 @@ internal class TestSuite1 :
         }
     )
 
+@TestDeclaration
 internal class TestSuite2 :
     TestSuite(
         {
@@ -79,6 +81,7 @@ internal class TestSuite2 :
         }
     )
 
+@TestDeclaration
 internal class TestSuite3 :
     TestSuite(
         {
@@ -94,7 +97,7 @@ internal class TestSuite3 :
         }
     )
 
-internal data class MyFirstFixture(
+private data class MyFirstFixture(
     val suite: TestSuite,
     var state: String = "open",
     val incarnation: Int = incarnationCount.incrementAndGet()
@@ -116,7 +119,7 @@ internal data class MyFirstFixture(
     }
 }
 
-internal data class MySecondFixture(
+private data class MySecondFixture(
     val suite: TestSuite,
     var state: String = "open",
     val incarnation: Int = incarnationCount.incrementAndGet()
@@ -144,9 +147,3 @@ private fun TestSuite.log(message: String) {
 }
 
 private fun fail(message: String): Unit = throw AssertionError(message)
-
-private suspend fun delay(duration: Duration) {
-    // FIXME: Workaround for https://github.com/Kotlin/kotlinx.coroutines/issues/4239
-    //     Wasm/WASI: calling delay() silently exits wasmWasiNodeRun
-    if (testPlatform.displayName != "Wasm/WASI") kotlinx.coroutines.delay(duration)
-}

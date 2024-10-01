@@ -4,16 +4,27 @@ This prototype aims to explore a flexible but concise test framework architectur
 
 ### Features
 
-* A test hierarchy represented by nestable `TestScope`s.
+* A **test hierarchy** represented by **nestable `TestScope`s**.
     * `Test`s are test scopes containing actual test logic with assertions, they cannot have child scopes.
     * `TestSuite`s are test scopes grouping child scopes, they cannot contain test logic.
     * A `TestSession` is the root of the test hierarchy for an individual test run.
-* Tests are fully coroutine-aware, coroutine contexts mirror the suites/tests hierarchy.
-* Suites support lazily initialized test fixtures with `AutoCloseable` support. Fixture initialization and tear-down (auto-close) functions can suspend.
-* Suites support a suspending `aroundAll` action.
-* Suite nesting and suspending suite-level actions are fully supported on JavaScript engines, using the Kotlin/JS test infra.
+* **Tests and suites** can be **created dynamically** via plain Kotlin.
+* Tests are fully **coroutine-aware**, coroutine contexts mirror the suites/tests hierarchy.
+* Suites support **lazily initialized test fixtures** with `AutoCloseable` support. Fixture **initialization and tear-down** (auto-close) functions **can suspend**.
+* Suites support a **suspending `aroundAll`** action.
+* Suite **nesting and suspending** suite-level actions are **fully supported on JavaScript** engines, using the Kotlin/JS test infra.
 * The entire framework is platform independent with almost zero redundancy.
 * The architecture favors simplicity and aims to avoid implicit constructs and indirection.
+
+[This example](application/src/commonTest/kotlin/com/example/Tests.kt) shows how it looks like.
+
+### Bootstrapping A Local Build
+
+This project builds a Gradle plugin and its sample application depends on accessing the Gradle plugin from a repository. Initially, it will not be there. To bootstrap this project using a local repository:
+
+1. In `application/build.gradle.kts`: comment out the line `alias(libs.plugins.test.framework.prototype)`.
+2. `./gradlew clean publishAllPublicationsToLocalRepository`
+3. In `application/build.gradle.kts`: re-enable the line `alias(libs.plugins.test.framework.prototype)`.
 
 ### Running Tests
 
@@ -26,28 +37,29 @@ This prototype aims to explore a flexible but concise test framework architectur
 * `./gradlew -p application cleanAllTests wasmWasiNodeTest`
 * `./gradlew -p application cleanAllTests linuxX64Test`
 
+* `./gradlew -p application cleanAllTests jvmTest`
+
 ### Limitations
 
-* Non-JVM test targets must be configured with instantiated test classes.
-* Tests using the Kotlin/JS infra (JS/Browser, JS/Node, Wasm/JS/Browser) do not report more than one level of suite nesting (intermediate levels are cut out).
+* Tests using the Kotlin/JS infra (JS/Browser, JS/Node, Wasm/JS/Browser) do not report more than one level of suite nesting (all suites appear, but not properly nested, because the names of intermediate levels are cut out).
 * Integration for IntelliJ IDEA
     * supports class-level actions (run, debug, jump to source) from the test run window for JVM tests only,
     * does not support non-class scope and method-level actions from the test run window,
     * does not support running individual tests via editor gutters or the test run window,
-    * does not support "rerun failed tests" (this is a limitation of the [IJ Gradle plugin](https://github.com/JetBrains/intellij-community/blob/b68794b5d030e424e4e58cfd57e9f3e08bcacac4/plugins/gradle/java/src/action/GradleRerunFailedTestsAction.kt#L89) and the [Gradle Java test task](https://github.com/gradle/gradle/issues/19897))
+    * does not support "rerun failed tests" from the test run window (this is a limitation of the [IJ Gradle plugin](https://github.com/JetBrains/intellij-community/blob/b68794b5d030e424e4e58cfd57e9f3e08bcacac4/plugins/gradle/java/src/action/GradleRerunFailedTestsAction.kt#L89) and the [Gradle Java test task](https://github.com/gradle/gradle/issues/19897)),
+    * does not support running failed tests from the inspections window. 
 
 ### What could be done
 
-* Add a compiler plugin for automatic test discovery on non-JVM targets.
-* Add an IntelliJ plugin to
-    * run individual tests from editor run gutters
-    * support non-class scope and method-level actions from the test run window
-    * support "rerun failed tests" from the test run window
-
-### Considerations
-
+* Report children of a disabled suite where applicable. Currently, the disabled suite `TestSuite3` is not reported by our own test execution (Node, Native, Wasm/WASI).
 * Combine sequential execution and parallelism into one settings class.
+* Use [KotlinNativeStackTraceParser.kt](https://github.com/JetBrains/kotlin/blob/d9ddcd991bf9c6122041f0276af644be0432fa38/libraries/tools/kotlin-gradle-plugin/src/common/kotlin/org/jetbrains/kotlin/gradle/targets/native/internal/KotlinNativeStackTraceParser.kt) to reference source locations in Native stack traces.
 * Check whether to use @DslMarker to avoid suite functions being available in tests.
+* Add an IntelliJ plugin to
+    * run individual tests from editor run gutters,
+    * support non-class scope and method-level actions from the test run window,
+    * support "rerun failed tests" from the test run window.
+    * support "rerun failed tests" from the inspections window.
 
 ### IDE and Build Tool Interoperability
 

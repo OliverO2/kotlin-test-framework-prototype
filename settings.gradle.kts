@@ -25,14 +25,14 @@ refreshVersions {
 }
 
 fun RepositoryHandler.specialRepositories() {
+    maven(url = "${System.getenv("HOME")!!}/.m2/local-repository")
     maven("https://maven.pkg.jetbrains.space/kotlin/p/wasm/experimental")
-    // maven("https://s01.oss.sonatype.org/content/repositories/snapshots/") {
-    //     name = "MavenCentralSnapshots"
-    //     mavenContent { snapshotsOnly() }
-    // }
 }
 
 rootProject.name = "kotlin-test-framework-prototype"
 
-include(":test-framework")
+include(":test-framework-core")
+include(":test-framework-gradle-plugin")
+include(":test-framework-compiler-plugin")
+
 include(":application")

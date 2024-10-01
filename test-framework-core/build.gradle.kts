@@ -4,8 +4,6 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinHierarchyTemplate
 
 plugins {
     alias(libs.plugins.org.jetbrains.kotlin.multiplatform)
-    alias(libs.plugins.org.jetbrains.kotlin.atomicfu)
-    alias(libs.plugins.test.framework.prototype)
     alias(libs.plugins.org.jmailen.kotlinter)
 }
 
@@ -14,37 +12,31 @@ val jdkVersion = project.property("local.jdk.version").toString().toInt()
 kotlin {
     jvmToolchain(jdkVersion)
 
-    @OptIn(ExperimentalKotlinGradlePluginApi::class)
     jvm {
-        mainRun {
-            mainClass = "MainKt"
-        }
+        @OptIn(ExperimentalKotlinGradlePluginApi::class)
         compilerOptions {
             freeCompilerArgs = listOf("-Xjdk-release=$jdkVersion")
         }
     }
 
     js {
-        binaries.executable()
         nodejs()
         browser()
     }
 
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
-        binaries.executable()
         nodejs()
         browser()
     }
 
     @OptIn(ExperimentalWasmDsl::class)
     wasmWasi {
-        binaries.executable()
         nodejs()
     }
 
     linuxX64 {
-        binaries.executable()
+        binaries.sharedLib()
     }
 
     @OptIn(ExperimentalKotlinGradlePluginApi::class)
@@ -60,38 +52,20 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation(project(":test-framework-core"))
-                // implementation(libs.test.framework.prototype.core)
-                implementation(libs.org.jetbrains.kotlinx.atomicfu)
+                api(libs.org.jetbrains.kotlinx.coroutines.core)
+                implementation(libs.org.jetbrains.kotlinx.datetime)
             }
         }
+
         val jvmMain by getting {
             dependencies {
-                implementation(libs.org.jetbrains.kotlinx.coroutines.debug)
+                implementation(libs.org.junit.platform.engine)
             }
         }
     }
 }
 
-tasks.withType<Test>().configureEach {
-    // https://docs.gradle.org/current/userguide/java_testing.html
-    useJUnitPlatform()
-}
-
-tasks {
-    val orderedTaskPrefixes =
-        listOf("jvm", "jsNode", "jsBrowser", "wasmJsNode", "wasmJsBrowser", "wasmWasiNode", "linuxX64")
-    var lastTaskName: String? = null
-    orderedTaskPrefixes.forEach {
-        val taskName = "${it}Test"
-        lastTaskName?.let {
-            named(taskName).configure {
-                mustRunAfter(it)
-            }
-        }
-        lastTaskName = taskName
-    }
-}
+apply(from = "../build-publish-local.gradle.kts")
 
 kotlinter {
     ignoreFailures = false

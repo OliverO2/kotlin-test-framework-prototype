@@ -11,6 +11,9 @@ org-jetbrains-kotlinx-coroutines = "1.9.0"
 
 [libraries]
 
+# https://github.com/ZacSweers/kotlin-compile-testing/releases
+dev-zacsweers-kctfork = "dev.zacsweers.kctfork:core:0.5.1"
+
 # https://github.com/Kotlin/kotlinx-atomicfu/releases
 org-jetbrains-kotlinx-atomicfu = "org.jetbrains.kotlinx:atomicfu:0.25.0"
 
@@ -30,8 +33,23 @@ org-junit-platform-engine = "org.junit.platform:junit-platform-engine:1.10.2"
 ##                                                                ⬆ :1.11.0"
 ##                                                                ⬆ :1.11.1"
 
+test-framework-prototype-core = "kotlin-test-framework-prototype:test-framework-core:unspecified"
+
 [plugins]
+
+# https://github.com/gmazzo/gradle-buildconfig-plugin/releases
+com-github-gmazzo-buildconfig = "com.github.gmazzo.buildconfig:4.1.2"
+
+# https://plugins.gradle.org/plugin/com.gradle.plugin-publish
+com-gradle-plugin-publish = "com.gradle.plugin-publish:1.2.1"
 
 org-jetbrains-kotlin-atomicfu = { id = "org.jetbrains.kotlin.plugin.atomicfu", version.ref = "org-jetbrains-kotlin" }
 
+org-jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "org-jetbrains-kotlin" }
+
 org-jetbrains-kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "org-jetbrains-kotlin" }
+
+# https://github.com/jeremymailen/kotlinter-gradle/releases
+org-jmailen-kotlinter = "org.jmailen.kotlinter:4.4.1"
+
+test-framework-prototype = "com.example.testFramework:unspecified"
