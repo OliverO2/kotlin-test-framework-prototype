@@ -29,6 +29,7 @@ import org.jetbrains.kotlin.ir.declarations.IrFile
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
 import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
+import org.jetbrains.kotlin.ir.declarations.IrSymbolOwner
 import org.jetbrains.kotlin.ir.declarations.nameWithPackage
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
@@ -48,6 +49,7 @@ import org.jetbrains.kotlin.platform.konan.isNative
 
 class CompilerPluginIrGenerationExtension(private val compilerConfiguration: CompilerConfiguration) :
     IrGenerationExtension {
+
     private val messageCollector =
         compilerConfiguration.get(CommonConfigurationKeys.MESSAGE_COLLECTOR_KEY, MessageCollector.NONE)
 
@@ -59,7 +61,7 @@ class CompilerPluginIrGenerationExtension(private val compilerConfiguration: Com
             return
         }
 
-        moduleFragment.transform(EntryPointInvocationTransformer(pluginContext, messageCollector, configuration), null)
+        moduleFragment.transform(ModuleTransformer(pluginContext, messageCollector, configuration), null)
     }
 }
 
@@ -83,7 +85,7 @@ private class Configuration(compilerConfiguration: CompilerConfiguration, plugin
     }
 }
 
-private class EntryPointInvocationTransformer(
+private class ModuleTransformer(
     val pluginContext: IrPluginContext,
     val messageCollector: MessageCollector,
     val configuration: Configuration
@@ -105,7 +107,7 @@ private class EntryPointInvocationTransformer(
         return super.visitFileNew(declaration)
     }
 
-    override fun visitClassNew(declaration: IrClass): IrStatement =
+    override fun visitClassNew(declaration: IrClass): IrStatement {
         withErrorReporting(declaration, "Could not analyze class '${declaration.name}'") {
             if (declaration.hasAnnotation(configuration.suiteAnnotationSymbol)) {
                 if (configuration.debugEnabled) {
@@ -114,9 +116,10 @@ private class EntryPointInvocationTransformer(
 
                 entryPointCollection.add(declaration)
             }
-
-            super.visitClassNew(declaration)
         }
+
+        return super.visitClassNew(declaration)
+    }
 
     override fun visitModuleFragment(declaration: IrModuleFragment): IrModuleFragment {
         // Process the entire module fragment first, collecting all test suites.
@@ -205,15 +208,7 @@ private class EntryPointInvocationTransformer(
             visibility = DescriptorVisibilities.PRIVATE
         }.apply property@{
             parent = entryPointsTargetFile
-            annotations += IrSingleStatementBuilder(
-                pluginContext,
-                Scope(symbol),
-                UNDEFINED_OFFSET,
-                UNDEFINED_OFFSET
-            ).build {
-                @OptIn(UnsafeDuringIrConstructionAPI::class) // safe: module fragment has been completely processed
-                irCall(pluginContext.irClassSymbol("kotlin.native", "EagerInitialization").constructors.single())
-            }
+            annotations += simpleAnnotation(pluginContext.irClassSymbol("kotlin.native", "EagerInitialization"))
 
             backingField = pluginContext.irFactory.buildField {
                 type = pluginContext.irBuiltIns.unitType
@@ -281,18 +276,19 @@ private class EntryPointInvocationTransformer(
             returnType = pluginContext.irBuiltIns.unitType
             visibility = DescriptorVisibilities.INTERNAL
         }.apply {
-            annotations += IrSingleStatementBuilder(
-                pluginContext,
-                Scope(symbol),
-                UNDEFINED_OFFSET,
-                UNDEFINED_OFFSET
-            ).build {
-                @OptIn(UnsafeDuringIrConstructionAPI::class) // safe: module fragment has been completely processed
-                irCall(wasmExportSymbol.constructors.single())
-            }
+            annotations += simpleAnnotation(wasmExportSymbol)
             body = DeclarationIrBuilder(pluginContext, symbol).irBlockBody {}
         }
     }
+
+    /**
+     * Returns a constructor call for an annotation class having a single no-argument constructor.
+     */
+    private fun IrSymbolOwner.simpleAnnotation(classSymbol: IrClassSymbol) =
+        IrSingleStatementBuilder(pluginContext, Scope(symbol), UNDEFINED_OFFSET, UNDEFINED_OFFSET).build {
+            @OptIn(UnsafeDuringIrConstructionAPI::class) // safe: module fragment has been completely processed
+            irCall(classSymbol.constructors.single())
+        }
 
     fun <Result> withErrorReporting(declaration: IrElement, failureDescription: String, block: () -> Result): Result =
         try {
