@@ -91,7 +91,7 @@ class CompilerPluginTests {
             debugEnabled = true
         ) {
             println(messages)
-            assertTrue("DEBUG: Found test suite 'TestSuiteOne'" in messages)
+            assertTrue("[DEBUG] Found test suite 'TestSuiteOne'" in messages)
         }
     }
 

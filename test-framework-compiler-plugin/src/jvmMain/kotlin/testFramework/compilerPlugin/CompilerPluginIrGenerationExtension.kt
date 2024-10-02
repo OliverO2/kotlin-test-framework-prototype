@@ -55,10 +55,7 @@ class CompilerPluginIrGenerationExtension(private val compilerConfiguration: Com
         val configuration: Configuration = try {
             Configuration(compilerConfiguration, pluginContext)
         } catch (exception: IllegalStateException) {
-            messageCollector.report(
-                CompilerMessageSeverity.ERROR,
-                "Could not configure $PLUGIN_DISPLAY_NAME: ${exception.message}"
-            )
+            messageCollector.report(CompilerMessageSeverity.ERROR, "$PLUGIN_DISPLAY_NAME: ${exception.message}")
             return
         }
 
@@ -306,7 +303,7 @@ private class EntryPointInvocationTransformer(
         }
 
     fun reportDebug(message: String, declaration: IrElement? = null) =
-        report(CompilerMessageSeverity.WARNING, "DEBUG: $message", declaration)
+        report(CompilerMessageSeverity.WARNING, "[DEBUG] $message", declaration)
 
     fun report(severity: CompilerMessageSeverity, message: String, declaration: IrElement? = null) {
         fun IrFile.locationOrNull(offset: Int?): CompilerMessageLocation? {
