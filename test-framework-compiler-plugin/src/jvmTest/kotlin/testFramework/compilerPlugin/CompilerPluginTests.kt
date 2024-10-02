@@ -91,7 +91,7 @@ class CompilerPluginTests {
             debugEnabled = true
         ) {
             println(messages)
-            assertTrue("FOUND test suite 'TestSuiteOne'" in messages)
+            assertTrue("DEBUG: Found test suite 'TestSuiteOne'" in messages)
         }
     }
 
@@ -104,7 +104,8 @@ class CompilerPluginTests {
             classPathInheritanceEnabled = false,
             expectedExitCode = KotlinCompilation.ExitCode.COMPILATION_ERROR
         ) {
-            assertTrue("please add the corresponding library dependency" in messages)
+            println(messages)
+            assertTrue("Please add the corresponding library dependency." in messages)
         }
     }
 }

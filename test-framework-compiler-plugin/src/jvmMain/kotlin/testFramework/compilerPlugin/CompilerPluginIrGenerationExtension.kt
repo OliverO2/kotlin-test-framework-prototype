@@ -29,6 +29,7 @@ import org.jetbrains.kotlin.ir.declarations.IrFile
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
 import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
+import org.jetbrains.kotlin.ir.declarations.nameWithPackage
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
@@ -56,15 +57,12 @@ class CompilerPluginIrGenerationExtension(private val compilerConfiguration: Com
         } catch (exception: IllegalStateException) {
             messageCollector.report(
                 CompilerMessageSeverity.ERROR,
-                "$PLUGIN_DISPLAY_NAME: ${exception.message}"
+                "Could not configure $PLUGIN_DISPLAY_NAME: ${exception.message}"
             )
             return
         }
 
-        moduleFragment.transform(
-            EntryPointInvocationTransformer(pluginContext, messageCollector, configuration),
-            null
-        )
+        moduleFragment.transform(EntryPointInvocationTransformer(pluginContext, messageCollector, configuration), null)
     }
 }
 
@@ -79,11 +77,9 @@ private class Configuration(compilerConfiguration: CompilerConfiguration, plugin
     private val runTestsFunctionName = "runTests"
     private val runTestsBlockingFunctionName = "runTestsBlocking"
 
-    val suiteAnnotationSymbol =
-        pluginContext.irClassSymbol(suiteAnnotationPackageName, suiteAnnotationClassName)
+    val suiteAnnotationSymbol = pluginContext.irClassSymbol(suiteAnnotationPackageName, suiteAnnotationClassName)
 
-    val runTestsFunctionSymbol =
-        pluginContext.irFunctionSymbol(runTestsPackageName, runTestsFunctionName)
+    val runTestsFunctionSymbol = pluginContext.irFunctionSymbol(runTestsPackageName, runTestsFunctionName)
 
     val runTestsBlockingFunctionSymbol by lazy {
         pluginContext.irFunctionSymbol(runTestsPackageName, runTestsBlockingFunctionName)
@@ -112,29 +108,41 @@ private class EntryPointInvocationTransformer(
         return super.visitFileNew(declaration)
     }
 
-    override fun visitClassNew(declaration: IrClass): IrStatement = withErrorReporting(declaration) {
-        if (declaration.hasAnnotation(configuration.suiteAnnotationSymbol)) {
-            if (configuration.debugEnabled) {
-                reportInfo("FOUND test suite '${declaration.name}'", declaration)
+    override fun visitClassNew(declaration: IrClass): IrStatement =
+        withErrorReporting(declaration, "Could not analyze class '${declaration.name}'") {
+            if (declaration.hasAnnotation(configuration.suiteAnnotationSymbol)) {
+                if (configuration.debugEnabled) {
+                    reportDebug("Found test suite '${declaration.name}'", declaration)
+                }
+
+                entryPointCollection.add(declaration)
             }
 
-            entryPointCollection.add(declaration)
+            super.visitClassNew(declaration)
         }
 
-        super.visitClassNew(declaration)
-    }
+    override fun visitModuleFragment(declaration: IrModuleFragment): IrModuleFragment {
+        // Process the entire module fragment first, collecting all test suites.
+        val moduleFragment = super.visitModuleFragment(declaration)
 
-    override fun visitModuleFragment(declaration: IrModuleFragment): IrModuleFragment =
-        withErrorReporting(declaration) {
-            // Process the entire module fragment first, collecting all test suites.
-            val moduleFragment = super.visitModuleFragment(declaration)
+        // Add the generated entry points to the first IR source file (return if none exists).
+        val entryPointsTargetFile = moduleFragment.files.firstOrNull() ?: return moduleFragment
 
+        withErrorReporting(
+            declaration,
+            "Could not generate entry point code in '${entryPointsTargetFile.nameWithPackage}'"
+        ) {
             // We have left all source files behind.
             sourceFileForReporting = null
 
-            // Add the generated entry points to the first IR source file (return if none exists).
-            val entryPointsTargetFile =
-                moduleFragment.files.firstOrNull() ?: return@withErrorReporting moduleFragment
+            if (configuration.debugEnabled) {
+                reportDebug(
+                    "Generating code in module '${declaration.name}'," +
+                        " file '${entryPointsTargetFile.nameWithPackage}'," +
+                        " for ${entryPointCollection.elements.size} entry point(s).",
+                    declaration
+                )
+            }
 
             val platform = pluginContext.platform
             val entryPointDeclarations = when {
@@ -157,12 +165,13 @@ private class EntryPointInvocationTransformer(
             entryPointDeclarations.forEach {
                 entryPointsTargetFile.addChild(it)
                 if (configuration.debugEnabled) {
-                    reportInfo("GENERATED\n${it.dump().prependIndent("\t")}")
+                    reportDebug("Generated:\n${it.dump().prependIndent("\t")}")
                 }
             }
-
-            moduleFragment
         }
+
+        return moduleFragment
+    }
 
     /**
      * Returns an entry point function declaration for test suite classes TS1...TSn like this:
@@ -288,15 +297,16 @@ private class EntryPointInvocationTransformer(
         }
     }
 
-    fun <Result> withErrorReporting(declaration: IrElement, block: () -> Result): Result = try {
-        block()
-    } catch (throwable: Throwable) {
-        report(CompilerMessageSeverity.EXCEPTION, "Could not transform function call: $throwable", declaration)
-        throw throwable
-    }
+    fun <Result> withErrorReporting(declaration: IrElement, failureDescription: String, block: () -> Result): Result =
+        try {
+            block()
+        } catch (throwable: Throwable) {
+            report(CompilerMessageSeverity.EXCEPTION, "$failureDescription: $throwable", declaration)
+            throw throwable
+        }
 
-    fun reportInfo(message: String, declaration: IrElement? = null) =
-        report(CompilerMessageSeverity.INFO, message, declaration)
+    fun reportDebug(message: String, declaration: IrElement? = null) =
+        report(CompilerMessageSeverity.WARNING, "DEBUG: $message", declaration)
 
     fun report(severity: CompilerMessageSeverity, message: String, declaration: IrElement? = null) {
         fun IrFile.locationOrNull(offset: Int?): CompilerMessageLocation? {
@@ -319,17 +329,14 @@ private fun IrPluginContext.irClassSymbolOrNull(packageName: String, className: 
 
 private fun IrPluginContext.irClassSymbol(packageName: String, className: String): IrClassSymbol =
     irClassSymbolOrNull(packageName, className)
-        ?: throw IllegalStateException(
-            "annotation class '$packageName.$className' not found on classpath" +
-                " – please add the corresponding library dependency"
-        )
+        ?: throw IllegalStateException("Class '$packageName.$className' $MISSING_CLASSPATH_INFO")
 
 @Suppress("SameParameterValue")
 private fun IrPluginContext.irFunctionSymbol(packageName: String, functionName: String): IrSimpleFunctionSymbol =
     referenceFunctions(CallableId(FqName(packageName), Name.identifier(functionName))).singleOrNull()
-        ?: throw IllegalStateException(
-            "function '$packageName.$functionName' not found on classpath" +
-                " – please add the corresponding library dependency"
-        )
+        ?: throw IllegalStateException("Function '$packageName.$functionName' $MISSING_CLASSPATH_INFO")
 
 private const val PLUGIN_DISPLAY_NAME = "Plugin ${BuildConfig.TEST_FRAMEWORK_PLUGIN_ID}"
+
+private const val MISSING_CLASSPATH_INFO =
+    "was not found on the classpath. Please add the corresponding library dependency."

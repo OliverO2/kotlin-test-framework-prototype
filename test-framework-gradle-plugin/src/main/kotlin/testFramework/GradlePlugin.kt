@@ -10,8 +10,6 @@ import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
 
 @Suppress("unused")
 class GradlePlugin : KotlinCompilerPluginSupportPlugin {
-    private var configurationWarningsEmitted = false
-
     override fun apply(target: Project) {
         target.extensions.create("testFramework", GradleExtension::class.java)
     }
@@ -22,16 +20,11 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
         val project = kotlinCompilation.target.project
         val extension = project.extensions.getByType(GradleExtension::class.java)
 
-        if (extension.debug && !project.logger.isInfoEnabled && !configurationWarningsEmitted) {
-            project.logger.warn(
-                "$extension: 'debug' is enabled, but its messages require a Gradle log option '--info' or higher"
-            )
-            configurationWarningsEmitted = true
-        }
-
         return project.provider {
-            listOf(SubpluginOption(key = "debug", value = extension.debug.toString()))
-            listOf(SubpluginOption(key = "jvmStandalone", value = extension.jvmStandalone.toString()))
+            listOf(
+                SubpluginOption(key = "debug", value = extension.debug.toString()),
+                SubpluginOption(key = "jvmStandalone", value = extension.jvmStandalone.toString())
+            )
         }
     }
 
