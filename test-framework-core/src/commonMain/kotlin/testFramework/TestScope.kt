@@ -1,6 +1,7 @@
 package testFramework
 
-import kotlinx.datetime.Clock
+import testFramework.internal.TestEvent
+import testFramework.internal.TestEventTrack
 
 sealed class TestScope(
     internal open val parent: TestSuite?,
@@ -33,49 +34,31 @@ sealed class TestScope(
         effectiveConfiguration.inheritFrom(parent?.effectiveConfiguration)
     }
 
-    internal abstract suspend fun execute(listener: TestScopeEventListener?)
+    internal abstract suspend fun execute(track: TestEventTrack)
 
-    internal sealed class Event(val scope: TestScope) {
-        val instant = Clock.System.now()
-
-        class Starting(scope: TestScope) : Event(scope)
-
-        class Finished(scope: TestScope, val startingEvent: Starting, val throwable: Throwable? = null) :
-            Event(scope) {
-            override fun toString(): String = "${super.toString()} – throwable=$throwable"
+    internal suspend fun executeTracking(track: TestEventTrack, action: suspend () -> Unit) {
+        if (!scopeIsEnabled && track.mode == TestEventTrack.Mode.EXCLUDE_SKIPPED_DESCENDANTS) {
+            track.add(TestEvent.Skipped(this))
+            return
         }
 
-        class Skipped(scope: TestScope) : Event(scope)
+        val startingEvent = TestEvent.Starting(this)
 
-        override fun toString(): String = "$scope: ${this::class.simpleName}"
-    }
-
-    internal suspend fun withExecutionTracking(listener: TestScopeEventListener?, action: suspend () -> Unit) {
-        if (listener == null) return action()
-
-        val startingEvent = Event.Starting(this)
-
-        listener(startingEvent)
+        track.add(startingEvent)
 
         try {
             action()
-            listener(Event.Finished(this, startingEvent))
+            track.add(TestEvent.Finished(this, startingEvent))
         } catch (assertionError: AssertionError) {
-            listener(Event.Finished(this, startingEvent, assertionError))
+            track.add(TestEvent.Finished(this, startingEvent, assertionError))
         } catch (throwable: Throwable) {
-            listener(Event.Finished(this, startingEvent, throwable))
+            track.add(TestEvent.Finished(this, startingEvent, throwable))
             throw throwable
         }
     }
 
-    internal suspend fun trackSkipping(listener: TestScopeEventListener?) {
-        listener?.invoke(Event.Skipped(this))
-    }
-
     override fun toString(): String = "${this::class.simpleName}($scopeName)"
 }
-
-internal typealias TestScopeEventListener = suspend (TestScope.Event) -> Unit
 
 private fun String.prefixesRemoved(): String = when {
     startsWith("f:") -> this.substring(2)

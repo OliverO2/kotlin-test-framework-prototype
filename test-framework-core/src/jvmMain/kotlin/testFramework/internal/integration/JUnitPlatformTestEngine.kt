@@ -15,6 +15,8 @@ import org.junit.platform.engine.support.descriptor.EngineDescriptor
 import testFramework.Test
 import testFramework.TestScope
 import testFramework.TestSuite
+import testFramework.internal.TestEvent
+import testFramework.internal.TestEventTrack
 import testFramework.internal.TestSession
 import java.util.concurrent.ConcurrentHashMap
 
@@ -58,27 +60,34 @@ internal class JUnitPlatformTestEngine : TestEngine {
         val listener = request.engineExecutionListener
 
         runBlocking {
-            TestSession.execute { event: TestScope.Event ->
-                when (event) {
-                    is TestScope.Event.Starting -> {
-                        log("${event.scope.platformDescriptor}: ${event.scope} starting")
-                        listener.executionStarted(event.scope.platformDescriptor)
-                    }
+            TestSession.execute(
+                object : TestEventTrack(mode = Mode.EXCLUDE_SKIPPED_DESCENDANTS) {
+                    override suspend fun add(event: TestEvent) {
+                        when (event) {
+                            is TestEvent.Starting -> {
+                                log("${event.scope.platformDescriptor}: ${event.scope} starting")
+                                listener.executionStarted(event.scope.platformDescriptor)
+                            }
 
-                    is TestScope.Event.Finished -> {
-                        log(
-                            "${event.scope.platformDescriptor}: ${event.scope} finished," +
-                                " result=${event.executionResult})"
-                        )
-                        listener.executionFinished(event.scope.platformDescriptor, event.executionResult)
-                    }
+                            is TestEvent.Finished -> {
+                                log(
+                                    "${event.scope.platformDescriptor}: ${event.scope} finished," +
+                                        " result=${event.executionResult})"
+                                )
+                                listener.executionFinished(
+                                    event.scope.platformDescriptor,
+                                    event.executionResult
+                                )
+                            }
 
-                    is TestScope.Event.Skipped -> {
-                        log("${event.scope.platformDescriptor}: ${event.scope} skipped")
-                        listener.executionSkipped(event.scope.platformDescriptor, "disabled")
+                            is TestEvent.Skipped -> {
+                                log("${event.scope.platformDescriptor}: ${event.scope} skipped")
+                                listener.executionSkipped(event.scope.platformDescriptor, "disabled")
+                            }
+                        }
                     }
                 }
-            }
+            )
         }
     }
 }
@@ -132,7 +141,7 @@ private fun TestScope.newPlatformDescriptor(parentUniqueId: UniqueId): TestScope
 private val TestScope.platformDescriptor: AbstractTestDescriptor get() =
     checkNotNull(scopeDescriptors[this]) { "Scope $this is missing its TestDescriptor" }
 
-private val TestScope.Event.Finished.executionResult: TestExecutionResult get() =
+private val TestEvent.Finished.executionResult: TestExecutionResult get() =
     when (throwable) {
         null -> TestExecutionResult.successful()
         is AssertionError -> TestExecutionResult.failed(throwable)

@@ -3,21 +3,22 @@ package testFramework.internal.integration
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import testFramework.Test
-import testFramework.TestScope
+import testFramework.internal.TestEvent
+import testFramework.internal.TestEventTrack
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
-internal object IntellijTestLog {
+internal object IntellijTestLog : TestEventTrack(mode = Mode.FULL_HIERARCHY) {
     private val outputMutex = Mutex()
 
-    suspend fun add(event: TestScope.Event) {
+    override suspend fun add(event: TestEvent) {
         val parentScope = event.scope.parent
 
         // Apparently, `className` must be unique, even across platform targets. Otherwise, IntelliJ's "run test"
         // window will mix tests for different targets under common `className` hierarchy nodes.
         // Therefore, we cannot use `event.scope::class.simpleName` here.
         // Unfortunately, if IntelliJ is not given a correct fully qualified class name, it does not offer to run a
-        // single tests class via its run window.
+        // single test class via its run window.
         val className = event.scope.scopeName
 
         suspend fun addBeforeEvent() {
@@ -36,7 +37,7 @@ internal object IntellijTestLog {
 
         suspend fun addAfterEvent(
             resultType: String,
-            startingEvent: TestScope.Event = event,
+            startingEvent: TestEvent = event,
             content: IjLog.Event.Test.Result.() -> Unit = {}
         ) {
             ijLog {
@@ -59,11 +60,11 @@ internal object IntellijTestLog {
         }
 
         when (event) {
-            is TestScope.Event.Starting -> {
+            is TestEvent.Starting -> {
                 addBeforeEvent()
             }
 
-            is TestScope.Event.Finished -> {
+            is TestEvent.Finished -> {
                 val resultType = if (event.throwable == null) "SUCCESS" else "FAILURE"
                 addAfterEvent(resultType = resultType, startingEvent = event.startingEvent) {
                     event.throwable?.let { throwable ->
@@ -74,7 +75,7 @@ internal object IntellijTestLog {
                 }
             }
 
-            is TestScope.Event.Skipped -> {
+            is TestEvent.Skipped -> {
                 addBeforeEvent()
                 addAfterEvent(resultType = "SKIPPED")
             }

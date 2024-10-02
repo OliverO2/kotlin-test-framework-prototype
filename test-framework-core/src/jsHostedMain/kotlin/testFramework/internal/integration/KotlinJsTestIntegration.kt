@@ -8,6 +8,8 @@ import kotlinx.coroutines.launch
 import testFramework.Test
 import testFramework.TestScope
 import testFramework.TestSuite
+import testFramework.internal.TestEvent
+import testFramework.internal.TestEventTrack
 import testFramework.internal.TestSession
 
 internal typealias JsPromiseLike = Any
@@ -35,13 +37,20 @@ internal suspend fun runTestsKotlinJs() {
     if (kotlinJsTestFrameworkAvailable()) {
         TestSession.registerWithKotlinJsTestFramework()
     } else {
-        TestSession.execute(IntellijTestLog::add)
+        TestSession.execute(IntellijTestLog)
     }
 }
 
 private object TestSessionAdapter {
     private var sessionIsExecuting = false
     private val testResults = mutableMapOf<Test, Channel<Throwable?>>()
+    private val testEventTrack = object : TestEventTrack(mode = Mode.EXCLUDE_SKIPPED_DESCENDANTS) {
+        override suspend fun add(event: TestEvent) {
+            if (event.scope is Test && event is TestEvent.Finished) {
+                testResults(event.scope).send(event.throwable)
+            }
+        }
+    }
 
     private fun testResults(test: Test): Channel<Throwable?> =
         testResults[test] ?: Channel<Throwable?>(capacity = 1).also { testResults[test] = it }
@@ -55,11 +64,7 @@ private object TestSessionAdapter {
 
             @OptIn(DelicateCoroutinesApi::class)
             GlobalScope.launch {
-                TestSession.execute { event: TestScope.Event ->
-                    if (event.scope is Test && event is TestScope.Event.Finished) {
-                        testResults(event.scope).send(event.throwable)
-                    }
-                }
+                TestSession.execute(testEventTrack)
             }
         }
 

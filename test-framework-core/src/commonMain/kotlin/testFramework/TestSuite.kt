@@ -4,6 +4,7 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import testFramework.internal.TestEventTrack
 import testFramework.internal.TestSession
 import testFramework.internal.withParallelism
 
@@ -68,32 +69,31 @@ open class TestSuite internal constructor(
         }
     }
 
-    override suspend fun execute(listener: TestScopeEventListener?) {
-        if (!scopeIsEnabled) {
-            trackSkipping(listener)
-            // This is opinionated, following JUnit Platform TestEngine guidelines in
-            // https://junit.org/junit5/docs/current/user-guide/#test-engines-custom:
-            // > If a node is reported as skipped, there must not be any events reported for its descendants.
-            return
-        }
-
-        val childScopeActions = allChildScopesWrappingActions().wrappedAround {
-            coroutineScope {
-                for (childScope in childScopes) {
-                    if (effectiveConfiguration.isSequential == true) {
-                        childScope.execute(listener)
-                    } else {
-                        launch {
-                            childScope.execute(listener)
+    override suspend fun execute(track: TestEventTrack) {
+        executeTracking(track) {
+            if (scopeIsEnabled) {
+                val childScopeActions = allChildScopesWrappingActions().wrappedAround {
+                    coroutineScope {
+                        for (childScope in childScopes) {
+                            if (effectiveConfiguration.isSequential == true) {
+                                childScope.execute(track)
+                            } else {
+                                launch {
+                                    childScope.execute(track)
+                                }
+                            }
                         }
                     }
                 }
-            }
-        }
 
-        withExecutionTracking(listener) {
-            withParallelism(effectiveConfiguration.parallelism) {
-                childScopeActions()
+                withParallelism(effectiveConfiguration.parallelism) {
+                    childScopeActions()
+                }
+            } else {
+                // "Execute" child scopes for reporting only.
+                for (childScope in childScopes) {
+                    childScope.execute(track)
+                }
             }
         }
     }

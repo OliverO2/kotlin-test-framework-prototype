@@ -12,5 +12,5 @@ actual suspend fun runTests(vararg suites: Any) {
     withContext(Dispatchers.Default) { }
 
     TestSession.configure()
-    TestSession.execute(IntellijTestLog::add)
+    TestSession.execute(IntellijTestLog)
 }

@@ -10,5 +10,5 @@ actual suspend fun runTests(vararg suites: Any) {
     // It is intended for internal framework testing only.
 
     TestSession.configure()
-    TestSession.execute(IntellijTestLog::add)
+    TestSession.execute(IntellijTestLog)
 }

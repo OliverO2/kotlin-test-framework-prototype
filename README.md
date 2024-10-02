@@ -55,7 +55,6 @@ This project builds a Gradle plugin. Its sample application depends on accessing
 
 ### What could be done
 
-* Report children of a disabled suite where applicable. Currently, the disabled suite `TestSuite3` is not reported by our own test execution (Node, Native, Wasm/WASI).
 * Combine sequential execution and parallelism into one settings class.
 * Use [KotlinNativeStackTraceParser.kt](https://github.com/JetBrains/kotlin/blob/d9ddcd991bf9c6122041f0276af644be0432fa38/libraries/tools/kotlin-gradle-plugin/src/common/kotlin/org/jetbrains/kotlin/gradle/targets/native/internal/KotlinNativeStackTraceParser.kt) to reference source locations in Native stack traces.
 * Check whether to use @DslMarker to avoid suite functions being available in tests.
