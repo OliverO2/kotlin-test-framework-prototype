@@ -16,7 +16,7 @@ import testFramework.Test
 import testFramework.TestScope
 import testFramework.TestSuite
 import testFramework.internal.TestEvent
-import testFramework.internal.TestEventTrack
+import testFramework.internal.TestReport
 import testFramework.internal.TestSession
 import java.util.concurrent.ConcurrentHashMap
 
@@ -61,7 +61,7 @@ internal class JUnitPlatformTestEngine : TestEngine {
 
         runBlocking {
             TestSession.execute(
-                object : TestEventTrack(mode = Mode.EXCLUDE_SKIPPED_DESCENDANTS) {
+                object : TestReport(FeedMode.ENABLED_SCOPES) {
                     override suspend fun add(event: TestEvent) {
                         when (event) {
                             is TestEvent.Starting -> {

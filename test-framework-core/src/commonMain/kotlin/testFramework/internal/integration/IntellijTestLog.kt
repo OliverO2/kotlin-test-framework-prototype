@@ -4,11 +4,11 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import testFramework.Test
 import testFramework.internal.TestEvent
-import testFramework.internal.TestEventTrack
+import testFramework.internal.TestReport
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
-internal object IntellijTestLog : TestEventTrack(mode = Mode.FULL_HIERARCHY) {
+internal object IntellijTestLog : TestReport(FeedMode.ALL_SCOPES) {
     private val outputMutex = Mutex()
 
     override suspend fun add(event: TestEvent) {

@@ -3,10 +3,19 @@ package testFramework.internal
 import kotlinx.datetime.Clock
 import testFramework.TestScope
 
-internal abstract class TestEventTrack(val mode: Mode) {
-    enum class Mode {
-        FULL_HIERARCHY,
-        EXCLUDE_SKIPPED_DESCENDANTS
+/**
+ * A report containing a sequence of test events, each of which will be added via [add] during execution.
+ *
+ * If [feedMode] is [FeedMode.ALL_SCOPES], the report will receive [TestEvent.Starting] and [TestEvent.Finished]
+ * for each scope, whether the scope is disabled or not.
+ *
+ * If [feedMode] is [FeedMode.ENABLED_SCOPES], only enabled scopes will receive the above events. The report for a
+ * disabled scope will receive a single [TestEvent.Finished], and none of the scope's descendants will be reported.
+ */
+internal abstract class TestReport(val feedMode: FeedMode) {
+    enum class FeedMode {
+        ALL_SCOPES,
+        ENABLED_SCOPES
     }
 
     abstract suspend fun add(event: TestEvent)

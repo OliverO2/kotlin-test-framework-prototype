@@ -9,7 +9,7 @@ import testFramework.Test
 import testFramework.TestScope
 import testFramework.TestSuite
 import testFramework.internal.TestEvent
-import testFramework.internal.TestEventTrack
+import testFramework.internal.TestReport
 import testFramework.internal.TestSession
 
 internal typealias JsPromiseLike = Any
@@ -44,7 +44,7 @@ internal suspend fun runTestsKotlinJs() {
 private object TestSessionAdapter {
     private var sessionIsExecuting = false
     private val testResults = mutableMapOf<Test, Channel<Throwable?>>()
-    private val testEventTrack = object : TestEventTrack(mode = Mode.EXCLUDE_SKIPPED_DESCENDANTS) {
+    private val testReport = object : TestReport(FeedMode.ENABLED_SCOPES) {
         override suspend fun add(event: TestEvent) {
             if (event.scope is Test && event is TestEvent.Finished) {
                 testResults(event.scope).send(event.throwable)
@@ -64,7 +64,7 @@ private object TestSessionAdapter {
 
             @OptIn(DelicateCoroutinesApi::class)
             GlobalScope.launch {
-                TestSession.execute(testEventTrack)
+                TestSession.execute(testReport)
             }
         }
 

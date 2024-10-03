@@ -1,7 +1,7 @@
 package testFramework
 
 import testFramework.internal.TestEvent
-import testFramework.internal.TestEventTrack
+import testFramework.internal.TestReport
 
 sealed class TestScope(
     internal open val parent: TestSuite?,
@@ -34,25 +34,25 @@ sealed class TestScope(
         effectiveConfiguration.inheritFrom(parent?.effectiveConfiguration)
     }
 
-    internal abstract suspend fun execute(track: TestEventTrack)
+    internal abstract suspend fun execute(report: TestReport)
 
-    internal suspend fun executeTracking(track: TestEventTrack, action: suspend () -> Unit) {
-        if (!scopeIsEnabled && track.mode == TestEventTrack.Mode.EXCLUDE_SKIPPED_DESCENDANTS) {
-            track.add(TestEvent.Skipped(this))
+    internal suspend fun executeReporting(report: TestReport, action: suspend () -> Unit) {
+        if (!scopeIsEnabled && report.feedMode == TestReport.FeedMode.ENABLED_SCOPES) {
+            report.add(TestEvent.Skipped(this))
             return
         }
 
         val startingEvent = TestEvent.Starting(this)
 
-        track.add(startingEvent)
+        report.add(startingEvent)
 
         try {
             action()
-            track.add(TestEvent.Finished(this, startingEvent))
+            report.add(TestEvent.Finished(this, startingEvent))
         } catch (assertionError: AssertionError) {
-            track.add(TestEvent.Finished(this, startingEvent, assertionError))
+            report.add(TestEvent.Finished(this, startingEvent, assertionError))
         } catch (throwable: Throwable) {
-            track.add(TestEvent.Finished(this, startingEvent, throwable))
+            report.add(TestEvent.Finished(this, startingEvent, throwable))
             throw throwable
         }
     }

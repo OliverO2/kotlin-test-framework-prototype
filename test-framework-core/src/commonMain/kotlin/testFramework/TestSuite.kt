@@ -4,7 +4,7 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import testFramework.internal.TestEventTrack
+import testFramework.internal.TestReport
 import testFramework.internal.TestSession
 import testFramework.internal.withParallelism
 
@@ -69,17 +69,17 @@ open class TestSuite internal constructor(
         }
     }
 
-    override suspend fun execute(track: TestEventTrack) {
-        executeTracking(track) {
+    override suspend fun execute(report: TestReport) {
+        executeReporting(report) {
             if (scopeIsEnabled) {
                 val childScopeActions = allChildScopesWrappingActions().wrappedAround {
                     coroutineScope {
                         for (childScope in childScopes) {
                             if (effectiveConfiguration.isSequential == true) {
-                                childScope.execute(track)
+                                childScope.execute(report)
                             } else {
                                 launch {
-                                    childScope.execute(track)
+                                    childScope.execute(report)
                                 }
                             }
                         }
@@ -92,7 +92,7 @@ open class TestSuite internal constructor(
             } else {
                 // "Execute" child scopes for reporting only.
                 for (childScope in childScopes) {
-                    childScope.execute(track)
+                    childScope.execute(report)
                 }
             }
         }

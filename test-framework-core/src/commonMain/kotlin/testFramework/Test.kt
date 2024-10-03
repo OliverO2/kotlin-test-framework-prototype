@@ -1,6 +1,6 @@
 package testFramework
 
-import testFramework.internal.TestEventTrack
+import testFramework.internal.TestReport
 import testFramework.internal.withParallelism
 
 class Test internal constructor(
@@ -10,8 +10,8 @@ class Test internal constructor(
     private val action: TestAction
 ) : TestScope(parent, simpleName, configuration = configuration) {
 
-    override suspend fun execute(track: TestEventTrack) {
-        executeTracking(track) {
+    override suspend fun execute(report: TestReport) {
+        executeReporting(report) {
             if (scopeIsEnabled) {
                 withParallelism(effectiveConfiguration.parallelism) {
                     action()
