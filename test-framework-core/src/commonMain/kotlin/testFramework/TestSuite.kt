@@ -90,7 +90,7 @@ open class TestSuite internal constructor(
                     childScopeActions()
                 }
             } else {
-                // "Execute" child scopes for reporting only.
+                // "Execute" disabled child scopes for reporting only.
                 for (childScope in childScopes) {
                     childScope.execute(report)
                 }

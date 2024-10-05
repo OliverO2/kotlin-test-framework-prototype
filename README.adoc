@@ -1,0 +1,117 @@
+== A Kotlin Multiplatform Test Framework Prototype
+
+This prototype aims to explore a flexible, concise and maintainable Kotlin
+Multiplatform test framework architecture.
+
+The goal: Testing Kotlin like Kotlin – concise, native everywhere,
+productive, fun. Will this help us get there?
+
+image:documentation/images/Test%20Run.png[Test Run.png]
+
+=== Features
+
+* A *test hierarchy* represented by *nestable `TestScope`s*.
+** ``Test``s are test scopes containing actual test logic with assertions,
+they cannot have child scopes.
+** ``TestSuite``s are test scopes grouping child scopes, they cannot
+contain test logic.
+** A ``TestSession`` is the root of the test hierarchy for an individual
+test run.
+* *Tests and suites* can be *created dynamically* via plain Kotlin.
+* Tests are fully *coroutine-aware*, coroutine contexts mirror the
+suites/tests hierarchy.
+* Suites support *lazily initialized test fixtures* with ``AutoCloseable``
+support. Fixture *initialization and tear-down* (auto-close) functions
+*can suspend*.
+* Suites support a *suspending ``aroundAll``* action.
+* Suite *nesting and suspending* suite-level actions are *fully
+supported on JavaScript* engines, using the Kotlin/JS test infra.
+* The entire framework is platform independent with almost zero
+redundancy.
+* The architecture favors simplicity and aims to avoid implicit
+constructs and indirection.
+
+link:application/src/commonTest/kotlin/com/example/Tests.kt[This
+example] shows how it looks like.
+
+=== Background
+
+I have been working for several years on (non-mobile) frontend and backend stuff, using the two most popular Kotlin test frameworks, https://kotlinlang.org/api/latest/kotlin.test/[kotlin-test] and https://kotest.io/[Kotest]. I am involved in maintaining Kotest. I have also researched other test framework approaches like https://www.spekframework.org/[Spek], https://github.com/failgood/failgood[failgood] and https://opensavvy.gitlab.io/groundwork/prepared/docs/index.html[OpenSavvy Prepared].
+
+What I've been missing so far is the combination of
+
+* an expressive and powerful API with a small API surface,
+* uniform multiplatform functionality (everything works everywhere in the same way),
+* a lean (maintainable) implementation,
+* a complete feature set for common usage scenarios,
+* composability, allowing users to extend the framework easily for special needs,
+* a developer experience with as little surprise (including quirks, bugs) as possible.
+
+The results of my research and experimentation with this prototype are reflected in these xref:documentation/Design Considerations.adoc[Design Considerations]. What matters to me is not maximizing some feature set (au contraire!), but having a well-thought-out, concise and easy-to-understand API, that lets us do testing as productively as possible.
+
+Of course, I've also been researching how to integrate with build tooling, IntelliJ IDEA and Kotlin's existing test infrastructure. Some of my findings are laid out in xref:documentation/Kotlin IDE and Build Tool Interoperability.adoc[Kotlin IDE and Build Tool Interoperability].
+
+=== Bootstrapping A Local Build
+
+This project builds a Gradle plugin. Its sample application depends on
+accessing the Gradle plugin from a repository. Initially, it will not be
+there. To bootstrap this project using a local repository:
+
+[arabic]
+. In ``application/build.gradle.kts``: comment out the line
+``alias(libs.plugins.test.framework.prototype)``.
+. ``./gradlew clean publishAllPublicationsToLocalRepository``
+. In ``application/build.gradle.kts``: re-enable the line
+``alias(libs.plugins.test.framework.prototype)``.
+
+=== Running Tests
+
+* `./gradlew -p application cleanAllTests allTests`
+* `./gradlew -p application cleanAllTests jvmTest`
+* `./gradlew -p application cleanAllTests jsNodeTest`
+* `./gradlew -p application cleanAllTests jsBrowserTest`
+* `./gradlew -p application cleanAllTests wasmJsNodeTest`
+* `./gradlew -p application cleanAllTests wasmJsBrowserTest`
+* `./gradlew -p application cleanAllTests wasmWasiNodeTest`
+* `./gradlew -p application cleanAllTests linuxX64Test`
+
+=== Limitations
+
+* The IDE does not report more than one level of suite nesting for tests
+using the Kotlin/JS infra (JS/Browser, JS/Node, Wasm/JS/Browser). While
+all suites appear, they are not properly nested, because the names of
+intermediate levels are cut out on their way from the test framework to
+the IDE.
+* Integration for IntelliJ IDEA is grossly incomplete:
+** It supports class-level actions (run, debug, jump to source) from the
+test run window for JVM tests only.
+** It does not support non-class scope and method-level actions from the
+test run window.
+** It does not support running individual tests via editor gutters or
+the test run window.
+** It does not support "rerun failed tests" from the test run window
+(this is a limitation of the
+https://github.com/JetBrains/intellij-community/blob/b68794b5d030e424e4e58cfd57e9f3e08bcacac4/plugins/gradle/java/src/action/GradleRerunFailedTestsAction.kt#L89[IJ
+Gradle plugin] and the
+https://github.com/gradle/gradle/issues/19897[Gradle Java test task]).
+** It does not support running failed tests from the inspections window.
+
+=== TODO
+
+* Investigate how to pass test selectors uniformly across platforms.
+* Combine sequential execution and parallelism into one settings class.
+** Use the test dispatcher by default.
+** Use the default dispatcher if concurrent execution is chosen.
+* Restrict suite-specific configuration to suites?
+* Provide some suite-local / global configuration?
+* Use
+https://github.com/JetBrains/kotlin/blob/d9ddcd991bf9c6122041f0276af644be0432fa38/libraries/tools/kotlin-gradle-plugin/src/common/kotlin/org/jetbrains/kotlin/gradle/targets/native/internal/KotlinNativeStackTraceParser.kt[KotlinNativeStackTraceParser.kt]
+to reference source locations in Native stack traces.
+* Check whether to use @DslMarker to avoid suite functions being
+available in tests.
+* Add an IntelliJ plugin to
+** run individual tests from editor run gutters,
+** support non-class scope and method-level actions from the test run
+window,
+** support "rerun failed tests" from the test run window.
+** support "rerun failed tests" from the inspections window.

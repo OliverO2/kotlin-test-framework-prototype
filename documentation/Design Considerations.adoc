@@ -1,0 +1,194 @@
+== Design Considerations for Scalable Testing with Kotlin Multiplatform
+
+=== Scope
+
+A *test framework*
+
+* provides language elements to declare and structure tests,
+* discovers tests,
+* runs tests, and
+* reports test results.
+
+A *test* is basically a function that either succeeds (terminates without an exception) or fails by throwing an `AssertionError`.
+
+Constructing ``AssertionError``s is the responsibility of an *assertion library*, which is outside the scope of this document.
+
+In this document, checkmarks refer to criteria fulfilled by the prototype framework. Unchecked boxes mark criteria the prototype is currently lacking.
+
+=== Structuring tests
+
+The test framework should support
+
+* [x] a test hierarchy represented by nestable ``TestScope``s,
+* [x] ``Test``s, which are test scopes containing actual test logic with assertions (tests cannot have child scopes),
+* [x] ``TestSuite``s, which are test scopes grouping child scopes (suites cannot contain test logic),
+* [x] a `TestSession` as the root of the test hierarchy for an individual test run.
+
+==== Rationale
+
+Larger test sets require flexible structuring capabilities. A single level of grouping, as with class-based suites, is often insufficient.
+
+=== Declaring tests
+
+The test framework should support
+
+* [x] the dynamic declaration of tests via plain Kotlin,
+* [x] the dynamic declaration of test suites via plain Kotlin.
+
+==== Rationale
+
+Dynamic declaration via plain Kotlin supports arbitrarily parameterized tests, while keeping the API surface small and the learning curve short.
+
+In contrast, static constructs like configuration annotations introduce a new, often stringly-typed language, which has to be learned and comes with limited capabilities.
+
+=== Configurability
+
+The test framework should support the following configuration options via plain Kotlin expressions evaluated at run-time:
+
+* [x] ``TestScope``: Enabling/disabling test scopes.
+* [x] ``TestSuite``: Concurrency (sequential, concurrent, parallel execution).
+
+=== Discovery
+
+The framework must discover
+
+* [x] its global (out-of-suite, out-of-test) configuration,
+* [x] top-level tests scopes,
+* [x] test scopes defined dynamically as children of top-level test scopes (recursively).
+
+=== Execution
+
+* [x] The framework must run all tests of a compilation module (typically, a Gradle (sub)project).
+* [ ] The framework should support running tests selectively as determined by selection parameters.
+
+==== Rationale
+
+Selectively running tests is required for build tool functions, like actions to run
+
+* a single test or suite,
+* failed tests only,
+* a subset of tests.
+
+=== Reporting
+
+* [x] The framework must produce a report during test execution. The report must be tailored to the needs of the respective platform's build tooling.
+* [x] The report must be _live_, showing test execution events as they happen. The report is typically consumed live by a listener.
+
+=== IDE integration
+
+An IDE plugin should support the following:
+
+* Discover test scopes during source code analysis, specifically:
+** [ ] top-level tests scopes,
+** [ ] test scopes defined dynamically as children of top-level test scopes (recursively).
+* In editor windows:
+** [ ] Show test run gutters for each test scope discovered with actions for run and debug.
+* In the test run window:
+** [ ] For each test scope, offer actions for run, debug, and jump to source.
+** [ ] Offer the action "rerun failed tests".
+* In the inspections window (Inspection Results – Gradle – JVM languages):
+** [ ] For each failed test scope, offer actions for run, debug, and jump to source.
+
+=== Coroutines
+
+Coroutines are an integral part of the Kotlin ecosystem, and the test framework should treat them as first-class citizens:
+
+* [x] The test framework should support suspending functions and asynchronous execution at all levels.
+
+==== Coroutine Hierarchy
+
+* [x] Each test scope should have its own coroutine, which should be a child of the parent test scope's coroutine.
+* [x] A suite should support invoking a lambda which wraps invocations of its descendants (suites and tests).
+
+NOTE: Wrappers for individual tests are not required. They can easily be provided as custom variants of the `test()` function or custom functions invoked in the body of a test function.
+
+===== Rationale
+
+* A coroutine hierarchy mirroring the suites/tests hierarchy preserves coroutine contexts and supports structured concurrency with safe cancellation.
+* Unlike separate "before" and "after" functions for setup and tear-down actions, a wrapping lambda enables using resource management blocks like
+** `withContext(...) { ... }`,
+** `AutoCloseable.use { ... }`,
+** custom wrappers combining any of the above.
+
+==== Tests run in ``kotlinx.coroutines.test.TestScope`` by default
+
+#Resolve the name clash between _testFramework.TestScope_ and _kotlinx.coroutines.test.TestScope_.#
+
+* [ ] By default, tests run in a `kotlinx.coroutines.test.TestScope`, created as a child of the parent coroutine and invoked via `TestScope.runTest`.
++
+--
+This imples that the following is in effect:
+
+* Single threaded execution
+* Virtual time with delay skipping
+* 60s timeout (configurable)
+* Unhandled exception reporting
+* `backgroundScope` with automatic job cancellation after finishing
+* `testTimeSource`, and others
+--
+
+* Restrictions of top-level `runTest` invocations and https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-test/kotlinx.coroutines.test/-test-result/[TestResult] usage on JS should not apply. Instead:
++
+--
+* [x] ``TestScope``s may appear anywhere in the coroutine hierarchy. Results returned from `runTest` can be ignored.
+* [x] ``TestScope``s may be nested.
+* [x] Multiple ``TestScope``s per test can be used.
+--
+
+References considered:
+
+* https://github.com/Kotlin/kotlinx.coroutines/blob/master/kotlinx-coroutines-test/README.md[kotlinx-coroutines-test README · Kotlin/kotlinx.coroutines]
+* https://developer.android.com/kotlin/coroutines/test#testdispatchers[Testing Kotlin coroutines on Android  |  Android Developers]
+
+=== Concurrency configurations
+
+==== A safe default: Run tests sequentially
+
+* [ ] The framework should provide a safe default for tests by running them sequentially.
+
+===== Rationale
+
+Some tests rely on shared (global) state, or are sensitive to real-time effects. These include:
+
+* Tests using `Dispatchers.setMain` and `Dispatchers.resetMain` for Compose Multiplatform ``ViewModel``s,
+* Tests depending on legacy code,
+* Benchmarks.
+
+==== Modern code can use parallelism
+
+* [ ] The framework should support running tests concurrently with platform-specific parallelism.
+
+===== Rationale
+
+Tests covering modern, coroutines-based, thread-safe code can run concurrently for better performance.
+
+==== Compartments enable selective concurrency
+
+* The framework should support compartmentalization of top-level suites where
+** [ ] suites of each compartment execute in isolation from other compartments' suites,
+** [ ] suites of a compartment execute according to the compartment's configuration regarding sequential or concurrent/parallel execution.
+
+===== Rationale
+
+Tests with different concurrency requirements can live together in one test module. IDE users can selectively run any combination of tests, regardless of their concurrency requirements.
+
+=== Fixtures
+
+The test framework should support fixtures with the following capabilities:
+
+* [x] Fixtures are created lazily. They do not incur a cost in (partial) test runs where they are not used.
+* [x] Fixture initialization and tear-down can suspend.
+* [x] Fixture tear-down occurs automatically when the closing the test scope where they were first used.
+* [x] Fixtures, which are of type `AutoCloseable` will be closed automatically.
+* [x] A closing function can be defined explicitly for each fixture.
+
+==== Rationale
+
+Test fixtures are used frequently. Using fixtures should be as safe and easy as possible. Scoping and automatically closing fixtures reduces boilerplate and avoids resource leaks.
+
+Suspending fixtures are commonly used with repositories, databases, and other data sources.
+
+=== Platform-Independence
+
+* [x] The framework's API should be in the common source set.
+* [x] The framework's functions should work consistently on all platforms.
