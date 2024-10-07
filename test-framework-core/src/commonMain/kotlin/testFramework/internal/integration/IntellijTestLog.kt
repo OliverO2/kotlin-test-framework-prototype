@@ -65,7 +65,11 @@ internal object IntellijTestLog : TestReport(FeedMode.ALL_SCOPES) {
             }
 
             is TestEvent.Finished -> {
-                val resultType = if (event.throwable == null) "SUCCESS" else "FAILURE"
+                val resultType = when {
+                    !event.scope.scopeIsEnabled -> "SKIPPED"
+                    event.throwable == null -> "SUCCESS"
+                    else -> "FAILURE"
+                }
                 addAfterEvent(resultType = resultType, startingEvent = event.startingEvent) {
                     event.throwable?.let { throwable ->
                         throwable.message?.let { errorMsg(it) }
@@ -76,8 +80,7 @@ internal object IntellijTestLog : TestReport(FeedMode.ALL_SCOPES) {
             }
 
             is TestEvent.Skipped -> {
-                addBeforeEvent()
-                addAfterEvent(resultType = "SKIPPED")
+                throw IllegalStateException("${TestEvent.Skipped::class.simpleName} reported unexpectedly")
             }
         }
     }
