@@ -19,9 +19,9 @@ In this document, checkmarks refer to criteria fulfilled by the prototype framew
 
 The test framework should support
 
-* [x] a test hierarchy represented by nestable ``TestScope``s,
-* [x] ``Test``s, which are test scopes containing actual test logic with assertions (tests cannot have child scopes),
-* [x] ``TestSuite``s, which are test scopes grouping child scopes (suites cannot contain test logic),
+* [x] a test hierarchy represented by nestable ``TestElement``s,
+* [x] ``Test``s, which are test elements containing actual test logic with assertions (tests cannot have child elements),
+* [x] ``TestSuite``s, which are test elements grouping child elements (suites cannot contain test logic),
 * [x] a `TestSession` as the root of the test hierarchy for an individual test run.
 
 ==== Rationale
@@ -45,7 +45,7 @@ In contrast, static constructs like configuration annotations introduce a new, o
 
 The test framework should support the following configuration options via plain Kotlin expressions evaluated at run-time:
 
-* [x] ``TestScope``: Enabling/disabling test scopes.
+* [x] ``TestElement``: Enabling/disabling test elements.
 * [x] ``TestSuite``: Concurrency (sequential, concurrent, parallel execution).
 
 === Discovery
@@ -53,8 +53,8 @@ The test framework should support the following configuration options via plain 
 The framework must discover
 
 * [x] its global (out-of-suite, out-of-test) configuration,
-* [x] top-level tests scopes,
-* [x] test scopes defined dynamically as children of top-level test scopes (recursively).
+* [x] top-level tests suites,
+* [x] test elements defined dynamically as children of top-level test suites (recursively).
 
 === Execution
 
@@ -78,16 +78,16 @@ Selectively running tests is required for build tool functions, like actions to 
 
 An IDE plugin should support the following:
 
-* Discover test scopes during source code analysis, specifically:
-** [ ] top-level tests scopes,
-** [ ] test scopes defined dynamically as children of top-level test scopes (recursively).
+* Discover test elements during source code analysis, specifically:
+** [ ] top-level tests suites,
+** [ ] test elements defined dynamically as children of top-level test suites (recursively).
 * In editor windows:
-** [ ] Show test run gutters for each test scope discovered with actions for run and debug.
+** [ ] Show test run gutters for each test element discovered with actions for run and debug.
 * In the test run window:
-** [ ] For each test scope, offer actions for run, debug, and jump to source.
+** [ ] For each test element, offer actions for run, debug, and jump to source.
 ** [ ] Offer the action "rerun failed tests".
 * In the inspections window (Inspection Results – Gradle – JVM languages):
-** [ ] For each failed test scope, offer actions for run, debug, and jump to source.
+** [ ] For each failed test, offer actions for run, debug, and jump to source.
 
 === Coroutines
 
@@ -97,7 +97,7 @@ Coroutines are an integral part of the Kotlin ecosystem, and the test framework 
 
 ==== Coroutine Hierarchy
 
-* [x] Each test scope should have its own coroutine, which should be a child of the parent test scope's coroutine.
+* [x] Each test element should have its own coroutine, which should be a child of the parent test suite's coroutine.
 * [x] A suite should support invoking a lambda which wraps invocations of its descendants (suites and tests).
 
 NOTE: Wrappers for individual tests are not required. They can easily be provided as custom variants of the `test()` function or custom functions invoked in the body of a test function.
@@ -111,8 +111,6 @@ NOTE: Wrappers for individual tests are not required. They can easily be provide
 ** custom wrappers combining any of the above.
 
 ==== Tests run in ``kotlinx.coroutines.test.TestScope`` by default
-
-#Resolve the name clash between _testFramework.TestScope_ and _kotlinx.coroutines.test.TestScope_.#
 
 * [ ] By default, tests run in a `kotlinx.coroutines.test.TestScope`, created as a child of the parent coroutine and invoked via `TestScope.runTest`.
 +
@@ -178,7 +176,7 @@ The test framework should support fixtures with the following capabilities:
 
 * [x] Fixtures are created lazily. They do not incur a cost in (partial) test runs where they are not used.
 * [x] Fixture initialization and tear-down can suspend.
-* [x] Fixture tear-down occurs automatically when the closing the test scope where they were first used.
+* [x] Fixture tear-down occurs automatically when the closing the test element where they were first used.
 * [x] Fixtures, which are of type `AutoCloseable` will be closed automatically.
 * [x] A closing function can be defined explicitly for each fixture.
 

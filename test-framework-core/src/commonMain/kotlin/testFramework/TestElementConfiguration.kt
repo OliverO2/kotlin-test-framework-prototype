@@ -1,6 +1,6 @@
 package testFramework
 
-class TestScopeConfiguration {
+class TestElementConfiguration {
     var isEnabled: Boolean = true // children inherit a disabled state
     var isFocused: Boolean = false
     var isSequential: Boolean? = null // inheritable
@@ -12,7 +12,7 @@ class TestScopeConfiguration {
             field = value
         }
 
-    internal fun inheritFrom(parent: TestScopeConfiguration?) {
+    internal fun inheritFrom(parent: TestElementConfiguration?) {
         if (parent != null) {
             if (!parent.isEnabled) isEnabled = false // Inherit a 'disabled' state
             if (isSequential == null) isSequential = parent.isSequential

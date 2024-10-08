@@ -6,13 +6,13 @@ import testFramework.internal.withParallelism
 class Test internal constructor(
     parent: TestSuite,
     simpleName: String,
-    configuration: TestScopeConfiguration.() -> Unit = {},
+    configuration: TestElementConfiguration.() -> Unit = {},
     private val action: TestAction
-) : TestScope(parent, simpleName, configuration = configuration) {
+) : TestElement(parent, simpleName, configuration = configuration) {
 
     override suspend fun execute(report: TestReport) {
         executeReporting(report) {
-            if (scopeIsEnabled) {
+            if (isEnabled) {
                 withParallelism(effectiveConfiguration.parallelism) {
                     action()
                 }

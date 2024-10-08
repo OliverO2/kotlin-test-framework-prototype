@@ -6,7 +6,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import testFramework.Test
-import testFramework.TestScope
+import testFramework.TestElement
 import testFramework.TestSession
 import testFramework.TestSuite
 import testFramework.internal.TestEvent
@@ -15,16 +15,16 @@ import testFramework.internal.TestReport
 internal typealias JsPromiseLike = Any
 
 internal suspend fun runTestsKotlinJs() {
-    fun TestScope.registerWithKotlinJsTestFramework() {
+    fun TestElement.registerWithKotlinJsTestFramework() {
         when (this) {
             is Test -> {
-                kotlinJsTestFramework.test(simpleScopeName, ignored = !scopeIsEnabled) {
+                kotlinJsTestFramework.test(simpleElementName, ignored = !isEnabled) {
                     TestSessionAdapter.produceTestResult(this)
                 }
             }
             is TestSuite -> {
-                kotlinJsTestFramework.suite(simpleScopeName, ignored = !scopeIsEnabled) {
-                    childScopes.forEach {
+                kotlinJsTestFramework.suite(simpleElementName, ignored = !isEnabled) {
+                    childElements.forEach {
                         it.registerWithKotlinJsTestFramework()
                     }
                 }
@@ -44,10 +44,10 @@ internal suspend fun runTestsKotlinJs() {
 private object TestSessionAdapter {
     private var sessionIsExecuting = false
     private val testResults = mutableMapOf<Test, Channel<Throwable?>>()
-    private val testReport = object : TestReport(FeedMode.ENABLED_SCOPES) {
+    private val testReport = object : TestReport(FeedMode.ENABLED_ELEMENTS) {
         override suspend fun add(event: TestEvent) {
-            if (event.scope is Test && event is TestEvent.Finished) {
-                testResults(event.scope).send(event.throwable)
+            if (event.element is Test && event is TestEvent.Finished) {
+                testResults(event.element).send(event.throwable)
             }
         }
     }

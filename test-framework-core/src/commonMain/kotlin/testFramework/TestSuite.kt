@@ -14,11 +14,11 @@ typealias TestSuiteWrappingAction = suspend (suiteAction: TestSuiteAction) -> Un
 open class TestSuite internal constructor(
     parent: TestSuite?,
     simpleNameOrNull: String? = null,
-    configuration: TestScopeConfiguration.() -> Unit = {},
+    configuration: TestElementConfiguration.() -> Unit = {},
     private val componentsDefinition: TestSuiteComponentsDefinition? = null
-) : TestScope(parent, simpleNameOrNull, configuration) {
+) : TestElement(parent, simpleNameOrNull, configuration) {
 
-    internal val childScopes: MutableList<TestScope> = mutableListOf()
+    internal val childElements: MutableList<TestElement> = mutableListOf()
 
     private var aroundAllAction: TestSuiteWrappingAction? = null
 
@@ -35,8 +35,8 @@ open class TestSuite internal constructor(
         componentsDefinition: TestSuiteComponentsDefinition
     ) : this(parent = compartment, componentsDefinition = componentsDefinition)
 
-    internal fun registerChildScope(childScope: TestScope) {
-        childScopes.add(childScope)
+    internal fun registerChildElement(childElement: TestElement) {
+        childElements.add(childElement)
     }
 
     fun aroundAll(action: TestSuiteWrappingAction) {
@@ -47,7 +47,7 @@ open class TestSuite internal constructor(
         TestSuite(this, name, componentsDefinition = componentsDefinition)
     }
 
-    fun test(name: String, configuration: TestScopeConfiguration.() -> Unit = {}, action: TestAction) {
+    fun test(name: String, configuration: TestElementConfiguration.() -> Unit = {}, action: TestAction) {
         Test(this, name, configuration = configuration, action)
     }
 
@@ -56,20 +56,20 @@ open class TestSuite internal constructor(
 
         componentsDefinition?.invoke(this)
 
-        childScopes.forEach {
+        childElements.forEach {
             it.configure()
         }
 
-        if (scopeIsEnabled && childScopes.isNotEmpty()) {
-            if (childScopes.any { it.scopeIsFocused }) {
-                // Disable all non-focused child scopes (disabling does not propagate to transitive child scopes).
-                childScopes.forEach {
-                    it.scopeIsEnabled = it.scopeIsFocused
+        if (isEnabled && childElements.isNotEmpty()) {
+            if (childElements.any { it.isFocused }) {
+                // Disable all non-focused child elements (disabling does not propagate to transitive child elements).
+                childElements.forEach {
+                    it.isEnabled = it.isFocused
                 }
             } else {
-                // Disable this scope if none of its child scopes are enabled.
-                if (!childScopes.any { it.scopeIsEnabled }) {
-                    scopeIsEnabled = false
+                // Disable this element if none of its child elements are enabled.
+                if (!childElements.any { it.isEnabled }) {
+                    isEnabled = false
                 }
             }
         }
@@ -77,15 +77,15 @@ open class TestSuite internal constructor(
 
     override suspend fun execute(report: TestReport) {
         executeReporting(report) {
-            if (scopeIsEnabled) {
-                val childScopeActions = allChildScopesWrappingActions().wrappedAround {
+            if (isEnabled) {
+                val childElementActions = allChildElementsWrappingActions().wrappedAround {
                     coroutineScope {
-                        for (childScope in childScopes) {
+                        for (childElement in childElements) {
                             if (effectiveConfiguration.isSequential == true) {
-                                childScope.execute(report)
+                                childElement.execute(report)
                             } else {
                                 launch {
-                                    childScope.execute(report)
+                                    childElement.execute(report)
                                 }
                             }
                         }
@@ -93,12 +93,12 @@ open class TestSuite internal constructor(
                 }
 
                 withParallelism(effectiveConfiguration.parallelism) {
-                    childScopeActions()
+                    childElementActions()
                 }
             } else {
-                // "Execute" disabled child scopes for reporting only.
-                for (childScope in childScopes) {
-                    childScope.execute(report)
+                // "Execute" disabled child elements for reporting only.
+                for (childElement in childElements) {
+                    childElement.execute(report)
                 }
             }
         }
@@ -109,8 +109,8 @@ open class TestSuite internal constructor(
             { wrappingAction(innerAction) }
         }
 
-    /** Returns actions wrapping around all child scope's execution, innermost first. */
-    private fun allChildScopesWrappingActions(): List<TestSuiteWrappingAction> = listOfNotNull(
+    /** Returns actions wrapping around all child element's execution, innermost first. */
+    private fun allChildElementsWrappingActions(): List<TestSuiteWrappingAction> = listOfNotNull(
         aroundAllAction,
         fixtureLifecycleAction()
     )

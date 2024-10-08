@@ -8,26 +8,26 @@ import testFramework.internal.TestReport
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
-internal object IntellijTestLog : TestReport(FeedMode.ALL_SCOPES) {
+internal object IntellijTestLog : TestReport(FeedMode.ALL_ELEMENTS) {
     private val outputMutex = Mutex()
 
     override suspend fun add(event: TestEvent) {
-        val parentScope = event.scope.parent
+        val parentElement = event.element.parent
 
         // Apparently, `className` must be unique, even across platform targets. Otherwise, IntelliJ's "run test"
         // window will mix tests for different targets under common `className` hierarchy nodes.
-        // Therefore, we cannot use `event.scope::class.simpleName` here.
+        // Therefore, we cannot use `event.element::class.simpleName` here.
         // Unfortunately, if IntelliJ is not given a correct fully qualified class name, it does not offer to run a
         // single test class via its run window.
-        val className = event.scope.scopeName
+        val className = event.element.elementName
 
         suspend fun addBeforeEvent() {
             ijLog {
-                event(type = if (event.scope is Test) "beforeTest" else "beforeSuite") {
-                    test(id = event.scope.scopeName, parentId = parentScope?.scopeName) {
+                event(type = if (event.element is Test) "beforeTest" else "beforeSuite") {
+                    test(id = event.element.elementName, parentId = parentElement?.elementName) {
                         descriptor(
-                            name = event.scope.scopeName,
-                            displayName = event.scope.simpleScopeName,
+                            name = event.element.elementName,
+                            displayName = event.element.simpleElementName,
                             className = className
                         )
                     }
@@ -41,11 +41,11 @@ internal object IntellijTestLog : TestReport(FeedMode.ALL_SCOPES) {
             content: IjLog.Event.Test.Result.() -> Unit = {}
         ) {
             ijLog {
-                event(type = if (event.scope is Test) "afterTest" else "afterSuite") {
-                    test(id = event.scope.scopeName, parentId = parentScope?.scopeName) {
+                event(type = if (event.element is Test) "afterTest" else "afterSuite") {
+                    test(id = event.element.elementName, parentId = parentElement?.elementName) {
                         descriptor(
-                            name = event.scope.scopeName,
-                            displayName = event.scope.simpleScopeName,
+                            name = event.element.elementName,
+                            displayName = event.element.simpleElementName,
                             className = className
                         )
                         result(
@@ -66,7 +66,7 @@ internal object IntellijTestLog : TestReport(FeedMode.ALL_SCOPES) {
 
             is TestEvent.Finished -> {
                 val resultType = when {
-                    !event.scope.scopeIsEnabled -> "SKIPPED"
+                    !event.element.isEnabled -> "SKIPPED"
                     event.throwable == null -> "SUCCESS"
                     else -> "FAILURE"
                 }

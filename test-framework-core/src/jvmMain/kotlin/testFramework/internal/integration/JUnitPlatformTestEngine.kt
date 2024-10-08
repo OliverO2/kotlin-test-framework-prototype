@@ -15,7 +15,7 @@ import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
 import org.junit.platform.engine.support.descriptor.ClassSource
 import org.junit.platform.engine.support.descriptor.EngineDescriptor
 import testFramework.Test
-import testFramework.TestScope
+import testFramework.TestElement
 import testFramework.TestSession
 import testFramework.TestSuite
 import testFramework.annotations.TestSessionDeclaration
@@ -25,7 +25,7 @@ import testFramework.internal.initializeTestFramework
 import java.util.concurrent.ConcurrentHashMap
 
 private var classLevelTestSuites = setOf<TestSuite>()
-private val scopeDescriptors = ConcurrentHashMap<TestScope, AbstractTestDescriptor>()
+private val testElementDescriptors = ConcurrentHashMap<TestElement, AbstractTestDescriptor>()
 
 internal class JUnitPlatformTestEngine : TestEngine {
     override fun getId(): String = "kotlin-test-framework-prototype"
@@ -89,7 +89,7 @@ internal class JUnitPlatformTestEngine : TestEngine {
             "${this::class.qualifiedName}"
         ).apply {
             log("created EngineDescriptor(${this.uniqueId}, $displayName)")
-            scopeDescriptors[TestSession.global] = this
+            testElementDescriptors[TestSession.global] = this
             addChild(TestSession.global.newPlatformDescriptor(uniqueId))
         }
     }
@@ -106,28 +106,28 @@ internal class JUnitPlatformTestEngine : TestEngine {
 
         runBlocking {
             TestSession.global.execute(
-                object : TestReport(FeedMode.ENABLED_SCOPES) {
+                object : TestReport(FeedMode.ENABLED_ELEMENTS) {
                     override suspend fun add(event: TestEvent) {
                         when (event) {
                             is TestEvent.Starting -> {
-                                log("${event.scope.platformDescriptor}: ${event.scope} starting")
-                                listener.executionStarted(event.scope.platformDescriptor)
+                                log("${event.element.platformDescriptor}: ${event.element} starting")
+                                listener.executionStarted(event.element.platformDescriptor)
                             }
 
                             is TestEvent.Finished -> {
                                 log(
-                                    "${event.scope.platformDescriptor}: ${event.scope} finished," +
+                                    "${event.element.platformDescriptor}: ${event.element} finished," +
                                         " result=${event.executionResult})"
                                 )
                                 listener.executionFinished(
-                                    event.scope.platformDescriptor,
+                                    event.element.platformDescriptor,
                                     event.executionResult
                                 )
                             }
 
                             is TestEvent.Skipped -> {
-                                log("${event.scope.platformDescriptor}: ${event.scope} skipped")
-                                listener.executionSkipped(event.scope.platformDescriptor, "disabled")
+                                log("${event.element.platformDescriptor}: ${event.element} skipped")
+                                listener.executionSkipped(event.element.platformDescriptor, "disabled")
                             }
                         }
                     }
@@ -137,13 +137,13 @@ internal class JUnitPlatformTestEngine : TestEngine {
     }
 }
 
-private class TestScopeJUnitPlatformDescriptor(
+private class TestElementJUnitPlatformDescriptor(
     uniqueId: UniqueId,
     displayName: String,
     source: TestSource?,
-    val scope: TestScope
+    val element: TestElement
 ) : AbstractTestDescriptor(uniqueId, displayName, source) {
-    override fun getType(): TestDescriptor.Type = when (scope) {
+    override fun getType(): TestDescriptor.Type = when (element) {
         is Test -> TestDescriptor.Type.TEST
         is TestSuite -> TestDescriptor.Type.CONTAINER
     }
@@ -151,41 +151,41 @@ private class TestScopeJUnitPlatformDescriptor(
     override fun toString(): String = "PD(uId=$uniqueId, dN=\"$displayName\", t=$type)"
 }
 
-private fun TestScope.newPlatformDescriptor(parentUniqueId: UniqueId): TestScopeJUnitPlatformDescriptor {
+private fun TestElement.newPlatformDescriptor(parentUniqueId: UniqueId): TestElementJUnitPlatformDescriptor {
     val source: TestSource?
     val uniqueId: UniqueId
-    val scope = this
+    val element = this
 
     if (classLevelTestSuites.contains(this)) {
-        uniqueId = parentUniqueId.append("class", scope::class.qualifiedName!!)
-        source = ClassSource.from(scope::class.java)
+        uniqueId = parentUniqueId.append("class", element::class.qualifiedName!!)
+        source = ClassSource.from(element::class.java)
     } else {
-        val segmentType = when (scope) {
+        val segmentType = when (element) {
             is Test -> "test"
             is TestSession -> "session"
             is TestSession.Compartment -> "compartment"
             is TestSuite -> "suite"
         }
-        uniqueId = parentUniqueId.append(segmentType, simpleScopeName)
+        uniqueId = parentUniqueId.append(segmentType, simpleElementName)
         source = null
     }
 
-    return TestScopeJUnitPlatformDescriptor(
+    return TestElementJUnitPlatformDescriptor(
         uniqueId = uniqueId,
-        displayName = simpleScopeName,
+        displayName = simpleElementName,
         source = source,
-        scope = scope
+        element = element
     ).apply {
         log("created TestDescriptor($uniqueId, $displayName)")
-        scopeDescriptors[scope] = this
+        testElementDescriptors[element] = this
         if (this@newPlatformDescriptor is TestSuite) {
-            childScopes.forEach { addChild(it.newPlatformDescriptor(uniqueId)) }
+            childElements.forEach { addChild(it.newPlatformDescriptor(uniqueId)) }
         }
     }
 }
 
-private val TestScope.platformDescriptor: AbstractTestDescriptor get() =
-    checkNotNull(scopeDescriptors[this]) { "Scope $this is missing its TestDescriptor" }
+private val TestElement.platformDescriptor: AbstractTestDescriptor get() =
+    checkNotNull(testElementDescriptors[this]) { "$this is missing its TestDescriptor" }
 
 private val TestEvent.Finished.executionResult: TestExecutionResult get() =
     when (throwable) {

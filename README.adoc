@@ -10,15 +10,15 @@ image:documentation/images/Test%20Run.png[Test Run.png]
 
 === Features
 
-* A *test hierarchy* represented by *nestable ``TestScope``s*.
-** ``Test``s are test scopes containing actual test logic with assertions, they cannot have child scopes.
-** ``TestSuite``s are test scopes grouping child scopes, they cannot contain test logic.
+* A *test hierarchy* represented by *nestable ``TestElement``s*.
+** ``Test``s are test elements containing actual test logic with assertions, they cannot have child elements.
+** ``TestSuite``s are test elements grouping child elements, they cannot contain test logic.
 ** A ``TestSession`` is the root of the test hierarchy for an individual test run.
 * *Tests and suites* can be *created dynamically* via plain Kotlin.
 * Tests are fully *coroutine-aware*, coroutine contexts mirror the suites/tests hierarchy.
 * Suites support *lazily initialized test fixtures* with ``AutoCloseable``support. Fixture *initialization and tear-down* (auto-close) functions *can suspend*.
 * Suites support a *suspending ``aroundAll``* action.
-* Suite *nesting and suspending* suite-level actions are *fully supported on JavaScript* engines, using the Kotlin/JS test infra.
+* *Suite nesting* and *suspending suite-level actions* are *fully supported on JavaScript* engines, using the Kotlin/JS test infra.
 * A global *TestSession* provides configuration defaults. A customized variant can be declared.
 * *Compartments* isolate suites with different *concurrency requirements*.
 * The entire framework is platform independent with almost zero redundancy.
@@ -68,7 +68,7 @@ This project builds a Gradle plugin. Its sample application depends on accessing
 * The IDE does not report more than one level of suite nesting for tests using the Kotlin/JS infra (JS/Browser, JS/Node, Wasm/JS/Browser). While all suites appear, they are not properly nested, because the names of intermediate levels are cut out on their way from the test framework to the IDE.
 * Integration for IntelliJ IDEA is grossly incomplete:
 ** It supports class-level actions (run, debug, jump to source) from the test run window for JVM tests only.
-** It does not support non-class scope and method-level actions from the test run window.
+** It does not support non-class suite/test actions from the test run window.
 ** It does not support running individual tests via editor gutters or the test run window.
 ** It does not support "rerun failed tests" from the test run window.
 ** It does not support running failed tests from the inspections window.
@@ -80,6 +80,6 @@ This project builds a Gradle plugin. Its sample application depends on accessing
 ** Use the test dispatcher by default.
 ** Use the default dispatcher if concurrent execution is chosen.
 * Restrict suite-specific configuration to suites?
-* Use https://github.com/JetBrains/kotlin/blob/d9ddcd991bf9c6122041f0276af644be0432fa38/libraries/tools/kotlin-gradle-plugin/src/common/kotlin/org/jetbrains/kotlin/gradle/targets/native/internal/KotlinNativeStackTraceParser.kt[KotlinNativeStackTraceParser.kt]to reference source locations in Native stack traces.
+* Use https://github.com/JetBrains/kotlin/blob/d9ddcd991bf9c6122041f0276af644be0432fa38/libraries/tools/kotlin-gradle-plugin/src/common/kotlin/org/jetbrains/kotlin/gradle/targets/native/internal/KotlinNativeStackTraceParser.kt[KotlinNativeStackTraceParser.kt] to reference source locations in Native stack traces.
 * Check whether to use `@DslMarker` to avoid suite functions being available in tests.
 * Add an IntelliJ plugin.

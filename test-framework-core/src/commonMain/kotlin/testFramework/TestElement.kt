@@ -3,31 +3,37 @@ package testFramework
 import testFramework.internal.TestEvent
 import testFramework.internal.TestReport
 
-sealed class TestScope(
+sealed class TestElement(
     internal open val parent: TestSuite?,
     private val simpleNameOrNull: String?,
-    configuration: TestScopeConfiguration.() -> Unit = {}
+    configuration: TestElementConfiguration.() -> Unit = {}
 ) {
-    val simpleScopeName: String by lazy {
-        simpleNameOrNull?.prefixesRemoved() ?: this::class.simpleName ?: "[TestScope]"
+    val simpleElementName: String by lazy {
+        simpleNameOrNull?.prefixesRemoved() ?: this::class.simpleName ?: "[TestElement]"
     }
 
-    val scopeName: String get() = if (parent != null) "${parent?.scopeName}.$simpleScopeName" else simpleScopeName
+    val elementName: String get() = if (parent !=
+        null
+    ) {
+        "${parent?.elementName}.$simpleElementName"
+    } else {
+        simpleElementName
+    }
 
-    protected var effectiveConfiguration: TestScopeConfiguration = TestScopeConfiguration().apply {
+    protected var effectiveConfiguration: TestElementConfiguration = TestElementConfiguration().apply {
         configuration()
         if (simpleNameOrNull?.startsWith('!') == true) isEnabled = false
         if (simpleNameOrNull?.startsWith("f:") == true) isFocused = true
     }
 
-    var scopeIsEnabled by effectiveConfiguration::isEnabled
-    var scopeIsFocused by effectiveConfiguration::isFocused
-    var scopeIsSequential by effectiveConfiguration::isSequential
-    var scopeParallelism by effectiveConfiguration::parallelism
+    var isEnabled by effectiveConfiguration::isEnabled
+    var isFocused by effectiveConfiguration::isFocused
+    var isSequential by effectiveConfiguration::isSequential
+    var parallelism by effectiveConfiguration::parallelism
 
     init {
         @Suppress("LeakingThis")
-        parent?.registerChildScope(this)
+        parent?.registerChildElement(this)
     }
 
     internal open fun configure() {
@@ -37,7 +43,7 @@ sealed class TestScope(
     internal abstract suspend fun execute(report: TestReport)
 
     internal suspend fun executeReporting(report: TestReport, action: suspend () -> Unit) {
-        if (!scopeIsEnabled && report.feedMode == TestReport.FeedMode.ENABLED_SCOPES) {
+        if (!isEnabled && report.feedMode == TestReport.FeedMode.ENABLED_ELEMENTS) {
             report.add(TestEvent.Skipped(this))
             return
         }
@@ -57,7 +63,7 @@ sealed class TestScope(
         }
     }
 
-    override fun toString(): String = "${this::class.simpleName}($scopeName)"
+    override fun toString(): String = "${this::class.simpleName}($elementName)"
 }
 
 private fun String.prefixesRemoved(): String = when {

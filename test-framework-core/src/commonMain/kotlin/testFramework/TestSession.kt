@@ -1,7 +1,7 @@
 package testFramework
 
 open class TestSession protected constructor(
-    configuration: TestScopeConfiguration.() -> Unit = {
+    configuration: TestElementConfiguration.() -> Unit = {
         isSequential = true
     },
     defaultCompartment: (() -> Compartment) = { SequentialCompartment }
@@ -26,7 +26,7 @@ open class TestSession protected constructor(
 
     internal constructor() : this(configuration = { isSequential = true })
 
-    open class Compartment(name: String, configuration: TestScopeConfiguration.() -> Unit) :
+    open class Compartment(name: String, configuration: TestElementConfiguration.() -> Unit) :
         TestSuite(parent = global, simpleNameOrNull = "@$name", configuration = configuration)
 
     companion object {

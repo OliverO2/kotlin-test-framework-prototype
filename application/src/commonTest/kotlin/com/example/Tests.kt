@@ -22,14 +22,14 @@ import kotlin.time.Duration.Companion.seconds
 class TestSuite1 :
     TestSuite(
         {
-            // scopeParallelism = testPlatform.parallelism
+            // parallelism = testPlatform.parallelism
 
             val fixtureA = fixture { MyFirstFixture(this) } closeWith { closeSuspending() }
 
-            aroundAll { scopeAction ->
+            aroundAll { childElementActions ->
                 log("aroundAll TestSuite1 start")
                 withContext(CoroutineName("aroundAll TestSuite1")) {
-                    scopeAction()
+                    childElementActions()
                 }
                 log("aroundAll TestSuite1 end")
             }
@@ -42,10 +42,10 @@ class TestSuite1 :
             suite("child-suite2") {
                 val fixtureB = fixture { MySecondFixture(this) }
 
-                aroundAll { scopeAction ->
+                aroundAll { childElementActions ->
                     log("aroundAll TestSuite1.child-suite2 start")
                     withContext(CoroutineName("aroundAll TestSuite1.child-suite2")) {
-                        scopeAction()
+                        childElementActions()
                     }
                     log("aroundAll TestSuite1.child-suite2 end")
                 }
@@ -124,7 +124,7 @@ private data class MyFirstFixture(
         state = "closed"
     }
 
-    override fun toString(): String = "${this::class.simpleName}(${suite.simpleScopeName}, i=$incarnation, s=$state)"
+    override fun toString(): String = "${this::class.simpleName}(${suite.simpleElementName}, i=$incarnation, s=$state)"
 
     companion object {
         val incarnationCount = atomic(0)
@@ -146,7 +146,7 @@ private data class MySecondFixture(
         state = "closed"
     }
 
-    override fun toString(): String = "${this::class.simpleName}(${suite.simpleScopeName}, i=$incarnation, s=$state)"
+    override fun toString(): String = "${this::class.simpleName}(${suite.simpleElementName}, i=$incarnation, s=$state)"
 
     companion object {
         val incarnationCount = atomic(0)
@@ -164,8 +164,8 @@ fun TestSuite.test(name: String, timeout: Duration, action: TestAction) = test(n
 }
 
 private fun TestSuite.log(message: String) {
-    // println("[${testPlatform.threadDisplayName()}] $scopeName: $message")
-    println("$scopeName: $message\n")
+    // println("[${testPlatform.threadDisplayName()}] $elementName: $message")
+    println("$elementName: $message\n")
 }
 
 private fun fail(message: String): Unit = throw AssertionError(message)
