@@ -7,10 +7,10 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import testFramework.Test
 import testFramework.TestScope
+import testFramework.TestSession
 import testFramework.TestSuite
 import testFramework.internal.TestEvent
 import testFramework.internal.TestReport
-import testFramework.internal.TestSession
 
 internal typealias JsPromiseLike = Any
 
@@ -32,12 +32,12 @@ internal suspend fun runTestsKotlinJs() {
         }
     }
 
-    TestSession.configure()
+    TestSession.global.configure()
 
     if (kotlinJsTestFrameworkAvailable()) {
-        TestSession.registerWithKotlinJsTestFramework()
+        TestSession.global.registerWithKotlinJsTestFramework()
     } else {
-        TestSession.execute(IntellijTestLog)
+        TestSession.global.execute(IntellijTestLog)
     }
 }
 
@@ -64,7 +64,7 @@ private object TestSessionAdapter {
 
             @OptIn(DelicateCoroutinesApi::class)
             GlobalScope.launch {
-                TestSession.execute(testReport)
+                TestSession.global.execute(testReport)
             }
         }
 

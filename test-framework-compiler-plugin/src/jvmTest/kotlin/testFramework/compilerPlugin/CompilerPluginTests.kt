@@ -9,6 +9,7 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.jetbrains.kotlin.incremental.deleteRecursivelyOrThrow
+import testFramework.TestSession
 import java.io.ByteArrayOutputStream
 import java.io.OutputStream
 import java.io.PrintStream
@@ -18,31 +19,29 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCompilerApi::class)
-class CompilerPluginTests {
+private class CompilerPluginTests {
     @Test
-    fun resolution() {
+    fun suiteDiscovery() {
         listOf("com.example", "").forEach { packageName ->
             println("=== packageName='$packageName' ===")
 
             val packageDeclaration = if (packageName.isEmpty()) "" else "package $packageName"
-            val packageNameDot = if (packageName.isEmpty()) "" else "$packageName."
             val d = "$"
 
             compilation(
                 """
                     $packageDeclaration
                     
-                    import kotlinx.coroutines.runBlocking
-                    import testFramework.annotations.TestDeclaration
+                    import testFramework.annotations.TestSuiteDeclaration
 
-                    @TestDeclaration
+                    @TestSuiteDeclaration
                     class TestSuiteOne {
                         init {
                             println("$d{this::class.qualifiedName}")
                         }
                     }
 
-                    @TestDeclaration
+                    @TestSuiteDeclaration
                     class TestSuiteTwo {
                         init {
                             println("$d{this::class.qualifiedName}")
@@ -50,23 +49,10 @@ class CompilerPluginTests {
                     }
                 """,
                 debugEnabled = true,
-                jvmStandaloneEnabled = true
-            ) {
-                println("--- Messages ---")
-                println(messages)
+                executionPackageName = packageName
+            ) { capturedStdout ->
 
-                val entryPointClass = classLoader.loadClass("${packageNameDot}MainKt")
-                val capturedStdout = capturedStdout {
-                    runBlocking {
-                        entryPointClass.getDeclaredMethod("main", Continuation::class.java).invoke(
-                            entryPointClass,
-                            Continuation<Unit>(currentCoroutineContext()) {}
-                        )
-                    }
-                }
-
-                println("--- Standard Output ---")
-                println(capturedStdout)
+                val packageNameDot = if (packageName.isEmpty()) "" else "$packageName."
 
                 assertTrue(
                     """
@@ -80,17 +66,92 @@ class CompilerPluginTests {
     }
 
     @Test
+    fun initialization() {
+        val packageName = "com.example"
+
+        val d = "$"
+
+        compilation(
+            """
+                package $packageName
+                
+                import testFramework.annotations.TestSessionDeclaration
+                import testFramework.annotations.TestSuiteDeclaration
+                import testFramework.TestSession
+                import testFramework.TestSuite
+
+                @TestSuiteDeclaration
+                class TestSuiteOne : TestSuite({
+                    println("$d{this::class.qualifiedName}")
+                })
+                
+                @TestSessionDeclaration
+                class MyTestSession : TestSession() {
+                    init {
+                        println("$d{this::class.qualifiedName}")
+                    }
+                }
+
+                @TestSuiteDeclaration
+                class TestSuiteTwo : TestSuite({
+                    println("$d{this::class.qualifiedName}")
+                })
+            """,
+            debugEnabled = true,
+            executionPackageName = packageName
+        ) { capturedStdout ->
+
+            assertTrue(
+                """
+                    $packageName.MyTestSession
+                    $packageName.TestSuiteOne
+                    $packageName.TestSuiteTwo
+                """.trimIndent() in capturedStdout,
+                capturedStdout
+            )
+        }
+    }
+
+    @Test
+    fun insistOnSingleTestSession() {
+        compilation(
+            """
+                package com.example
+                
+                import testFramework.annotations.TestSessionDeclaration
+                import testFramework.annotations.TestSuiteDeclaration
+                import testFramework.TestSession
+                import testFramework.TestSuite
+
+                @TestSuiteDeclaration
+                class TestSuiteOne : TestSuite({})
+                
+                @TestSessionDeclaration
+                class MyTestSession : TestSession()
+
+                @TestSuiteDeclaration
+                class TestSuiteTwo : TestSuite({})
+                
+                @TestSessionDeclaration
+                class MyOtherTestSession : TestSession()
+            """,
+            expectedExitCode = KotlinCompilation.ExitCode.COMPILATION_ERROR
+        ) {
+            assertTrue("Found multiple annotations @TestSessionDeclaration" in messages)
+        }
+    }
+
+    @Test
     fun debugEnabled() {
         compilation(
             """
-                import testFramework.annotations.TestDeclaration
+                import testFramework.annotations.TestSuiteDeclaration
 
-                @TestDeclaration
+                @TestSuiteDeclaration
                 class TestSuiteOne
             """,
             debugEnabled = true
         ) {
-            println(messages)
             assertTrue("[DEBUG] Found test suite 'TestSuiteOne'" in messages)
         }
     }
@@ -104,7 +165,6 @@ class CompilerPluginTests {
             classPathInheritanceEnabled = false,
             expectedExitCode = KotlinCompilation.ExitCode.COMPILATION_ERROR
         ) {
-            println(messages)
             assertTrue("Please add the corresponding library dependency." in messages)
         }
     }
@@ -114,10 +174,10 @@ class CompilerPluginTests {
 private fun compilation(
     sourceCode: String,
     debugEnabled: Boolean = false,
-    jvmStandaloneEnabled: Boolean = false,
+    executionPackageName: String? = null,
     classPathInheritanceEnabled: Boolean = true,
     expectedExitCode: KotlinCompilation.ExitCode = KotlinCompilation.ExitCode.OK,
-    action: JvmCompilationResult.() -> Unit
+    action: JvmCompilationResult.(capturedStdout: String) -> Unit
 ) {
     val compilation = KotlinCompilation()
 
@@ -125,7 +185,7 @@ private fun compilation(
         PluginOption(BuildConfig.TEST_FRAMEWORK_PLUGIN_ID, name, value)
 
     try {
-        val result = compilation.apply {
+        compilation.apply {
             sources = listOf(SourceFile.kotlin("Main.kt", sourceCode.trimIndent()))
             verbose = false
             compilerPluginRegistrars = listOf(CompilerPluginRegistrar())
@@ -133,14 +193,46 @@ private fun compilation(
             commandLineProcessors = listOf(CompilerPluginCommandLineProcessor())
             pluginOptions = listOfNotNull(
                 if (debugEnabled) option("debug", "true") else null,
-                if (jvmStandaloneEnabled) option("jvmStandalone", "true") else null
+                if (executionPackageName != null) option("jvmStandalone", "true") else null
             )
             messageOutputStream = OutputStream.nullOutputStream()
-        }.compile()
+        }.compile().run {
+            println("--- Compilation ---")
+            println(messages)
 
-        assertEquals(expectedExitCode, result.exitCode, result.messages)
+            assertEquals(expectedExitCode, exitCode, messages)
 
-        result.action()
+            var capturedStdout = ""
+
+            if (executionPackageName != null) {
+                // The following hack un-initializes the framework. This is necessary because the framework's classes
+                // are loaded into the test JVM. JVM-static members of such classes will then retain their state
+                // across test runs, but the framework expects such members to have a freshly initialized state
+                // on each run.
+                // FIXME: Loading `TestSessionKt` multiple times leads to inconsistencies regarding compartments.
+                //     Compartments used repeatedly in multiple test runs will have an earlier test run's TestSession
+                //     as their parent. It would be better to load MainKt and all dependencies in an isolated class
+                //     loader per invocation. See https://stackoverflow.com/a/3726742/2529022
+                @Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
+                TestSession.singleton = null
+
+                val packageNameDot = if (executionPackageName.isEmpty()) "" else "$executionPackageName."
+                val entryPointClass = classLoader.loadClass("${packageNameDot}MainKt")
+                capturedStdout = capturedStdout {
+                    runBlocking {
+                        entryPointClass.getDeclaredMethod("main", Continuation::class.java).invoke(
+                            entryPointClass,
+                            Continuation<Unit>(currentCoroutineContext()) {}
+                        )
+                    }
+                }
+
+                println("--- Execution ---")
+                println(capturedStdout)
+            }
+
+            action(capturedStdout)
+        }
     } finally {
         compilation.workingDir.deleteRecursivelyOrThrow()
     }

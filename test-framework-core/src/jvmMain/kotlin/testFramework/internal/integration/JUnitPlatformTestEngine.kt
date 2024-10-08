@@ -1,5 +1,7 @@
 package testFramework.internal.integration
 
+import io.github.classgraph.ClassGraph
+import io.github.classgraph.ScanResult
 import kotlinx.coroutines.runBlocking
 import org.junit.platform.engine.EngineDiscoveryRequest
 import org.junit.platform.engine.ExecutionRequest
@@ -14,13 +16,15 @@ import org.junit.platform.engine.support.descriptor.ClassSource
 import org.junit.platform.engine.support.descriptor.EngineDescriptor
 import testFramework.Test
 import testFramework.TestScope
+import testFramework.TestSession
 import testFramework.TestSuite
+import testFramework.annotations.TestSessionDeclaration
 import testFramework.internal.TestEvent
 import testFramework.internal.TestReport
-import testFramework.internal.TestSession
+import testFramework.internal.initializeTestFramework
 import java.util.concurrent.ConcurrentHashMap
 
-private lateinit var classLevelTestSuites: Set<TestSuite>
+private var classLevelTestSuites = setOf<TestSuite>()
 private val scopeDescriptors = ConcurrentHashMap<TestScope, AbstractTestDescriptor>()
 
 internal class JUnitPlatformTestEngine : TestEngine {
@@ -29,23 +33,64 @@ internal class JUnitPlatformTestEngine : TestEngine {
     override fun discover(discoveryRequest: EngineDiscoveryRequest, uniqueId: UniqueId): TestDescriptor {
         val classSelectors = discoveryRequest.getSelectorsByType(ClassSelector::class.java)
 
-        // Instantiate all TestSuite classes requested via class selectors
-        classLevelTestSuites = classSelectors
+        // Find suite classes via class selectors.
+        val testSuiteClassesUninitialized = classSelectors
             .asSequence()
             .map { Class.forName(it.className, false, it.classLoader) } // classes, but not initialized yet
-            .filter { TestSuite::class.java.isAssignableFrom(it) } // only TestSuite classes from here
+            .filter { TestSuite::class.java.isAssignableFrom(it) && !TestSession::class.java.isAssignableFrom(it) }
+            .toList()
+
+        // If no suites were found, return early, avoiding any initialization.
+        if (testSuiteClassesUninitialized.isEmpty()) {
+            // Do not initialize the test framework if no test classes have been discovered on the classpath.
+            // This is probably a JVM-standalone invocation via the main() function for testing.
+            return EngineDescriptor(UniqueId.forEngine(id), "${this::class.qualifiedName}")
+        }
+
+        // If a session class has been declared, instantiate it.
+        val testSessionClassesUninitialized = withClassGraphAnnotationScan {
+            getClassesWithAnnotation(TestSessionDeclaration::class.java)
+                .map { Class.forName(it.name, false, this::class.java.classLoader) }
+        }
+
+        val testSession = when (testSessionClassesUninitialized.size) {
+            0 -> null
+
+            1 -> {
+                testSessionClassesUninitialized.single().let {
+                    Class.forName(it.name).getDeclaredConstructor().newInstance() as? TestSession
+                        ?: throw IllegalArgumentException(
+                            "Could not instantiate a ${TestSession::class.simpleName}" +
+                                " from ${it.name} annotated with @${TestSessionDeclaration::class.simpleName}."
+                        )
+                } // instantiate
+            }
+
+            else -> throw IllegalArgumentException(
+                "Found ${testSessionClassesUninitialized.size} classes" +
+                    " annotated with @${TestSessionDeclaration::class.simpleName}," +
+                    " but expected at most one." +
+                    "\n\tAnnotated classes: $testSessionClassesUninitialized"
+            )
+        }
+
+        // Initialize the framework first...
+        initializeTestFramework(testSession)
+
+        // ...then instantiate suites.
+        classLevelTestSuites = testSuiteClassesUninitialized
             .map { Class.forName(it.name).getDeclaredConstructor().newInstance() as TestSuite } // instantiate
             .toSet()
 
-        TestSession.configure()
+        TestSession.global.configure()
 
         return EngineDescriptor(
             UniqueId.forEngine(id),
             "${this::class.qualifiedName}"
         ).apply {
             log("created EngineDescriptor(${this.uniqueId}, $displayName)")
-            scopeDescriptors[TestSession] = this
-            addChild(TestSession.newPlatformDescriptor(uniqueId))
+            scopeDescriptors[TestSession.global] = this
+            addChild(TestSession.global.newPlatformDescriptor(uniqueId))
         }
     }
 
@@ -60,7 +105,7 @@ internal class JUnitPlatformTestEngine : TestEngine {
         val listener = request.engineExecutionListener
 
         runBlocking {
-            TestSession.execute(
+            TestSession.global.execute(
                 object : TestReport(FeedMode.ENABLED_SCOPES) {
                     override suspend fun add(event: TestEvent) {
                         when (event) {
@@ -118,6 +163,7 @@ private fun TestScope.newPlatformDescriptor(parentUniqueId: UniqueId): TestScope
         val segmentType = when (scope) {
             is Test -> "test"
             is TestSession -> "session"
+            is TestSession.Compartment -> "compartment"
             is TestSuite -> "suite"
         }
         uniqueId = parentUniqueId.append(segmentType, simpleScopeName)
@@ -146,6 +192,25 @@ private val TestEvent.Finished.executionResult: TestExecutionResult get() =
         null -> TestExecutionResult.successful()
         is AssertionError -> TestExecutionResult.failed(throwable)
         else -> TestExecutionResult.aborted(throwable)
+    }
+
+private fun <Result> withClassGraphAnnotationScan(action: ScanResult.() -> Result): Result = ClassGraph()
+    .disableModuleScanning()
+    .disableNestedJarScanning()
+    .rejectPackages(
+        "java.*",
+        "javax.*",
+        "sun.*",
+        "com.sun.*",
+        "kotlin.*",
+        "kotlinx.*",
+        "androidx.*",
+        "org.jetbrains.kotlin.*",
+        "org.junit.*"
+    )
+    .enableAnnotationInfo()
+    .scan().use { scanResult ->
+        scanResult.action()
     }
 
 private fun log(message: String) {

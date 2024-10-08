@@ -5,7 +5,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import testFramework.internal.TestReport
-import testFramework.internal.TestSession
 import testFramework.internal.withParallelism
 
 typealias TestSuiteComponentsDefinition = TestSuite.() -> Unit
@@ -26,8 +25,15 @@ open class TestSuite internal constructor(
     /** Fixtures created while executing this suite, in reverse order of fixture creation. */
     private val fixtures = mutableListOf<Fixture<*>>()
 
-    protected constructor(componentsDefinition: TestSuiteComponentsDefinition) :
-        this(parent = TestSession, componentsDefinition = componentsDefinition)
+    protected constructor(componentsDefinition: TestSuiteComponentsDefinition) : this(
+        parent = TestSession.global.defaultCompartment,
+        componentsDefinition = componentsDefinition
+    )
+
+    protected constructor(
+        compartment: TestSession.Compartment,
+        componentsDefinition: TestSuiteComponentsDefinition
+    ) : this(parent = compartment, componentsDefinition = componentsDefinition)
 
     internal fun registerChildScope(childScope: TestScope) {
         childScopes.add(childScope)

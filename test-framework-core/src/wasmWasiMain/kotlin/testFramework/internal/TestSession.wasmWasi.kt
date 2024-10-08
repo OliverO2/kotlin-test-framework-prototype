@@ -2,6 +2,7 @@ package testFramework.internal
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import testFramework.TestSession
 import testFramework.internal.integration.IntellijTestLog
 
 actual suspend fun runTests(vararg suites: Any) {
@@ -11,6 +12,6 @@ actual suspend fun runTests(vararg suites: Any) {
     //     https://github.com/Kotlin/kotlinx.coroutines/issues/4239
     withContext(Dispatchers.Default) { }
 
-    TestSession.configure()
-    TestSession.execute(IntellijTestLog)
+    TestSession.global.configure()
+    TestSession.global.execute(IntellijTestLog)
 }

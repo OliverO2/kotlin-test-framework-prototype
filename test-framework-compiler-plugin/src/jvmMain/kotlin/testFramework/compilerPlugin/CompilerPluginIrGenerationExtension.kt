@@ -21,8 +21,10 @@ import org.jetbrains.kotlin.ir.builders.declarations.addGetter
 import org.jetbrains.kotlin.ir.builders.declarations.buildField
 import org.jetbrains.kotlin.ir.builders.declarations.buildFun
 import org.jetbrains.kotlin.ir.builders.declarations.buildProperty
+import org.jetbrains.kotlin.ir.builders.irBlock
 import org.jetbrains.kotlin.ir.builders.irBlockBody
 import org.jetbrains.kotlin.ir.builders.irCall
+import org.jetbrains.kotlin.ir.builders.irNull
 import org.jetbrains.kotlin.ir.builders.irVararg
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFile
@@ -31,6 +33,8 @@ import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 import org.jetbrains.kotlin.ir.declarations.IrSymbolOwner
 import org.jetbrains.kotlin.ir.declarations.nameWithPackage
+import org.jetbrains.kotlin.ir.expressions.IrCall
+import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
@@ -46,6 +50,7 @@ import org.jetbrains.kotlin.platform.isJs
 import org.jetbrains.kotlin.platform.isWasm
 import org.jetbrains.kotlin.platform.jvm.isJvm
 import org.jetbrains.kotlin.platform.konan.isNative
+import java.util.concurrent.atomic.AtomicReference
 
 class CompilerPluginIrGenerationExtension(private val compilerConfiguration: CompilerConfiguration) :
     IrGenerationExtension {
@@ -65,31 +70,47 @@ class CompilerPluginIrGenerationExtension(private val compilerConfiguration: Com
     }
 }
 
-private class Configuration(compilerConfiguration: CompilerConfiguration, pluginContext: IrPluginContext) {
+private interface IrPluginContextOwner {
+    val pluginContext: IrPluginContext
+}
+
+private class Configuration(compilerConfiguration: CompilerConfiguration, override val pluginContext: IrPluginContext) :
+    IrPluginContextOwner {
+
     val debugEnabled = Options.debug.value(compilerConfiguration)
     val jvmStandaloneEnabled = Options.jvmStandalone.value(compilerConfiguration)
 
-    private val suiteAnnotationPackageName = "testFramework.annotations"
-    private val suiteAnnotationClassName = "TestDeclaration"
+    private val frameworkAnnotationsPackageName = "testFramework.annotations"
+    private val suiteAnnotationClassName = "TestSuiteDeclaration"
+    private val sessionAnnotationClassName = "TestSessionDeclaration"
 
-    private val runTestsPackageName = "testFramework.internal"
+    private val initializationPackageName = "testFramework.internal"
+    private val initializeTestFrameworkFunctionName = "initializeTestFramework"
     private val runTestsFunctionName = "runTests"
     private val runTestsBlockingFunctionName = "runTestsBlocking"
 
-    val suiteAnnotationSymbol = pluginContext.irClassSymbol(suiteAnnotationPackageName, suiteAnnotationClassName)
+    val suiteAnnotationSymbol = irClassSymbol(frameworkAnnotationsPackageName, suiteAnnotationClassName)
 
-    val runTestsFunctionSymbol = pluginContext.irFunctionSymbol(runTestsPackageName, runTestsFunctionName)
+    val sessionAnnotationSymbol =
+        irClassSymbol(frameworkAnnotationsPackageName, sessionAnnotationClassName)
+
+    val initializeTestFrameworkFunctionSymbol =
+        irFunctionSymbol(initializationPackageName, initializeTestFrameworkFunctionName)
+
+    val runTestsFunctionSymbol =
+        irFunctionSymbol(initializationPackageName, runTestsFunctionName)
 
     val runTestsBlockingFunctionSymbol by lazy {
-        pluginContext.irFunctionSymbol(runTestsPackageName, runTestsBlockingFunctionName)
+        irFunctionSymbol(initializationPackageName, runTestsBlockingFunctionName)
     }
 }
 
 private class ModuleTransformer(
-    val pluginContext: IrPluginContext,
+    override val pluginContext: IrPluginContext,
     val messageCollector: MessageCollector,
     val configuration: Configuration
-) : IrElementTransformerVoidWithContext() {
+) : IrElementTransformerVoidWithContext(),
+    IrPluginContextOwner {
 
     class EntryPointCollection {
         private val elementList = mutableListOf<IrClass>()
@@ -98,7 +119,8 @@ private class ModuleTransformer(
         fun add(irClass: IrClass) = synchronized(this) { elementList.add(irClass) }
     }
 
-    val entryPointCollection = EntryPointCollection()
+    val rootSuites = EntryPointCollection()
+    var rootSession = AtomicReference<IrClass?>(null)
 
     var sourceFileForReporting: IrFile? = null
 
@@ -108,13 +130,30 @@ private class ModuleTransformer(
     }
 
     override fun visitClassNew(declaration: IrClass): IrStatement {
-        withErrorReporting(declaration, "Could not analyze class '${declaration.name}'") {
-            if (declaration.hasAnnotation(configuration.suiteAnnotationSymbol)) {
-                if (configuration.debugEnabled) {
-                    reportDebug("Found test suite '${declaration.name}'", declaration)
+        withErrorReporting<Unit>(declaration, "Could not analyze class '${declaration.name}'") {
+            when {
+                declaration.hasAnnotation(configuration.suiteAnnotationSymbol) -> {
+                    if (configuration.debugEnabled) {
+                        reportDebug("Found test suite '${declaration.name}'", declaration)
+                    }
+
+                    rootSuites.add(declaration)
                 }
 
-                entryPointCollection.add(declaration)
+                declaration.hasAnnotation(configuration.sessionAnnotationSymbol) -> {
+                    if (configuration.debugEnabled) {
+                        reportDebug("Found test session '${declaration.name}'", declaration)
+                    }
+
+                    if (!rootSession.compareAndSet(null, declaration)) {
+                        @OptIn(UnsafeDuringIrConstructionAPI::class) // safe: annotation exists
+                        reportError(
+                            "Found multiple annotations @${configuration.sessionAnnotationSymbol.owner.name}," +
+                                " but expected at most one.",
+                            declaration
+                        )
+                    }
+                }
             }
         }
 
@@ -139,7 +178,8 @@ private class ModuleTransformer(
                 reportDebug(
                     "Generating code in module '${declaration.name}'," +
                         " file '${entryPointsTargetFile.nameWithPackage}'," +
-                        " for ${entryPointCollection.elements.size} entry point(s).",
+                        " for ${rootSuites.elements.size} root suite(s)" +
+                        " and ${if (rootSession.get() == null) "no" else "one"} root configuration.",
                     declaration
                 )
             }
@@ -188,6 +228,7 @@ private class ModuleTransformer(
         returnType = pluginContext.irBuiltIns.unitType
     }.apply {
         body = DeclarationIrBuilder(pluginContext, symbol).irBlockBody {
+            +initializeTestFrameworkFunctionCall()
             +runTestsFunctionCall()
         }
     }
@@ -208,7 +249,8 @@ private class ModuleTransformer(
             visibility = DescriptorVisibilities.PRIVATE
         }.apply property@{
             parent = entryPointsTargetFile
-            annotations += simpleAnnotation(pluginContext.irClassSymbol("kotlin.native", "EagerInitialization"))
+            annotations +=
+                irConstructorCall(irClassSymbol("kotlin.native", "EagerInitialization"))
 
             backingField = pluginContext.irFactory.buildField {
                 type = pluginContext.irBuiltIns.unitType
@@ -221,9 +263,10 @@ private class ModuleTransformer(
                 initializer = pluginContext.irFactory.createExpressionBody(
                     UNDEFINED_OFFSET,
                     UNDEFINED_OFFSET,
-                    DeclarationIrBuilder(pluginContext, symbol).runTestsFunctionCall(
-                        configuration.runTestsBlockingFunctionSymbol
-                    )
+                    DeclarationIrBuilder(pluginContext, symbol).irBlock {
+                        +initializeTestFrameworkFunctionCall()
+                        +runTestsFunctionCall(configuration.runTestsBlockingFunctionSymbol)
+                    }
                 )
             }
 
@@ -234,6 +277,19 @@ private class ModuleTransformer(
             }
         }
     }
+
+    /**
+     * Returns a function call for a test session class TS:
+     *
+     * ```
+     * initializeTestFrameworkFunctionCall(TS())
+     * ```
+     */
+    private fun IrBuilderWithScope.initializeTestFrameworkFunctionCall(): IrCall =
+        irCall(configuration.initializeTestFrameworkFunctionSymbol).apply {
+            val irTestSuiteClass = rootSession.get()
+            putValueArgument(0, if (irTestSuiteClass != null) irConstructorCall(irTestSuiteClass.symbol) else irNull())
+        }
 
     /**
      * Returns a function call for test suite classes TS1...TSn like this:
@@ -247,12 +303,8 @@ private class ModuleTransformer(
     private fun IrBuilderWithScope.runTestsFunctionCall(
         runTestsSymbol: IrSimpleFunctionSymbol = configuration.runTestsFunctionSymbol
     ) = irCall(runTestsSymbol).apply {
-        val suites = entryPointCollection.elements.map { irClass ->
-            @OptIn(UnsafeDuringIrConstructionAPI::class) // safe: module fragment has been completely processed
-            val irConstructor = irClass.constructors.singleOrNull()
-                ?: throw IllegalArgumentException("$irClass must have a single constructor")
-
-            irCall(irConstructor.symbol)
+        val suites = rootSuites.elements.map { irClass ->
+            irConstructorCall(irClass.symbol)
         }
 
         putValueArgument(0, irVararg(pluginContext.irBuiltIns.anyType, suites))
@@ -269,26 +321,30 @@ private class ModuleTransformer(
      * `startUnitTests()` is invoked by Kotlin/Wasm and must be present. It has no effect with this framework.
      */
     private fun wasmStartUnitTestsFunctionDeclarationOrNull(): IrSimpleFunction? {
-        val wasmExportSymbol = pluginContext.irClassSymbolOrNull("kotlin.wasm", "WasmExport") ?: return null
+        val wasmExportSymbol = irClassSymbolOrNull("kotlin.wasm", "WasmExport") ?: return null
 
         return pluginContext.irFactory.buildFun {
             name = Name.identifier("startUnitTests")
             returnType = pluginContext.irBuiltIns.unitType
             visibility = DescriptorVisibilities.INTERNAL
         }.apply {
-            annotations += simpleAnnotation(wasmExportSymbol)
+            annotations += irConstructorCall(wasmExportSymbol)
             body = DeclarationIrBuilder(pluginContext, symbol).irBlockBody {}
         }
     }
 
-    /**
-     * Returns a constructor call for an annotation class having a single no-argument constructor.
-     */
-    private fun IrSymbolOwner.simpleAnnotation(classSymbol: IrClassSymbol) =
+    private fun IrSymbolOwner.irConstructorCall(irClassSymbol: IrClassSymbol) =
         IrSingleStatementBuilder(pluginContext, Scope(symbol), UNDEFINED_OFFSET, UNDEFINED_OFFSET).build {
-            @OptIn(UnsafeDuringIrConstructionAPI::class) // safe: module fragment has been completely processed
-            irCall(classSymbol.constructors.single())
+            irConstructorCall(irClassSymbol)
         }
+
+    private fun IrBuilderWithScope.irConstructorCall(irClassSymbol: IrClassSymbol): IrConstructorCall {
+        @OptIn(UnsafeDuringIrConstructionAPI::class) // safe: module fragment has been completely processed
+        val irConstructor = irClassSymbol.constructors.singleOrNull()
+            ?: throw IllegalArgumentException("$irClassSymbol must have a single constructor")
+
+        return irCall(irConstructor)
+    }
 
     fun <Result> withErrorReporting(declaration: IrElement, failureDescription: String, block: () -> Result): Result =
         try {
@@ -300,6 +356,9 @@ private class ModuleTransformer(
 
     fun reportDebug(message: String, declaration: IrElement? = null) =
         report(CompilerMessageSeverity.WARNING, "[DEBUG] $message", declaration)
+
+    fun reportError(message: String, declaration: IrElement? = null) =
+        report(CompilerMessageSeverity.ERROR, message, declaration)
 
     fun report(severity: CompilerMessageSeverity, message: String, declaration: IrElement? = null) {
         fun IrFile.locationOrNull(offset: Int?): CompilerMessageLocation? {
@@ -317,16 +376,16 @@ private class ModuleTransformer(
     }
 }
 
-private fun IrPluginContext.irClassSymbolOrNull(packageName: String, className: String): IrClassSymbol? =
-    referenceClass(classId(packageName, className))
+private fun IrPluginContextOwner.irClassSymbolOrNull(packageName: String, className: String): IrClassSymbol? =
+    pluginContext.referenceClass(classId(packageName, className))
 
-private fun IrPluginContext.irClassSymbol(packageName: String, className: String): IrClassSymbol =
+private fun IrPluginContextOwner.irClassSymbol(packageName: String, className: String): IrClassSymbol =
     irClassSymbolOrNull(packageName, className)
         ?: throw IllegalStateException("Class '$packageName.$className' $MISSING_CLASSPATH_INFO")
 
 @Suppress("SameParameterValue")
-private fun IrPluginContext.irFunctionSymbol(packageName: String, functionName: String): IrSimpleFunctionSymbol =
-    referenceFunctions(CallableId(FqName(packageName), Name.identifier(functionName))).singleOrNull()
+private fun IrPluginContextOwner.irFunctionSymbol(packageName: String, functionName: String): IrSimpleFunctionSymbol =
+    pluginContext.referenceFunctions(CallableId(FqName(packageName), Name.identifier(functionName))).singleOrNull()
         ?: throw IllegalStateException("Function '$packageName.$functionName' $MISSING_CLASSPATH_INFO")
 
 private const val PLUGIN_DISPLAY_NAME = "Plugin ${BuildConfig.TEST_FRAMEWORK_PLUGIN_ID}"

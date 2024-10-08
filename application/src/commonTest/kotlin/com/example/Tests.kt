@@ -3,16 +3,23 @@ package com.example
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
+import testFramework.TestAction
 import testFramework.TestSuite
-import testFramework.annotations.TestDeclaration
+import testFramework.annotations.TestSuiteDeclaration
 import kotlin.coroutines.coroutineContext
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-@TestDeclaration
-internal class TestSuite1 :
+// @TestSessionDeclaration
+// class MyTestSession : TestSession(defaultCompartment = { ParallelCompartment })
+
+@TestSuiteDeclaration
+class TestSuite1 :
     TestSuite(
         {
             // scopeParallelism = testPlatform.parallelism
@@ -69,24 +76,25 @@ internal class TestSuite1 :
         }
     )
 
-@TestDeclaration
-internal class TestSuite2 :
+@TestSuiteDeclaration
+class TestSuite2 :
     TestSuite(
+        // compartment = TestSession.BenchmarkCompartment,
         {
             test("!test1") {
                 log("in TestSuite2.test1")
             }
 
-            test("test2 with strange characters <&>'Ä\" and a –\t– tab") {
+            test("test2 with strange characters <&>'Ä\" and a –\t– tab", timeout = 0.1.seconds) {
                 log("in TestSuite2.test2 – before delay")
-                delay(0.1.seconds)
+                delay(0.3.seconds)
                 log("in TestSuite2.test2 – after delay")
             }
         }
     )
 
-@TestDeclaration
-internal class TestSuite3 :
+@TestSuiteDeclaration
+class TestSuite3 :
     TestSuite(
         {
             val fixtureC = fixture { MyFirstFixture(this) }
@@ -142,6 +150,16 @@ private data class MySecondFixture(
 
     companion object {
         val incarnationCount = atomic(0)
+    }
+}
+
+fun TestSuite.test(name: String, timeout: Duration, action: TestAction) = test(name) {
+    try {
+        withTimeout(timeout) {
+            action()
+        }
+    } catch (timeoutCancellationException: TimeoutCancellationException) {
+        throw AssertionError("$timeoutCancellationException", timeoutCancellationException)
     }
 }
 

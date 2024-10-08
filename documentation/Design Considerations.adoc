@@ -117,7 +117,7 @@ NOTE: Wrappers for individual tests are not required. They can easily be provide
 * [ ] By default, tests run in a `kotlinx.coroutines.test.TestScope`, created as a child of the parent coroutine and invoked via `TestScope.runTest`.
 +
 --
-This imples that the following is in effect:
+This implies that the following is in effect:
 
 * Single threaded execution
 * Virtual time with delay skipping
@@ -144,7 +144,7 @@ References considered:
 
 ==== A safe default: Run tests sequentially
 
-* [ ] The framework should provide a safe default for tests by running them sequentially.
+* [x] The framework should provide a safe default for tests by running them sequentially.
 
 ===== Rationale
 
@@ -156,7 +156,7 @@ Some tests rely on shared (global) state, or are sensitive to real-time effects.
 
 ==== Modern code can use parallelism
 
-* [ ] The framework should support running tests concurrently with platform-specific parallelism.
+* [x] The framework should support running tests concurrently with platform-specific parallelism.
 
 ===== Rationale
 
@@ -165,8 +165,8 @@ Tests covering modern, coroutines-based, thread-safe code can run concurrently f
 ==== Compartments enable selective concurrency
 
 * The framework should support compartmentalization of top-level suites where
-** [ ] suites of each compartment execute in isolation from other compartments' suites,
-** [ ] suites of a compartment execute according to the compartment's configuration regarding sequential or concurrent/parallel execution.
+** [x] suites of each compartment execute in isolation from other compartments' suites,
+** [x] suites of a compartment execute according to the compartment's configuration regarding sequential or concurrent/parallel execution.
 
 ===== Rationale
 
