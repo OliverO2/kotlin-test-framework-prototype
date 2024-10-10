@@ -58,14 +58,15 @@ kotlin {
     }
 
     sourceSets {
-        val commonMain by getting {
+        commonTest {
             dependencies {
                 implementation(project(":test-framework-core"))
                 // implementation(libs.test.framework.prototype.core)
                 implementation(libs.org.jetbrains.kotlinx.atomicfu)
             }
         }
-        val jvmMain by getting {
+
+        jvmTest {
             dependencies {
                 implementation(libs.org.jetbrains.kotlinx.coroutines.debug)
             }
@@ -76,6 +77,21 @@ kotlin {
 tasks.withType<Test>().configureEach {
     // https://docs.gradle.org/current/userguide/java_testing.html
     useJUnitPlatform()
+
+    // Pass TEST_* environment variables from the Gradle invocation to the test JVM.
+    for ((name, value) in System.getenv()) {
+        if (name.startsWith("TEST_")) environment(name, value)
+    }
+
+    // Pass application.test.* system properties from the Gradle invocation to the test JVM.
+    // Pass TEST_* system properties as environment variables. NOTE: Doesn't help with K/Native.
+    for ((name, value) in System.getProperties()) {
+        when {
+            name !is String -> Unit
+            name.startsWith("application.test.") -> systemProperty(name, value)
+            name.startsWith("TEST_") -> environment(name, value)
+        }
+    }
 }
 
 tasks {

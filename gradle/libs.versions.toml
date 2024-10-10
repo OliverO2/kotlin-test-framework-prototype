@@ -4,7 +4,6 @@
 
 # https://github.com/JetBrains/kotlin/releases
 org-jetbrains-kotlin = "2.0.20"
-##                ⬆ = "2.1.0-Beta1"
 
 # https://github.com/Kotlin/kotlinx.coroutines/releases
 org-jetbrains-kotlinx-coroutines = "1.9.0"
@@ -13,6 +12,7 @@ org-jetbrains-kotlinx-coroutines = "1.9.0"
 
 # https://github.com/ZacSweers/kotlin-compile-testing/releases
 dev-zacsweers-kctfork = "dev.zacsweers.kctfork:core:0.5.1"
+##                                              ⬆ :0.6.0-alpha01"
 
 io-github-classgraph = "io.github.classgraph:classgraph:4.8.177"
 
@@ -24,16 +24,23 @@ org-jetbrains-kotlinx-coroutines-debug = { module = "org.jetbrains.kotlinx:kotli
 
 # https://github.com/Kotlin/kotlinx-datetime/blob/master/CHANGELOG.md
 org-jetbrains-kotlinx-datetime = "org.jetbrains.kotlinx:kotlinx-datetime:0.5.0-wasm0"
+##                                                                   ⬆ :0.5.0"
+##                                                                   ⬆ :0.6.0-RC"
+##                                                                   ⬆ :0.6.0-RC.2"
+##                                                                   ⬆ :0.6.0"
+##                                                                   ⬆ :0.6.1"
 
 # https://github.com/junit-team/junit5/releases
 org-junit-platform-engine = "org.junit.platform:junit-platform-engine:1.10.2"
 ##                                                                ⬆ :1.10.3"
 ##                                                                ⬆ :1.10.4"
+##                                                                ⬆ :1.10.5"
 ##                                                                ⬆ :1.11.0-M1"
 ##                                                                ⬆ :1.11.0-M2"
 ##                                                                ⬆ :1.11.0-RC1"
 ##                                                                ⬆ :1.11.0"
 ##                                                                ⬆ :1.11.1"
+##                                                                ⬆ :1.11.2"
 
 test-framework-prototype-core = "kotlin-test-framework-prototype:test-framework-core:unspecified"
 
@@ -41,9 +48,24 @@ test-framework-prototype-core = "kotlin-test-framework-prototype:test-framework-
 
 # https://github.com/gmazzo/gradle-buildconfig-plugin/releases
 com-github-gmazzo-buildconfig = "com.github.gmazzo.buildconfig:4.1.2"
+##                                                         ⬆ :4.2.0"
+##                                                         ⬆ :5.0.0"
+##                                                         ⬆ :5.0.1"
+##                                                         ⬆ :5.1.0"
+##                                                         ⬆ :5.2.0"
+##                                                         ⬆ :5.3.0"
+##                                                         ⬆ :5.3.1"
+##                                                         ⬆ :5.3.2"
+##                                                         ⬆ :5.3.3"
+##                                                         ⬆ :5.3.4"
+##                                                         ⬆ :5.3.5"
+##                                                         ⬆ :5.4.0"
+##                                                         ⬆ :5.5.0"
 
 # https://plugins.gradle.org/plugin/com.gradle.plugin-publish
 com-gradle-plugin-publish = "com.gradle.plugin-publish:1.2.1"
+##                                                 ⬆ :1.2.2"
+##                                                 ⬆ :1.3.0"
 
 org-jetbrains-kotlin-atomicfu = { id = "org.jetbrains.kotlin.plugin.atomicfu", version.ref = "org-jetbrains-kotlin" }
 

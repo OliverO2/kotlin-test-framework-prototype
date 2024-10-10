@@ -1,10 +1,8 @@
 == A Kotlin Multiplatform Test Framework Prototype
 
-This prototype aims to explore a flexible, concise and maintainable Kotlin
-Multiplatform test framework architecture.
+This prototype aims to explore a flexible, concise and maintainable Kotlin Multiplatform test framework architecture.
 
-The goal: Testing Kotlin like Kotlin – concise, native everywhere,
-productive, fun. Will this help us get there?
+The goal: Testing Kotlin like Kotlin – concise, native everywhere, productive, fun. Will this help us get there?
 
 image:documentation/images/Test%20Run.png[Test Run.png]
 
@@ -72,10 +70,27 @@ This project builds a Gradle plugin. Its sample application depends on accessing
 ** It does not support running individual tests via editor gutters or the test run window.
 ** It does not support "rerun failed tests" from the test run window.
 ** It does not support running failed tests from the inspections window.
+* Selecting tests via Gradle invocations is possible for targets checkmarked below. Depending on the target, selection supports command line arguments, environment variables, or system properties. Sometimes regular expressions are used, sometimes glob-like patterns, depending on the existing Gradle infrastructure.
++
+--
+NOTE: Environment variables and system properties must be relayed to the test task (see xref:application/build.gradle.kts[application/build.gradle.kts]).
+--
+** [x] `++./gradlew -p application --quiet cleanAllTests jvmTest -DTEST_INCLUDE=.*TestSuite1\.test.* -DTEST_EXCLUDE=.*test3-2++`
+** [x] `++./gradlew -p application --quiet cleanAllTests jsNodeTest --tests *TestSuite1.test1++`
+** [x] `++./gradlew -p application --quiet cleanAllTests jsBrowserTest --tests *TestSuite1.test1++`
+** [x] `++./gradlew -p application --quiet cleanAllTests wasmJsNodeTest --tests .*TestSuite1.test1++`
+** [ ] `++./gradlew -p application --quiet cleanAllTests wasmJsBrowserTest --tests .*TestSuite1.test1++`
+** [ ] `++./gradlew -p application --quiet cleanAllTests wasmWasiNodeTest --tests .*TestSuite1.test1++`
+** [x] `++./gradlew -p application --quiet cleanAllTests linuxX64Test++`
++
+--
+with IDE run configuration environment variables:
+
+* `TEST_INCLUDE=.*TestSuite1\.test.*;TEST_EXCLUDE=.*test3-2`
+--
 
 === TODO
 
-* Investigate how to pass test selectors uniformly across platforms.
 * Combine sequential execution and parallelism into one settings class.
 ** Use the test dispatcher by default.
 ** Use the default dispatcher if concurrent execution is chosen.

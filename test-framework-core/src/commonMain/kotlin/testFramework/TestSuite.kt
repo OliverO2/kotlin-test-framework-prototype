@@ -51,13 +51,13 @@ open class TestSuite internal constructor(
         Test(this, name, configuration = configuration, action)
     }
 
-    override fun configure() {
-        super.configure()
+    override fun configure(selection: Selection) {
+        super.configure(selection)
 
         componentsDefinition?.invoke(this)
 
         childElements.forEach {
-            it.configure()
+            it.configure(selection)
         }
 
         if (isEnabled && childElements.isNotEmpty()) {
@@ -68,7 +68,7 @@ open class TestSuite internal constructor(
                 }
             } else {
                 // Disable this element if none of its child elements are enabled.
-                if (!childElements.any { it.isEnabled }) {
+                if (childElements.none { it.isEnabled }) {
                     isEnabled = false
                 }
             }

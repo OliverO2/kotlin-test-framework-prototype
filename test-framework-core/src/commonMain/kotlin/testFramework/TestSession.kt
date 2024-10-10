@@ -12,6 +12,9 @@ open class TestSession protected constructor(
 ) {
     val defaultCompartment: Compartment by lazy { defaultCompartment() }
 
+    open class Compartment(name: String, configuration: TestElementConfiguration.() -> Unit) :
+        TestSuite(parent = global, simpleNameOrNull = "@$name", configuration = configuration)
+
     init {
         if (singleton != null) {
             throw IllegalArgumentException(
@@ -25,9 +28,6 @@ open class TestSession protected constructor(
     }
 
     internal constructor() : this(configuration = { isSequential = true })
-
-    open class Compartment(name: String, configuration: TestElementConfiguration.() -> Unit) :
-        TestSuite(parent = global, simpleNameOrNull = "@$name", configuration = configuration)
 
     companion object {
         // This property is internal for compiler plugin testing only. Consider it private otherwise.

@@ -1,7 +1,8 @@
 package testFramework
 
 // https://stackoverflow.com/a/31090240
-private val isNodeJs: Boolean = js("(new Function('try {return this===global;}catch(e){return false;}'))()") as Boolean
+internal val isNodeJs: Boolean =
+    js("(new Function('try { return this === global; } catch(e) { return false; }'))()") as Boolean
 
 actual val testPlatform = object : TestPlatform {
     override val displayName = if (isNodeJs) "JS/Node" else "JS/Browser"

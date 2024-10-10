@@ -2,6 +2,7 @@ package testFramework.internal.integration
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.promise
+import testFramework.isNodeJs
 
 internal actual fun kotlinJsTestFrameworkAvailable(): Boolean =
     js("typeof describe === 'function' && typeof it === 'function'") as Boolean
@@ -88,3 +89,5 @@ private fun describe(description: String, suiteFn: () -> Unit) {
 private external fun xdescribe(name: String, testFn: () -> Unit)
 private external fun it(name: String, testFn: () -> JsPromiseLike?)
 private external fun xit(name: String, testFn: () -> JsPromiseLike?)
+
+internal actual fun processArguments(): Array<String>? = if (isNodeJs) js("process.argv") as Array<String> else null

@@ -59,7 +59,7 @@ The framework must discover
 === Execution
 
 * [x] The framework must run all tests of a compilation module (typically, a Gradle (sub)project).
-* [ ] The framework should support running tests selectively as determined by selection parameters.
+* [x] The framework should support running tests selectively as determined by selection parameters.
 
 ==== Rationale
 

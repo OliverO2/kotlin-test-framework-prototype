@@ -10,6 +10,14 @@ class Test internal constructor(
     private val action: TestAction
 ) : TestElement(parent, simpleName, configuration = configuration) {
 
+    override fun configure(selection: Selection) {
+        super.configure(selection)
+
+        if (isEnabled && !selection.includes(this)) {
+            isEnabled = false
+        }
+    }
+
     override suspend fun execute(report: TestReport) {
         executeReporting(report) {
             if (isEnabled) {

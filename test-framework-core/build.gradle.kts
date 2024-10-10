@@ -50,14 +50,14 @@ kotlin {
     }
 
     sourceSets {
-        val commonMain by getting {
+        commonMain {
             dependencies {
                 api(libs.org.jetbrains.kotlinx.coroutines.core)
                 implementation(libs.org.jetbrains.kotlinx.datetime)
             }
         }
 
-        val jvmMain by getting {
+        jvmMain {
             dependencies {
                 implementation(libs.org.junit.platform.engine)
                 implementation(libs.io.github.classgraph)

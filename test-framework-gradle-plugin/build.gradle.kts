@@ -44,9 +44,9 @@ kotlinter {
 }
 
 tasks.withType<org.jmailen.gradle.kotlinter.tasks.LintTask> {
-    this.source = this.source.minus(fileTree("build")).asFileTree
+    source = source.minus(fileTree("build")).asFileTree
 }
 
 tasks.withType<org.jmailen.gradle.kotlinter.tasks.FormatTask> {
-    this.source = this.source.minus(fileTree("build")).asFileTree
+    source = source.minus(fileTree("build")).asFileTree
 }

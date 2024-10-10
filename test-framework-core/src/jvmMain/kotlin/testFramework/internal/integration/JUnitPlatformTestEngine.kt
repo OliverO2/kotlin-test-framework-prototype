@@ -5,12 +5,15 @@ import io.github.classgraph.ScanResult
 import kotlinx.coroutines.runBlocking
 import org.junit.platform.engine.EngineDiscoveryRequest
 import org.junit.platform.engine.ExecutionRequest
+import org.junit.platform.engine.Filter
 import org.junit.platform.engine.TestDescriptor
 import org.junit.platform.engine.TestEngine
 import org.junit.platform.engine.TestExecutionResult
 import org.junit.platform.engine.TestSource
 import org.junit.platform.engine.UniqueId
+import org.junit.platform.engine.discovery.ClassNameFilter
 import org.junit.platform.engine.discovery.ClassSelector
+import org.junit.platform.engine.discovery.PackageNameFilter
 import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
 import org.junit.platform.engine.support.descriptor.ClassSource
 import org.junit.platform.engine.support.descriptor.EngineDescriptor
@@ -19,9 +22,11 @@ import testFramework.TestElement
 import testFramework.TestSession
 import testFramework.TestSuite
 import testFramework.annotations.TestSessionDeclaration
+import testFramework.internal.EnvironmentBasedElementSelection
 import testFramework.internal.TestEvent
 import testFramework.internal.TestReport
 import testFramework.internal.initializeTestFramework
+import testFramework.internal.logDebug
 import java.util.concurrent.ConcurrentHashMap
 
 private var classLevelTestSuites = setOf<TestSuite>()
@@ -32,12 +37,21 @@ internal class JUnitPlatformTestEngine : TestEngine {
 
     override fun discover(discoveryRequest: EngineDiscoveryRequest, uniqueId: UniqueId): TestDescriptor {
         val classSelectors = discoveryRequest.getSelectorsByType(ClassSelector::class.java)
+        val classNameFilter = Filter.composeFilters(discoveryRequest.getFiltersByType(ClassNameFilter::class.java))
+        val packageNameFilter = Filter.composeFilters(discoveryRequest.getFiltersByType(PackageNameFilter::class.java))
 
-        // Find suite classes via class selectors.
+        // Find suite classes via class selectors (ignoring all other selectors).
         val testSuiteClassesUninitialized = classSelectors
             .asSequence()
-            .map { Class.forName(it.className, false, it.classLoader) } // classes, but not initialized yet
-            .filter { TestSuite::class.java.isAssignableFrom(it) && !TestSession::class.java.isAssignableFrom(it) }
+            .filter { classNameFilter.apply(it.className).included() }
+            .map { Class.forName(it.className, false, it.classLoader) }
+            .filter {
+                packageNameFilter.apply(it.packageName).included() &&
+                    // must be a suite
+                    TestSuite::class.java.isAssignableFrom(it) &&
+                    // but not the top-level session
+                    !TestSession::class.java.isAssignableFrom(it)
+            }
             .toList()
 
         // If no suites were found, return early, avoiding any initialization.
@@ -77,21 +91,22 @@ internal class JUnitPlatformTestEngine : TestEngine {
         // Initialize the framework first...
         initializeTestFramework(testSession)
 
-        // ...then instantiate suites.
+        // ...then instantiate top-level suites,
         classLevelTestSuites = testSuiteClassesUninitialized
             .map { Class.forName(it.name).getDeclaredConstructor().newInstance() as TestSuite } // instantiate
             .toSet()
 
-        TestSession.global.configure()
+        // ...and configure the entire test element tree top-down, starting at the TestSession.
+        TestSession.global.configure(
+            EnvironmentBasedElementSelection(System.getenv("TEST_INCLUDE"), System.getenv("TEST_EXCLUDE"))
+        )
 
-        return EngineDescriptor(
-            UniqueId.forEngine(id),
-            "${this::class.qualifiedName}"
-        ).apply {
-            log("created EngineDescriptor(${this.uniqueId}, $displayName)")
-            testElementDescriptors[TestSession.global] = this
-            addChild(TestSession.global.newPlatformDescriptor(uniqueId))
-        }
+        val engineDescriptor = EngineDescriptor(UniqueId.forEngine(id), "${this::class.qualifiedName}")
+        log { "created EngineDescriptor(${engineDescriptor.uniqueId}, ${engineDescriptor.displayName})" }
+        testElementDescriptors[TestSession.global] = engineDescriptor
+        engineDescriptor.addChild(TestSession.global.newPlatformDescriptor(uniqueId))
+
+        return engineDescriptor
     }
 
     override fun execute(request: ExecutionRequest) {
@@ -110,15 +125,15 @@ internal class JUnitPlatformTestEngine : TestEngine {
                     override suspend fun add(event: TestEvent) {
                         when (event) {
                             is TestEvent.Starting -> {
-                                log("${event.element.platformDescriptor}: ${event.element} starting")
+                                log { "${event.element.platformDescriptor}: ${event.element} starting" }
                                 listener.executionStarted(event.element.platformDescriptor)
                             }
 
                             is TestEvent.Finished -> {
-                                log(
+                                log {
                                     "${event.element.platformDescriptor}: ${event.element} finished," +
                                         " result=${event.executionResult})"
-                                )
+                                }
                                 listener.executionFinished(
                                     event.element.platformDescriptor,
                                     event.executionResult
@@ -126,7 +141,7 @@ internal class JUnitPlatformTestEngine : TestEngine {
                             }
 
                             is TestEvent.Skipped -> {
-                                log("${event.element.platformDescriptor}: ${event.element} skipped")
+                                log { "${event.element.platformDescriptor}: ${event.element} skipped" }
                                 listener.executionSkipped(event.element.platformDescriptor, "disabled")
                             }
                         }
@@ -176,7 +191,7 @@ private fun TestElement.newPlatformDescriptor(parentUniqueId: UniqueId): TestEle
         source = source,
         element = element
     ).apply {
-        log("created TestDescriptor($uniqueId, $displayName)")
+        log { "created TestDescriptor($uniqueId, $displayName)" }
         testElementDescriptors[element] = this
         if (this@newPlatformDescriptor is TestSuite) {
             childElements.forEach { addChild(it.newPlatformDescriptor(uniqueId)) }
@@ -213,6 +228,6 @@ private fun <Result> withClassGraphAnnotationScan(action: ScanResult.() -> Resul
         scanResult.action()
     }
 
-private fun log(message: String) {
-    // println("JUPTE: $message")
+private fun log(message: () -> String) {
+    logDebug(message)
 }

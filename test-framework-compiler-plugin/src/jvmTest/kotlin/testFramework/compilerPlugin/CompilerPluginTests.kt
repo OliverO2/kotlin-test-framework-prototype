@@ -146,7 +146,7 @@ private class CompilerPluginTests {
         compilation(
             """
                 import testFramework.annotations.TestSuiteDeclaration
-
+                
                 @TestSuiteDeclaration
                 class TestSuiteOne
             """,
@@ -220,8 +220,13 @@ private fun compilation(
                 val entryPointClass = classLoader.loadClass("${packageNameDot}MainKt")
                 capturedStdout = capturedStdout {
                     runBlocking {
-                        entryPointClass.getDeclaredMethod("main", Continuation::class.java).invoke(
+                        entryPointClass.getDeclaredMethod(
+                            "main",
+                            Array<String>::class.java,
+                            Continuation::class.java
+                        ).invoke(
                             entryPointClass,
+                            null,
                             Continuation<Unit>(currentCoroutineContext()) {}
                         )
                     }

@@ -18,12 +18,14 @@ import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.IrSingleStatementBuilder
 import org.jetbrains.kotlin.ir.builders.Scope
 import org.jetbrains.kotlin.ir.builders.declarations.addGetter
+import org.jetbrains.kotlin.ir.builders.declarations.addValueParameter
 import org.jetbrains.kotlin.ir.builders.declarations.buildField
 import org.jetbrains.kotlin.ir.builders.declarations.buildFun
 import org.jetbrains.kotlin.ir.builders.declarations.buildProperty
 import org.jetbrains.kotlin.ir.builders.irBlock
 import org.jetbrains.kotlin.ir.builders.irBlockBody
 import org.jetbrains.kotlin.ir.builders.irCall
+import org.jetbrains.kotlin.ir.builders.irGet
 import org.jetbrains.kotlin.ir.builders.irNull
 import org.jetbrains.kotlin.ir.builders.irVararg
 import org.jetbrains.kotlin.ir.declarations.IrClass
@@ -32,12 +34,14 @@ import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
 import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 import org.jetbrains.kotlin.ir.declarations.IrSymbolOwner
+import org.jetbrains.kotlin.ir.declarations.IrValueParameter
 import org.jetbrains.kotlin.ir.declarations.nameWithPackage
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+import org.jetbrains.kotlin.ir.types.typeWith
 import org.jetbrains.kotlin.ir.util.addChild
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.dump
@@ -217,7 +221,8 @@ private class ModuleTransformer(
      * Returns an entry point function declaration for test suite classes TS1...TSn like this:
      *
      * ```
-     * suspend fun main() {
+     * suspend fun main(arguments: Array<String>) {
+     *     initializeTestFramework(rootSessionOrNull, arguments)
      *     runTests(TS1(), ..., TSn())
      * }
      * ```
@@ -227,8 +232,13 @@ private class ModuleTransformer(
         isSuspend = true
         returnType = pluginContext.irBuiltIns.unitType
     }.apply {
+        val arguments = addValueParameter(
+            "arguments",
+            pluginContext.irBuiltIns.arrayClass.typeWith(pluginContext.irBuiltIns.stringType),
+            origin
+        )
         body = DeclarationIrBuilder(pluginContext, symbol).irBlockBody {
-            +initializeTestFrameworkFunctionCall()
+            +initializeTestFrameworkFunctionCall(arguments)
             +runTestsFunctionCall()
         }
     }
@@ -238,7 +248,10 @@ private class ModuleTransformer(
      *
      * ```
      * @EagerInitialization
-     * private val testFrameworkEntryPoint = runTestsBlocking(TS1(), ..., TSn())
+     * private val testFrameworkEntryPoint: Unit = run {
+     *     initializeTestFramework(rootSessionOrNull)
+     *     runTestsBlocking(TS1(), ..., TSn())
+     * }
      * ```
      */
     private fun testFrameworkEntryPointPropertyDeclaration(entryPointsTargetFile: IrFile): IrProperty {
@@ -279,16 +292,23 @@ private class ModuleTransformer(
     }
 
     /**
-     * Returns a function call for a test session class TS:
+     * Returns a function call to initialize the test framework.
      *
+     * For a declared test session class [rootSession] and [arguments]:
      * ```
-     * initializeTestFrameworkFunctionCall(TS())
+     * initializeTestFrameworkFunctionCall(rootSession(), arguments)
+     * ```
+     *
+     * Without a declared test session class and [arguments]:
+     * ```
+     * initializeTestFrameworkFunctionCall(null, arguments)
      * ```
      */
-    private fun IrBuilderWithScope.initializeTestFrameworkFunctionCall(): IrCall =
+    private fun IrBuilderWithScope.initializeTestFrameworkFunctionCall(arguments: IrValueParameter? = null): IrCall =
         irCall(configuration.initializeTestFrameworkFunctionSymbol).apply {
-            val irTestSuiteClass = rootSession.get()
-            putValueArgument(0, if (irTestSuiteClass != null) irConstructorCall(irTestSuiteClass.symbol) else irNull())
+            val irTestSessionOrNull = rootSession.get()?.let { irConstructorCall(it.symbol) } ?: irNull()
+            putValueArgument(0, irTestSessionOrNull)
+            putValueArgument(1, if (arguments != null) irGet(arguments) else irNull())
         }
 
     /**

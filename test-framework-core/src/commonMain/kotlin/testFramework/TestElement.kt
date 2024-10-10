@@ -36,7 +36,11 @@ sealed class TestElement(
         parent?.registerChildElement(this)
     }
 
-    internal open fun configure() {
+    interface Selection {
+        fun includes(testElement: TestElement): Boolean
+    }
+
+    internal open fun configure(selection: Selection) {
         effectiveConfiguration.inheritFrom(parent?.effectiveConfiguration)
     }
 
@@ -64,6 +68,12 @@ sealed class TestElement(
     }
 
     override fun toString(): String = "${this::class.simpleName}($elementName)"
+
+    companion object {
+        internal val AllInSelection = object : Selection {
+            override fun includes(testElement: TestElement): Boolean = true
+        }
+    }
 }
 
 private fun String.prefixesRemoved(): String = when {

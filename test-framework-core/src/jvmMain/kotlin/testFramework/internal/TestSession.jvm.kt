@@ -1,5 +1,6 @@
 package testFramework.internal
 
+import testFramework.TestElement
 import testFramework.TestSession
 import testFramework.internal.integration.IntellijTestLog
 
@@ -10,6 +11,11 @@ actual suspend fun runTests(vararg suites: Any) {
     // In this case, this function is not used.
     // It is intended for internal framework testing only.
 
-    TestSession.global.configure()
-    TestSession.global.execute(IntellijTestLog)
+    configureTestsCatching {
+        TestSession.global.configure(argumentsBasedElementSelection ?: TestElement.AllInSelection)
+    }.onSuccess {
+        executeTestsCatching {
+            TestSession.global.execute(IntellijTestLog)
+        } 
+    }
 }

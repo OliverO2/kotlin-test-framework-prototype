@@ -9,12 +9,15 @@ import testFramework.Test
 import testFramework.TestElement
 import testFramework.TestSession
 import testFramework.TestSuite
+import testFramework.internal.ArgumentsBasedElementSelection
 import testFramework.internal.TestEvent
 import testFramework.internal.TestReport
+import testFramework.internal.argumentsBasedElementSelection
+import testFramework.internal.configureTestsCatching
 
 internal typealias JsPromiseLike = Any
 
-internal suspend fun runTestsKotlinJs() {
+internal suspend fun configureAndRunJsHostedTests() {
     fun TestElement.registerWithKotlinJsTestFramework() {
         when (this) {
             is Test -> {
@@ -32,25 +35,25 @@ internal suspend fun runTestsKotlinJs() {
         }
     }
 
-    TestSession.global.configure()
-
-    if (kotlinJsTestFrameworkAvailable()) {
-        TestSession.global.registerWithKotlinJsTestFramework()
-    } else {
-        TestSession.global.execute(IntellijTestLog)
+    configureTestsCatching {
+        TestSession.global.configure(
+            argumentsBasedElementSelection
+                ?: processArguments()?.let { ArgumentsBasedElementSelection(it) }
+                ?: TestElement.AllInSelection
+        )
+    }.onSuccess {
+        if (kotlinJsTestFrameworkAvailable()) {
+            TestSession.global.registerWithKotlinJsTestFramework()
+        } else {
+            TestSession.global.execute(IntellijTestLog)
+        }
     }
 }
 
 private object TestSessionAdapter {
     private var sessionIsExecuting = false
+    private var sessionFailure: Throwable? = null
     private val testResults = mutableMapOf<Test, Channel<Throwable?>>()
-    private val testReport = object : TestReport(FeedMode.ENABLED_ELEMENTS) {
-        override suspend fun add(event: TestEvent) {
-            if (event.element is Test && event is TestEvent.Finished) {
-                testResults(event.element).send(event.throwable)
-            }
-        }
-    }
 
     private fun testResults(test: Test): Channel<Throwable?> =
         testResults[test] ?: Channel<Throwable?>(capacity = 1).also { testResults[test] = it }
@@ -64,14 +67,31 @@ private object TestSessionAdapter {
 
             @OptIn(DelicateCoroutinesApi::class)
             GlobalScope.launch {
-                TestSession.global.execute(testReport)
+                try {
+                    TestSession.global.execute(
+                        object : TestReport(FeedMode.ENABLED_ELEMENTS) {
+                            override suspend fun add(event: TestEvent) {
+                                if (event.element is Test && event is TestEvent.Finished) {
+                                    testResults(event.element).send(event.throwable)
+                                }
+                            }
+                        }
+                    )
+                } catch (throwable: Throwable) {
+                    sessionFailure = throwable
+                }
             }
         }
 
         // Produce the test result, waiting for it to arrive from the concurrently executing session.
+        // If the entire session has failed, relay its failure to every remaining test result.
         @OptIn(DelicateCoroutinesApi::class)
         return GlobalScope.testFunctionPromise {
-            testResults(test).receive()?.let { throw(it) }
+            testResults(test).receive()?.let { testFailure ->
+                sessionFailure?.let { testFailure.addSuppressed(it) }
+                throw testFailure
+            }
+            sessionFailure?.let { throw it }
         }
     }
 }
@@ -118,3 +138,5 @@ internal interface KotlinJsTestFramework {
      */
     fun test(name: String, ignored: Boolean, testFn: () -> JsPromiseLike?)
 }
+
+internal expect fun processArguments(): Array<String>?
