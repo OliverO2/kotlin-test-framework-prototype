@@ -31,7 +31,7 @@ open class TestSuite internal constructor(
     )
 
     protected constructor(
-        compartment: TestSession.Compartment,
+        compartment: TestCompartment,
         componentsDefinition: TestSuiteComponentsDefinition
     ) : this(parent = compartment, componentsDefinition = componentsDefinition)
 

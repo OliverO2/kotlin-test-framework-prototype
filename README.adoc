@@ -52,7 +52,7 @@ This project builds a Gradle plugin. Its sample application depends on accessing
 
 === Running Tests
 
-* `./gradlew -p application cleanAllTests allTests`
+* `./gradlew -p application --quiet cleanAllTests allTests`
 * `./gradlew -p application cleanAllTests jvmTest`
 * `./gradlew -p application cleanAllTests jsNodeTest`
 * `./gradlew -p application cleanAllTests jsBrowserTest`
@@ -63,7 +63,9 @@ This project builds a Gradle plugin. Its sample application depends on accessing
 
 === Limitations
 
-* The IDE does not report more than one level of suite nesting for tests using the Kotlin/JS infra (JS/Browser, JS/Node, Wasm/JS/Browser). While all suites appear, they are not properly nested, because the names of intermediate levels are cut out on their way from the test framework to the IDE.
+* Test reporting:
+** The IDE does not report more than one level of suite nesting for tests using the Kotlin/JS infra (JS/Browser, JS/Node, Wasm/JS/Browser). While all suites appear, they are not properly nested, because the names of intermediate levels are cut out on their way from the test framework to the IDE.
+** Gradle XML test reports are incomplete: Wasm/JS/Node, Wasm/WASI and Native are missing.
 * Integration for IntelliJ IDEA is grossly incomplete:
 ** It supports class-level actions (run, debug, jump to source) from the test run window for JVM tests only.
 ** It does not support non-class suite/test actions from the test run window.
@@ -84,9 +86,9 @@ NOTE: Environment variables and system properties must be relayed to the test ta
 ** [x] `++./gradlew -p application --quiet cleanAllTests linuxX64Test++`
 +
 --
-with IDE run configuration environment variables:
+in an IDE run configuration with an environment variable setting:
 
-* `TEST_INCLUDE=.*TestSuite1\.test.*;TEST_EXCLUDE=.*test3-2`
+* `++TEST_INCLUDE=.*TestSuite1\.test.*;TEST_EXCLUDE=.*test3-2++`
 --
 
 === TODO

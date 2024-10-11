@@ -4,16 +4,13 @@ open class TestSession protected constructor(
     configuration: TestElementConfiguration.() -> Unit = {
         isSequential = true
     },
-    defaultCompartment: (() -> Compartment) = { SequentialCompartment }
+    defaultCompartment: (() -> TestCompartment) = { TestCompartment.Sequential }
 ) : TestSuite(
     parent = null,
     simpleNameOrNull = "${testPlatform.displayName} session",
     configuration = configuration
 ) {
-    val defaultCompartment: Compartment by lazy { defaultCompartment() }
-
-    open class Compartment(name: String, configuration: TestElementConfiguration.() -> Unit) :
-        TestSuite(parent = global, simpleNameOrNull = "@$name", configuration = configuration)
+    val defaultCompartment: TestCompartment by lazy { defaultCompartment() }
 
     init {
         if (singleton != null) {
@@ -39,13 +36,5 @@ open class TestSession protected constructor(
                     " A TestSession must exist before creating a top-level TestSuite." +
                     "\n\tPlease ensure that the test framework's Gradle plugin is configured."
             )
-
-        val SequentialCompartment by lazy { Compartment(name = "Sequential", configuration = { isSequential = true }) }
-
-        val ParallelCompartment by lazy {
-            Compartment(name = "Parallel", configuration = { parallelism = testPlatform.parallelism })
-        }
-
-        val BenchmarkCompartment by lazy { Compartment(name = "Benchmark", configuration = { isSequential = true }) }
     }
 }

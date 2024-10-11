@@ -150,7 +150,7 @@ Some tests rely on shared (global) state, or are sensitive to real-time effects.
 
 * Tests using `Dispatchers.setMain` and `Dispatchers.resetMain` for Compose Multiplatform ``ViewModel``s,
 * Tests depending on legacy code,
-* Benchmarks.
+* Benchmarks (but these should use a special setup anyway, see https://github.com/Kotlin/kotlinx-benchmark[kotlinx-benchmark]).
 
 ==== Modern code can use parallelism
 

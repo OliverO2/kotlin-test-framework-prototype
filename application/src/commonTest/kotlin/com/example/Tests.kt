@@ -16,7 +16,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 // @TestSessionDeclaration
-// class MyTestSession : TestSession(defaultCompartment = { ParallelCompartment })
+// class MyTestSession : TestSession(defaultCompartment = { TestCompartment.Parallel })
 
 @TestSuiteDeclaration
 class TestSuite1 :
@@ -79,7 +79,7 @@ class TestSuite1 :
 @TestSuiteDeclaration
 class TestSuite2 :
     TestSuite(
-        // compartment = TestSession.BenchmarkCompartment,
+        // compartment = TestCompartment.Parallel,
         {
             test("!test1") {
                 log("in TestSuite2.test1")

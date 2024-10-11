@@ -18,6 +18,7 @@ import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
 import org.junit.platform.engine.support.descriptor.ClassSource
 import org.junit.platform.engine.support.descriptor.EngineDescriptor
 import testFramework.Test
+import testFramework.TestCompartment
 import testFramework.TestElement
 import testFramework.TestSession
 import testFramework.TestSuite
@@ -178,7 +179,7 @@ private fun TestElement.newPlatformDescriptor(parentUniqueId: UniqueId): TestEle
         val segmentType = when (element) {
             is Test -> "test"
             is TestSession -> "session"
-            is TestSession.Compartment -> "compartment"
+            is TestCompartment -> "compartment"
             is TestSuite -> "suite"
         }
         uniqueId = parentUniqueId.append(segmentType, simpleElementName)

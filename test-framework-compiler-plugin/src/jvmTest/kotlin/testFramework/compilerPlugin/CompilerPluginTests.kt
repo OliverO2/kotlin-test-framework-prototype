@@ -210,9 +210,9 @@ private fun compilation(
                 // across test runs, but the framework expects such members to have a freshly initialized state
                 // on each run.
                 // FIXME: Loading `TestSessionKt` multiple times leads to inconsistencies regarding compartments.
-                //     Compartments used repeatedly in multiple test runs will have an earlier test run's TestSession
-                //     as their parent. It would be better to load MainKt and all dependencies in an isolated class
-                //     loader per invocation. See https://stackoverflow.com/a/3726742/2529022
+                //     TestCompartments used repeatedly in multiple test runs will have an earlier test run's
+                //     TestSession as their parent. It would be better to load MainKt and all dependencies in an
+                //     isolated class loader per invocation. See https://stackoverflow.com/a/3726742/2529022
                 @Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
                 TestSession.singleton = null
 
