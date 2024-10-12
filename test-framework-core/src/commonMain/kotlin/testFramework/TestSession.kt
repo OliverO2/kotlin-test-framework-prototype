@@ -26,11 +26,11 @@ open class TestSession protected constructor(
 
     internal constructor() : this(configuration = { isSequential = true })
 
-    companion object {
+    internal companion object {
         // This property is internal for compiler plugin testing only. Consider it private otherwise.
         internal var singleton: TestSession? = null
 
-        val global: TestSession get() =
+        internal val global: TestSession get() =
             singleton ?: throw IllegalStateException(
                 "The test framework was not initialized." +
                     " A TestSession must exist before creating a top-level TestSuite." +

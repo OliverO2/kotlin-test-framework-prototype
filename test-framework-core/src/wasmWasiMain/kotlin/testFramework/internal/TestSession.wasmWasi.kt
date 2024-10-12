@@ -4,9 +4,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import testFramework.TestElement
 import testFramework.TestSession
+import testFramework.TestSuite
 import testFramework.internal.integration.IntellijTestLog
 
-actual suspend fun runTests(vararg suites: Any) {
+internal actual suspend fun runTests(suites: Array<TestSuite>) {
     // `suites` is unused because test suites register themselves with `TestSession`.
 
     configureTestsCatching {

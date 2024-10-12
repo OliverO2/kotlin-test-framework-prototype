@@ -26,41 +26,26 @@ private class CompilerPluginTests {
             println("=== packageName='$packageName' ===")
 
             val packageDeclaration = if (packageName.isEmpty()) "" else "package $packageName"
-            val d = "$"
 
             compilation(
                 """
                     $packageDeclaration
                     
                     import testFramework.annotations.TestSuiteDeclaration
+                    import testFramework.TestSuite
 
                     @TestSuiteDeclaration
-                    class TestSuiteOne {
-                        init {
-                            println("$d{this::class.qualifiedName}")
-                        }
-                    }
+                    class TestSuiteOne : TestSuite({})
 
                     @TestSuiteDeclaration
-                    class TestSuiteTwo {
-                        init {
-                            println("$d{this::class.qualifiedName}")
-                        }
-                    }
+                    class TestSuiteTwo : TestSuite({})
                 """,
-                debugEnabled = true,
-                executionPackageName = packageName
-            ) { capturedStdout ->
-
+                debugEnabled = true
+            ) {
                 val packageNameDot = if (packageName.isEmpty()) "" else "$packageName."
 
-                assertTrue(
-                    """
-                        ${packageNameDot}TestSuiteOne
-                        ${packageNameDot}TestSuiteTwo
-                    """.trimIndent() in capturedStdout,
-                    capturedStdout
-                )
+                assertTrue("Found test suite '${packageNameDot}TestSuiteOne'" in messages)
+                assertTrue("Found test suite '${packageNameDot}TestSuiteTwo'" in messages)
             }
         }
     }
@@ -113,6 +98,33 @@ private class CompilerPluginTests {
     }
 
     @Test
+    fun typeChecking() {
+        compilation(
+            """
+                package com.example
+                
+                import testFramework.annotations.TestSessionDeclaration
+                import testFramework.annotations.TestSuiteDeclaration
+                import testFramework.TestSuite
+
+                @TestSuiteDeclaration
+                class NoTestSuite
+                
+                @TestSessionDeclaration
+                class NoTestSession : TestSuite({})
+            """,
+            expectedExitCode = KotlinCompilation.ExitCode.COMPILATION_ERROR
+        ) {
+            assertTrue(
+                "'NoTestSuite' does not conform to the expected type of 'testFramework.TestSuite'" in messages
+            )
+            assertTrue(
+                "'NoTestSession' does not conform to the expected type of 'testFramework.TestSession'" in messages
+            )
+        }
+    }
+
+    @Test
     fun insistOnSingleTestSession() {
         compilation(
             """
@@ -146,9 +158,10 @@ private class CompilerPluginTests {
         compilation(
             """
                 import testFramework.annotations.TestSuiteDeclaration
+                import testFramework.TestSuite
                 
                 @TestSuiteDeclaration
-                class TestSuiteOne
+                class TestSuiteOne : TestSuite({})
             """,
             debugEnabled = true
         ) {

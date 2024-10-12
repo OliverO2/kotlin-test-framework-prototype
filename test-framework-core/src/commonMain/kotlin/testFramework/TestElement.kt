@@ -36,7 +36,7 @@ sealed class TestElement(
         parent?.registerChildElement(this)
     }
 
-    interface Selection {
+    internal interface Selection {
         fun includes(testElement: TestElement): Boolean
     }
 
@@ -69,7 +69,7 @@ sealed class TestElement(
 
     override fun toString(): String = "${this::class.simpleName}($elementName)"
 
-    companion object {
+    internal companion object {
         internal val AllInSelection = object : Selection {
             override fun includes(testElement: TestElement): Boolean = true
         }

@@ -8,7 +8,7 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.newSingleThreadContext
 import kotlinx.coroutines.withContext
 
-actual fun dispatcherWithParallelism(parallelism: Int): CoroutineDispatcher =
+internal actual fun dispatcherWithParallelism(parallelism: Int): CoroutineDispatcher =
     Dispatchers.IO.limitedParallelism(parallelism)
 
 actual suspend fun withSingleThreading(action: suspend () -> Unit) {

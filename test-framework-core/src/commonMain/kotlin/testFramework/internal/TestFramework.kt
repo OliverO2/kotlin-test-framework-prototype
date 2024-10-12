@@ -21,7 +21,7 @@ internal fun initializeTestFramework(testSession: TestSession?, arguments: Array
  *
  * The framework invokes this function with a list of top-level [TestSuite]s.
  */
-expect suspend fun runTests(vararg suites: Any)
+internal expect suspend fun runTests(suites: Array<TestSuite>)
 
 internal var argumentsBasedElementSelection: TestElement.Selection? = null
 
@@ -74,7 +74,7 @@ internal class ArgumentsBasedElementSelection(arguments: Array<String>) :
 internal class EnvironmentBasedElementSelection(includePatterns: String?, excludePatterns: String?) :
     ListsBasedElementSelection(includePatterns, excludePatterns)
 
-enum class LogLevel { DEBUG, INFO, ERROR }
+internal enum class LogLevel { DEBUG, INFO, ERROR }
 
 private val logLevel = LogLevel.INFO
 

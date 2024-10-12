@@ -5,9 +5,10 @@ import kotlinx.cinterop.toKString
 import kotlinx.coroutines.runBlocking
 import platform.posix.getenv
 import testFramework.TestSession
+import testFramework.TestSuite
 import testFramework.internal.integration.IntellijTestLog
 
-actual suspend fun runTests(vararg suites: Any) {
+internal actual suspend fun runTests(suites: Array<TestSuite>) {
     // `suites` is unused because test suites register themselves with `TestSession`.
 
     configureTestsCatching {
@@ -22,6 +23,6 @@ actual suspend fun runTests(vararg suites: Any) {
     }
 }
 
-internal fun runTestsBlocking(vararg suites: Any) {
-    runBlocking { runTests(*suites) }
+internal fun runTestsBlocking(suites: Array<TestSuite>) {
+    runBlocking { runTests(suites) }
 }

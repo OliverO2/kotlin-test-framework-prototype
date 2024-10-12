@@ -2,9 +2,10 @@ package testFramework.internal
 
 import testFramework.TestElement
 import testFramework.TestSession
+import testFramework.TestSuite
 import testFramework.internal.integration.IntellijTestLog
 
-actual suspend fun runTests(vararg suites: Any) {
+internal actual suspend fun runTests(suites: Array<TestSuite>) {
     // `suites` is unused because test suites register themselves with `TestSession`.
 
     // On the JVM, tests will be discovered and run via JUnit Platform.
@@ -16,6 +17,6 @@ actual suspend fun runTests(vararg suites: Any) {
     }.onSuccess {
         executeTestsCatching {
             TestSession.global.execute(IntellijTestLog)
-        } 
+        }
     }
 }
