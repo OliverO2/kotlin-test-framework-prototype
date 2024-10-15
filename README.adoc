@@ -37,9 +37,13 @@ What I've been missing so far is the combination of
 * composability, allowing users to extend the framework easily for special needs,
 * a developer experience with as little surprise (including quirks, bugs) as possible.
 
+=== Evolution
+
 The results of my research and experimentation with this prototype are reflected in these xref:documentation/Design Considerations.adoc[Design Considerations]. What matters to me is not maximizing some feature set (au contraire!), but having a well-thought-out, concise and easy-to-understand API, that lets us do testing as productively as possible.
 
 Of course, I've also been researching how to integrate with build tooling, IntelliJ IDEA and Kotlin's existing test infrastructure. Some of my findings are laid out in xref:documentation/Kotlin IDE and Build Tool Interoperability.adoc[Kotlin IDE and Build Tool Interoperability].
+
+Based on my research, there is a link:documentation/FrameworkAgnosticAPI.adoc[proposal (WIP) for a framework-agnostic API] which the Kotlin core ecosystem (compiler, stdlib, IDE plugin) could offer to integrate a variety of powerful test frameworks with minimal effort. You can also find an https://gitlab.com/opensavvy/groundwork/kotlin-test-initiative/-/merge_requests/1#note_2158155204[ongoing discussion about this proposal and an alternative] in the OpenSavvy Prepared project.
 
 === Bootstrapping A Local Build
 
@@ -53,13 +57,13 @@ This project builds a Gradle plugin. Its sample application depends on accessing
 === Running Tests
 
 * `./gradlew -p application --quiet cleanAllTests allTests`
-* `./gradlew -p application cleanAllTests jvmTest`
-* `./gradlew -p application cleanAllTests jsNodeTest`
-* `./gradlew -p application cleanAllTests jsBrowserTest`
-* `./gradlew -p application cleanAllTests wasmJsNodeTest`
-* `./gradlew -p application cleanAllTests wasmJsBrowserTest`
-* `./gradlew -p application cleanAllTests wasmWasiNodeTest`
-* `./gradlew -p application cleanAllTests linuxX64Test`
+* `./gradlew -p application --quiet cleanAllTests jvmTest`
+* `./gradlew -p application --quiet cleanAllTests jsNodeTest`
+* `./gradlew -p application --quiet cleanAllTests jsBrowserTest`
+* `./gradlew -p application --quiet cleanAllTests wasmJsNodeTest`
+* `./gradlew -p application --quiet cleanAllTests wasmJsBrowserTest`
+* `./gradlew -p application --quiet cleanAllTests wasmWasiNodeTest`
+* `./gradlew -p application --quiet cleanAllTests linuxX64Test`
 
 === Limitations
 

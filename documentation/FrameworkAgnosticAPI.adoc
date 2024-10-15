@@ -1,0 +1,137 @@
+=== Proposal for a Framework-Agnostic API (WIP)
+
+The code section shows the API, as well as how to create a framework on top of it and how to use such a framework:
+
+[source,kotlin]
+----
+typealias TestElementPath = List<String> // List of element names from the top of the hierarchy down to an element
+
+sealed interface TestElement {
+    val path: TestElementPath
+    val displayName: String
+    val isEnabled: Boolean
+
+    interface Test : TestElement
+
+    interface Suite : TestElement {
+        val children: Iterable<TestElement>
+    }
+}
+
+typealias TestElementPathPattern = List<Regex>
+
+interface TestSession {
+    fun configure(
+        topLevelSuites: List<TestElement.Suite>,
+        includePatterns: List<TestElementPathPattern>,
+        excludePatterns: List<TestElementPathPattern>
+    )
+
+    suspend fun execute(report: Report)
+
+    interface Report {
+        fun add(event: Event)
+
+        sealed interface Event {
+            val instant: Instant
+            val element: TestElement
+
+            interface Starting : Event
+
+            interface Finished {
+                val startingEvent: Starting
+                val throwable: Throwable?
+            }
+
+            interface Skipped
+        }
+    }
+}
+
+@Target(AnnotationTarget.FUNCTION, AnnotationTarget.CLASS)
+@Retention(AnnotationRetention.BINARY)
+annotation class TestDiscoverable
+
+@Target(AnnotationTarget.VALUE_PARAMETER)
+@Retention(AnnotationRetention.BINARY)
+annotation class TestName
+
+// The test framework must provide a default session at run-time:
+fun testSessionDefault(): TestSession = TODO()
+
+// The test framework must provide, and other modules can provide functions declaring discoverable test elements, like:
+@TestDiscoverable
+fun suite(@TestName name: String, componentsDefinition: TestElement.Suite.() -> Unit) {}
+
+@TestDiscoverable
+open class TestSuite(@TestName name: String, componentsDefinition: TestElement.Suite.() -> Unit) : TestElement.Suite {}
+
+@TestDiscoverable
+fun TestElement.Suite.suite(@TestName name: String, componentsDefinition: TestElement.Suite.() -> Unit) {}
+
+@TestDiscoverable
+fun TestElement.Suite.test(@TestName name: String, action: TestElement.Test.() -> Unit) {}
+
+// Test are then written in an annotation-free style like so:
+val mySuite1 = suite("my first suite") {
+    test("test one") {}
+
+    suite("my sub-suite") {
+        test("test sub-one") {}
+        test("test sub-two") {}
+    }
+}
+
+// Or, alternatively:
+class MySuite1 : TestSuite("my first suite", {
+    test("test one") {}
+    // ...
+})
+----
+
+=== Compiler
+
+These would be the compiler's responsibilities (or those of a compiler plugin):
+
+* Discover top-level test suites, which are
+** top-level classes derived from a class annotated with `@TestDiscoverable` and having a `TestElement.Suite` interface, or
+** top-level properties initialized by a function annotated with `@TestDiscoverable` and returning a `TestElement.Suite` (sub-)type.
+* Discover an optional top-level `TestSession`, which is
+** a top-level class annotated with `@TestDiscoverable` and having a `TestSession` interface, or
+** a top-level property initialized by a function annotated with `@TestDiscoverable` and returning a `TestElement.Suite` (sub-)type.
+* Generate a test start function, which
+** creates a test session, by invoking the constructor or property getter of a top-level session discovered, or the framework library's `testSessionDefault()` (this must be the first step, so that when suites are created, they register with the correct session),
+** creates a list of top-level test suites, by invoking the constructors or property getters for each suite discovered,
+** invokes ´TestSession.configure` with the top-level suites discovered and include/exclude patterns gained from the build tooling,
+** invokes ´TestSession.execute`.
+
+=== IDE
+
+These would be the IDE's responsibilities (via an IDE plugin):
+
+* Use the compiler's analysis to find suites and tests via
+** types derived from classes annotated with `@TestDiscoverable`,
+** calls of functions annotated with `@TestDiscoverable`.
+* Construct a `TestElementPathPattern` for each element by
+** considering `@TestDiscoverable`-invocations in a single source file (only direct calls to annotated suites and tests are considered),
+** constructing an element name pattern by using the constant string parts of value parameters annotated with `@TestName`, filling any dynamic parts with `.*`,
+** using the static invocation hierarchy to create a `TestElementPathPattern`.
+* Provide the following:
+** In editor windows (from code analysis):
+*** Show test run gutters for each test element discovered with actions for run and debug.
+** In the test run window (from the test report and test element properties):
+*** Show the element hierarchy with names and enabled state.
+*** For each test element, offer actions for run, debug, and jump to source.
+*** Offer the action "rerun failed tests".
+** In the inspections window (from the test report and test element properties):
+*** For each failed test, show its name, offer actions for run, debug, and jump to source.
+
+=== Framework
+
+These would be the test framework's responsibilities:
+
+* `TestSession.configure`:
+** Populate the element hierarchy from top-level suites to test elements, subject to include/exclude patterns. With a dynamically constructed hierarchy, the framework may find more elements than the compiler's static analysis, which is OK.
+** Initialize the properties `path`, `displayName`, `isEnabled` for all elements (which can depend on dynamic evaluation).
+* `TestSession.execute`:
+** Execute tests as configured, providing results continuously by adding events to the `TestReport`.
