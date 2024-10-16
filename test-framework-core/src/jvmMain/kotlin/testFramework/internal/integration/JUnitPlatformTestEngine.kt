@@ -182,13 +182,13 @@ private fun TestElement.newPlatformDescriptor(parentUniqueId: UniqueId): TestEle
             is TestCompartment -> "compartment"
             is TestSuite -> "suite"
         }
-        uniqueId = parentUniqueId.append(segmentType, simpleElementName)
+        uniqueId = parentUniqueId.append(segmentType, displayName)
         source = null
     }
 
     return TestElementJUnitPlatformDescriptor(
         uniqueId = uniqueId,
-        displayName = simpleElementName,
+        displayName = displayName,
         source = source,
         element = element
     ).apply {

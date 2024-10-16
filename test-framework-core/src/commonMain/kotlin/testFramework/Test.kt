@@ -4,23 +4,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.test.TestScope
 import testFramework.internal.TestReport
-import kotlin.coroutines.CoroutineContext
 
 class Test internal constructor(
-    parent: TestSuite,
+    parentSuite: TestSuite,
     simpleName: String,
     configuration: TestElementConfiguration.() -> Unit = {},
     private val action: TestAction
-) : TestElement(parent, simpleName, configuration = configuration) {
-
-    private var _testScope: TestScope? = null
-    val testScope: TestScope get() = _testScope
-        ?: throw IllegalArgumentException("$this is not executing in a TestScope.")
-
-    private var testCoroutineContext: CoroutineContext? = null
-    val testCoroutineScope: CoroutineScope get() = CoroutineScope(
-        testCoroutineContext ?: throw IllegalArgumentException("$this is not executing in a coroutine.")
-    )
+) : TestElement(parentSuite, simpleName, configuration = configuration),
+    AbstractTest {
 
     override fun configure(selection: Selection) {
         super.configure(selection)
@@ -33,20 +24,20 @@ class Test internal constructor(
     override suspend fun execute(report: TestReport) {
         executeReporting(report) {
             if (isEnabled) {
-                require(testCoroutineContext == null) { "$this must not execute concurrently with itself" }
-                try {
-                    effectiveConfiguration.testConcurrency!!.runInContext { testScope ->
-                        _testScope = testScope
-                        testCoroutineContext = currentCoroutineContext()
-                        action()
-                    }
-                } finally {
-                    _testScope = null
-                    testCoroutineContext = null
+                effectiveConfiguration.testConcurrency!!.runInContext { testScope ->
+                    TestCoroutineScope(this, CoroutineScope(currentCoroutineContext()), testScope).action()
                 }
             }
         }
     }
 }
 
-typealias TestAction = suspend Test.() -> Unit
+class TestCoroutineScope(private val test: Test, scope: CoroutineScope, private val testScopeOrNull: TestScope?) :
+    AbstractTest by test,
+    CoroutineScope by scope {
+
+    val testScope: TestScope get() = testScopeOrNull
+        ?: throw IllegalArgumentException("$test is not executing in a TestScope.")
+}
+
+typealias TestAction = suspend TestCoroutineScope.() -> Unit

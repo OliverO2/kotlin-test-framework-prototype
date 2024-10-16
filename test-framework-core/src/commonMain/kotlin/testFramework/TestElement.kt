@@ -4,21 +4,16 @@ import testFramework.internal.TestEvent
 import testFramework.internal.TestReport
 
 sealed class TestElement(
-    internal open val parent: TestSuite?,
-    private val simpleNameOrNull: String?,
+    override val parentSuite: TestSuite?,
+    simpleNameOrNull: String?,
     configuration: TestElementConfiguration.() -> Unit = {}
-) {
-    val simpleElementName: String by lazy {
+) : AbstractTestElement {
+    override val displayName: String by lazy {
         simpleNameOrNull?.prefixesRemoved() ?: this::class.simpleName ?: "[TestElement]"
     }
 
-    val elementName: String get() = if (parent !=
-        null
-    ) {
-        "${parent?.elementName}.$simpleElementName"
-    } else {
-        simpleElementName
-    }
+    override val elementPath: TestElementPath get() =
+        if (parentSuite != null) "${parentSuite?.elementPath}.$displayName" else displayName
 
     internal var effectiveConfiguration: TestElementConfiguration = TestElementConfiguration().apply {
         configuration()
@@ -26,12 +21,12 @@ sealed class TestElement(
         if (simpleNameOrNull?.startsWith("f:") == true) isFocused = true
     }
 
-    open val isEnabled by effectiveConfiguration::isEnabled
-    open val isFocused by effectiveConfiguration::isFocused
+    override val isEnabled by effectiveConfiguration::isEnabled
+    internal open val isFocused by effectiveConfiguration::isFocused
 
     init {
         @Suppress("LeakingThis")
-        parent?.registerChildElement(this)
+        parentSuite?.registerChildElement(this)
     }
 
     internal interface Selection {
@@ -39,7 +34,7 @@ sealed class TestElement(
     }
 
     internal open fun configure(selection: Selection) {
-        effectiveConfiguration.inheritFrom(parent?.effectiveConfiguration)
+        effectiveConfiguration.inheritFrom(parentSuite?.effectiveConfiguration)
     }
 
     internal abstract suspend fun execute(report: TestReport)
@@ -65,7 +60,7 @@ sealed class TestElement(
         }
     }
 
-    override fun toString(): String = "${this::class.simpleName}($elementName)"
+    override fun toString(): String = "${this::class.simpleName}($elementPath)"
 
     internal companion object {
         internal val AllInSelection = object : Selection {

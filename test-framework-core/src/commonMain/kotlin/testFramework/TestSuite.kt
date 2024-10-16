@@ -11,13 +11,14 @@ typealias TestSuiteAction = suspend TestSuite.() -> Unit
 typealias TestSuiteWrappingAction = suspend (suiteAction: TestSuiteAction) -> Unit
 
 open class TestSuite internal constructor(
-    parent: TestSuite?,
+    parentSuite: TestSuite?,
     simpleNameOrNull: String? = null,
     configuration: TestElementConfiguration.() -> Unit = {},
     private val componentsDefinition: TestSuiteComponentsDefinition? = null
-) : TestElement(parent, simpleNameOrNull, configuration) {
+) : TestElement(parentSuite, simpleNameOrNull, configuration),
+    AbstractTestSuite {
 
-    internal val childElements: MutableList<TestElement> = mutableListOf()
+    override val childElements: MutableList<TestElement> = mutableListOf()
 
     override var isEnabled by effectiveConfiguration::isEnabled
     override var isFocused by effectiveConfiguration::isFocused
@@ -28,14 +29,14 @@ open class TestSuite internal constructor(
     private val fixtures = mutableListOf<Fixture<*>>()
 
     protected constructor(componentsDefinition: TestSuiteComponentsDefinition) : this(
-        parent = TestSession.global.defaultCompartment,
+        parentSuite = TestSession.global.defaultCompartment,
         componentsDefinition = componentsDefinition
     )
 
     protected constructor(
         compartment: TestCompartment,
         componentsDefinition: TestSuiteComponentsDefinition
-    ) : this(parent = compartment, componentsDefinition = componentsDefinition)
+    ) : this(parentSuite = compartment, componentsDefinition = componentsDefinition)
 
     internal fun registerChildElement(childElement: TestElement) {
         childElements.add(childElement)

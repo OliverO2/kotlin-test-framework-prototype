@@ -43,7 +43,7 @@ The results of my research and experimentation with this prototype are reflected
 
 Of course, I've also been researching how to integrate with build tooling, IntelliJ IDEA and Kotlin's existing test infrastructure. Some of my findings are laid out in xref:documentation/Kotlin IDE and Build Tool Interoperability.adoc[Kotlin IDE and Build Tool Interoperability].
 
-Based on my research, there is a link:documentation/FrameworkAgnosticAPI.adoc[proposal (WIP) for a framework-agnostic API] which the Kotlin core ecosystem (compiler, stdlib, IDE plugin) could offer to integrate a variety of powerful test frameworks with minimal effort. You can also find an https://gitlab.com/opensavvy/groundwork/kotlin-test-initiative/-/merge_requests/1#note_2158155204[ongoing discussion about this proposal and an alternative] in the OpenSavvy Prepared project.
+Based on my research, there is a xref:documentation/Framework-Agnostic API.adoc[proposal (WIP) for a framework-agnostic API] which the Kotlin core ecosystem (compiler, stdlib, IDE plugin) could offer to integrate a variety of powerful test frameworks with minimal effort. You can also find an https://gitlab.com/opensavvy/groundwork/kotlin-test-initiative/-/merge_requests/1#note_2158155204[ongoing discussion about this proposal and an alternative] in the OpenSavvy Prepared project.
 
 === Bootstrapping A Local Build
 
@@ -97,7 +97,6 @@ in an IDE run configuration with an environment variable setting:
 
 === TODO
 
-* Make Test an interface, to be joined with a CoroutineScope to a TestCoroutineScope?
 * Add support for Dispatchers.setMain: Auto clean-up and detecting/preventing concurrent mutations?
 * Make TestScoped.DEFAULT_TIMEOUT a TestSession configuration parameter?
 * Use https://github.com/JetBrains/kotlin/blob/d9ddcd991bf9c6122041f0276af644be0432fa38/libraries/tools/kotlin-gradle-plugin/src/common/kotlin/org/jetbrains/kotlin/gradle/targets/native/internal/KotlinNativeStackTraceParser.kt[KotlinNativeStackTraceParser.kt] to reference source locations in Native stack traces.

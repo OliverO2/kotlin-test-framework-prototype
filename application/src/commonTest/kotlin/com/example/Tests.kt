@@ -128,7 +128,7 @@ class TestSuite4 :
             test("unhandled exceptions") {
                 with(testScope) {
                     log("$this starting, currentTime=$currentTime")
-                    testCoroutineScope.launch {
+                    launch {
                         throw AssertionError("could this be unhandled?")
                         try {
                             log("$this launched job starting, currentTime=$currentTime")
@@ -202,7 +202,7 @@ private data class MyFirstFixture(
         state = "closed"
     }
 
-    override fun toString(): String = "${this::class.simpleName}(${suite.simpleElementName}, i=$incarnation, s=$state)"
+    override fun toString(): String = "${this::class.simpleName}(${suite.displayName}, i=$incarnation, s=$state)"
 
     companion object {
         val incarnationCount = atomic(0)
@@ -224,7 +224,7 @@ private data class MySecondFixture(
         state = "closed"
     }
 
-    override fun toString(): String = "${this::class.simpleName}(${suite.simpleElementName}, i=$incarnation, s=$state)"
+    override fun toString(): String = "${this::class.simpleName}(${suite.displayName}, i=$incarnation, s=$state)"
 
     companion object {
         val incarnationCount = atomic(0)
@@ -243,7 +243,7 @@ fun TestSuite.test(name: String, timeout: Duration, action: TestAction) = test(n
 
 private fun TestSuite.log(message: String) {
     // println("[${testPlatform.threadDisplayName()}] $elementName: $message")
-    println("$elementName: $message\n")
+    println("$elementPath: $message\n")
 }
 
 private fun fail(message: String): Unit = throw AssertionError(message)

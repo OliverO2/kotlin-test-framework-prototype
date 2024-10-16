@@ -1,7 +1,7 @@
 package testFramework
 
 open class TestCompartment(name: String, configuration: TestElementConfiguration.() -> Unit) :
-    TestSuite(parent = TestSession.global, simpleNameOrNull = "@$name", configuration = configuration) {
+    TestSuite(parentSuite = TestSession.global, simpleNameOrNull = "@$name", configuration = configuration) {
 
     companion object {
         val Default by lazy {

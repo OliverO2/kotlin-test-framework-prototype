@@ -21,12 +21,12 @@ internal suspend fun configureAndRunJsHostedTests() {
     fun TestElement.registerWithKotlinJsTestFramework() {
         when (this) {
             is Test -> {
-                kotlinJsTestFramework.test(simpleElementName, ignored = !isEnabled) {
+                kotlinJsTestFramework.test(displayName, ignored = !isEnabled) {
                     TestSessionAdapter.produceTestResult(this)
                 }
             }
             is TestSuite -> {
-                kotlinJsTestFramework.suite(simpleElementName, ignored = !isEnabled) {
+                kotlinJsTestFramework.suite(displayName, ignored = !isEnabled) {
                     childElements.forEach {
                         it.registerWithKotlinJsTestFramework()
                     }

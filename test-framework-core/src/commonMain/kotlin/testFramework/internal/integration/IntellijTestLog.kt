@@ -12,22 +12,22 @@ internal object IntellijTestLog : TestReport(FeedMode.ALL_ELEMENTS) {
     private val outputMutex = Mutex()
 
     override suspend fun add(event: TestEvent) {
-        val parentElement = event.element.parent
+        val parentElement = event.element.parentSuite
 
         // Apparently, `className` must be unique, even across platform targets. Otherwise, IntelliJ's "run test"
         // window will mix tests for different targets under common `className` hierarchy nodes.
         // Therefore, we cannot use `event.element::class.simpleName` here.
         // Unfortunately, if IntelliJ is not given a correct fully qualified class name, it does not offer to run a
         // single test class via its run window.
-        val className = event.element.elementName
+        val className = event.element.elementPath
 
         suspend fun addBeforeEvent() {
             ijLog {
                 event(type = if (event.element is Test) "beforeTest" else "beforeSuite") {
-                    test(id = event.element.elementName, parentId = parentElement?.elementName) {
+                    test(id = event.element.elementPath, parentId = parentElement?.elementPath) {
                         descriptor(
-                            name = event.element.elementName,
-                            displayName = event.element.simpleElementName,
+                            name = event.element.elementPath,
+                            displayName = event.element.displayName,
                             className = className
                         )
                     }
@@ -42,10 +42,10 @@ internal object IntellijTestLog : TestReport(FeedMode.ALL_ELEMENTS) {
         ) {
             ijLog {
                 event(type = if (event.element is Test) "afterTest" else "afterSuite") {
-                    test(id = event.element.elementName, parentId = parentElement?.elementName) {
+                    test(id = event.element.elementPath, parentId = parentElement?.elementPath) {
                         descriptor(
-                            name = event.element.elementName,
-                            displayName = event.element.simpleElementName,
+                            name = event.element.elementPath,
+                            displayName = event.element.displayName,
                             className = className
                         )
                         result(
