@@ -3,4 +3,7 @@
   <component name="KtLint plugin">
     <ktlintMode>DISTRACT_FREE</ktlintMode>
   </component>
+  <component name="com.nbadal.ktlint.KtlintProjectSettings">
+    <ktlintMode>DISTRACT_FREE</ktlintMode>
+  </component>
 </project>

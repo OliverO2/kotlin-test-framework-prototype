@@ -3,11 +3,16 @@ package com.example
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import testFramework.Concurrency
 import testFramework.TestAction
 import testFramework.TestSuite
 import testFramework.annotations.TestSuiteDeclaration
@@ -22,7 +27,7 @@ import kotlin.time.Duration.Companion.seconds
 class TestSuite1 :
     TestSuite(
         {
-            // parallelism = testPlatform.parallelism
+            // compartment = TestCompartment.Parallel,
 
             val fixtureA = fixture { MyFirstFixture(this) } closeWith { closeSuspending() }
 
@@ -90,6 +95,10 @@ class TestSuite2 :
                 delay(0.3.seconds)
                 log("in TestSuite2.test2 – after delay")
             }
+
+            test("test3 (disabled)", configuration = { isEnabled = false }) {
+                log("in TestSuite2.test1")
+            }
         }
     )
 
@@ -99,12 +108,81 @@ class TestSuite3 :
         {
             val fixtureC = fixture { MyFirstFixture(this) }
 
-            test("!test1") {
+            isEnabled = false
+
+            test("test1") {
                 log("in TestSuite3.test1, C=${fixtureC()}")
             }
 
-            test("!test2") {
+            test("test2") {
                 log("in TestSuite3.test2, C=${fixtureC()}")
+            }
+        }
+    )
+
+@OptIn(ExperimentalCoroutinesApi::class)
+@TestSuiteDeclaration
+class TestSuite4 :
+    TestSuite(
+        {
+            test("unhandled exceptions") {
+                with(testScope) {
+                    log("$this starting, currentTime=$currentTime")
+                    testCoroutineScope.launch {
+                        throw AssertionError("could this be unhandled?")
+                        try {
+                            log("$this launched job starting, currentTime=$currentTime")
+                            delay(0.2.seconds)
+                            log("$this launched job finishing, currentTime=$currentTime")
+                        } catch (throwable: Throwable) {
+                            log("$this launched job caught $throwable, currentTime=$currentTime")
+                            throw throwable
+                        }
+                    }
+                    log("$this after launch, currentTime=$currentTime")
+                    delay(0.1.seconds)
+                    log("$this finishing, currentTime=$currentTime")
+                }
+            }
+
+            test("background scope") {
+                with(testScope) {
+                    log("$this starting, currentTime=$currentTime")
+                    backgroundScope.launch {
+                        try {
+                            log("$this launched job starting, currentTime=$currentTime")
+                            delay(0.2.seconds)
+                            log("$this launched job finishing, currentTime=$currentTime")
+                        } catch (throwable: Throwable) {
+                            log("$this launched job caught $throwable, currentTime=$currentTime")
+                            throw throwable
+                        }
+                    }
+                    log("$this after launch, currentTime=$currentTime")
+                    delay(0.1.seconds)
+                    log("$this finishing, currentTime=$currentTime")
+                }
+            }
+
+            test("unconfined dispatcher", configuration = {
+                testConcurrency = Concurrency.TestScoped(UnconfinedTestDispatcher())
+            }) {
+                with(testScope) {
+                    log("$this starting, currentTime=$currentTime")
+                    launch {
+                        try {
+                            log("$this launched job starting, currentTime=$currentTime")
+                            delay(0.2.seconds)
+                            log("$this launched job finishing, currentTime=$currentTime")
+                        } catch (throwable: Throwable) {
+                            log("$this launched job caught $throwable, currentTime=$currentTime")
+                            throw throwable
+                        }
+                    }
+                    log("$this after launch, currentTime=$currentTime")
+                    delay(0.1.seconds)
+                    log("$this finishing, currentTime=$currentTime")
+                }
             }
         }
     )

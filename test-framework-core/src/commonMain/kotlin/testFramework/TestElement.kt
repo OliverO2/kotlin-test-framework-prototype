@@ -20,16 +20,14 @@ sealed class TestElement(
         simpleElementName
     }
 
-    protected var effectiveConfiguration: TestElementConfiguration = TestElementConfiguration().apply {
+    internal var effectiveConfiguration: TestElementConfiguration = TestElementConfiguration().apply {
         configuration()
         if (simpleNameOrNull?.startsWith('!') == true) isEnabled = false
         if (simpleNameOrNull?.startsWith("f:") == true) isFocused = true
     }
 
-    var isEnabled by effectiveConfiguration::isEnabled
-    var isFocused by effectiveConfiguration::isFocused
-    var isSequential by effectiveConfiguration::isSequential
-    var parallelism by effectiveConfiguration::parallelism
+    open val isEnabled by effectiveConfiguration::isEnabled
+    open val isFocused by effectiveConfiguration::isFocused
 
     init {
         @Suppress("LeakingThis")

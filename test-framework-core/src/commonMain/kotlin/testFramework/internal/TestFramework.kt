@@ -1,8 +1,10 @@
 package testFramework.internal
 
+import kotlinx.coroutines.test.TestScope
 import testFramework.TestElement
 import testFramework.TestSession
 import testFramework.TestSuite
+import kotlin.time.Duration
 
 /**
  * Initialize the test framework with a [TestSession].
@@ -124,3 +126,5 @@ private inline fun <R> runCatchingLogging(headline: String, action: () -> R): Re
 }.onFailure { throwable ->
     throwable.logErrorWithStacktrace(headline)
 }
+
+internal expect suspend fun TestScope.runTestAwaitingCompletion(timeout: Duration, action: suspend TestScope.() -> Unit)

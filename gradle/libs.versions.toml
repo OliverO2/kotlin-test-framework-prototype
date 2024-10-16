@@ -20,6 +20,7 @@ io-github-classgraph = "io.github.classgraph:classgraph:4.8.177"
 org-jetbrains-kotlinx-atomicfu = "org.jetbrains.kotlinx:atomicfu:0.25.0"
 
 org-jetbrains-kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "org-jetbrains-kotlinx-coroutines" }
+org-jetbrains-kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "org-jetbrains-kotlinx-coroutines" }
 org-jetbrains-kotlinx-coroutines-debug = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-debug", version.ref = "org-jetbrains-kotlinx-coroutines" }
 
 # https://github.com/Kotlin/kotlinx-datetime/blob/master/CHANGELOG.md

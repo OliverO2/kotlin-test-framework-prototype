@@ -4,12 +4,18 @@ open class TestCompartment(name: String, configuration: TestElementConfiguration
     TestSuite(parent = TestSession.global, simpleNameOrNull = "@$name", configuration = configuration) {
 
     companion object {
-        val Sequential by lazy {
-            TestCompartment(name = "Sequential", configuration = { isSequential = true })
+        val Default by lazy {
+            TestCompartment(name = "Default", configuration = {
+                suiteConcurrency = Concurrency.Sequential
+                testConcurrency = Concurrency.TestScoped()
+            })
         }
 
         val Parallel by lazy {
-            TestCompartment(name = "Parallel", configuration = { parallelism = testPlatform.parallelism })
+            TestCompartment(name = "Parallel", configuration = {
+                suiteConcurrency = Concurrency.Parallel()
+                testConcurrency = Concurrency.Inherited
+            })
         }
     }
 }

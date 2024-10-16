@@ -1,10 +1,8 @@
 package testFramework
 
 open class TestSession protected constructor(
-    configuration: TestElementConfiguration.() -> Unit = {
-        isSequential = true
-    },
-    defaultCompartment: (() -> TestCompartment) = { TestCompartment.Sequential }
+    configuration: TestElementConfiguration.() -> Unit = {},
+    defaultCompartment: (() -> TestCompartment) = { TestCompartment.Default }
 ) : TestSuite(
     parent = null,
     simpleNameOrNull = "${testPlatform.displayName} session",
@@ -24,7 +22,7 @@ open class TestSession protected constructor(
         singleton = this
     }
 
-    internal constructor() : this(configuration = { isSequential = true })
+    internal constructor() : this(configuration = {})
 
     internal companion object {
         // This property is internal for compiler plugin testing only. Consider it private otherwise.

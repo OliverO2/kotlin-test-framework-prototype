@@ -97,10 +97,9 @@ in an IDE run configuration with an environment variable setting:
 
 === TODO
 
-* Combine sequential execution and parallelism into one settings class.
-** Use the test dispatcher by default.
-** Use the default dispatcher if concurrent execution is chosen.
-* Restrict suite-specific configuration to suites?
+* Make Test an interface, to be joined with a CoroutineScope to a TestCoroutineScope?
+* Add support for Dispatchers.setMain: Auto clean-up and detecting/preventing concurrent mutations?
+* Make TestScoped.DEFAULT_TIMEOUT a TestSession configuration parameter?
 * Use https://github.com/JetBrains/kotlin/blob/d9ddcd991bf9c6122041f0276af644be0432fa38/libraries/tools/kotlin-gradle-plugin/src/common/kotlin/org/jetbrains/kotlin/gradle/targets/native/internal/KotlinNativeStackTraceParser.kt[KotlinNativeStackTraceParser.kt] to reference source locations in Native stack traces.
 * Check whether to use `@DslMarker` to avoid suite functions being available in tests.
 * Add an IntelliJ plugin.

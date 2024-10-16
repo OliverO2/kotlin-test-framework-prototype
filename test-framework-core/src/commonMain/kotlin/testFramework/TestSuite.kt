@@ -5,7 +5,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import testFramework.internal.TestReport
-import testFramework.internal.withParallelism
 
 typealias TestSuiteComponentsDefinition = TestSuite.() -> Unit
 typealias TestSuiteAction = suspend TestSuite.() -> Unit
@@ -19,6 +18,9 @@ open class TestSuite internal constructor(
 ) : TestElement(parent, simpleNameOrNull, configuration) {
 
     internal val childElements: MutableList<TestElement> = mutableListOf()
+
+    override var isEnabled by effectiveConfiguration::isEnabled
+    override var isFocused by effectiveConfiguration::isFocused
 
     private var aroundAllAction: TestSuiteWrappingAction? = null
 
@@ -64,12 +66,12 @@ open class TestSuite internal constructor(
             if (childElements.any { it.isFocused }) {
                 // Disable all non-focused child elements (disabling does not propagate to transitive child elements).
                 childElements.forEach {
-                    it.isEnabled = it.isFocused
+                    it.effectiveConfiguration.isEnabled = it.isFocused
                 }
             } else {
                 // Disable this element if none of its child elements are enabled.
                 if (childElements.none { it.isEnabled }) {
-                    isEnabled = false
+                    effectiveConfiguration.isEnabled = false
                 }
             }
         }
@@ -81,7 +83,7 @@ open class TestSuite internal constructor(
                 val childElementActions = allChildElementsWrappingActions().wrappedAround {
                     coroutineScope {
                         for (childElement in childElements) {
-                            if (effectiveConfiguration.isSequential == true) {
+                            if (effectiveConfiguration.suiteConcurrency is Concurrency.Sequential) {
                                 childElement.execute(report)
                             } else {
                                 launch {
@@ -92,7 +94,7 @@ open class TestSuite internal constructor(
                     }
                 }
 
-                withParallelism(effectiveConfiguration.parallelism) {
+                effectiveConfiguration.suiteConcurrency!!.runInContext {
                     childElementActions()
                 }
             } else {

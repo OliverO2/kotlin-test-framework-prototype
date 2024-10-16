@@ -1,4 +1,4 @@
-package testFramework.internal
+package testFramework
 
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -7,7 +7,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.newSingleThreadContext
 import kotlinx.coroutines.withContext
 
-internal actual fun dispatcherWithParallelism(parallelism: Int): CoroutineDispatcher =
+actual fun dispatcherWithParallelism(parallelism: Int): CoroutineDispatcher =
     Dispatchers.IO.limitedParallelism(parallelism)
 
 actual suspend fun withSingleThreading(action: suspend () -> Unit) {

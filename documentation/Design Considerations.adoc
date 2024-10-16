@@ -110,27 +110,19 @@ NOTE: Wrappers for individual tests are not required. They can easily be provide
 ** `AutoCloseable.use { ... }`,
 ** custom wrappers combining any of the above.
 
-==== Tests run in ``kotlinx.coroutines.test.TestScope`` by default
+==== Tests run in ``TestScope`` by default
 
-* [ ] By default, tests run in a `kotlinx.coroutines.test.TestScope`, created as a child of the parent coroutine and invoked via `TestScope.runTest`.
+* [x] By default, tests run in a `TestScope`, invoked via `TestScope.runTest`.
 +
 --
 This implies that the following is in effect:
 
-* Single threaded execution
-* Virtual time with delay skipping
-* 60s timeout (configurable)
-* Unhandled exception reporting
-* `backgroundScope` with automatic job cancellation after finishing
-* `testTimeSource`, and others
---
-
-* Restrictions of top-level `runTest` invocations and https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-test/kotlinx.coroutines.test/-test-result/[TestResult] usage on JS should not apply. Instead:
-+
---
-* [x] ``TestScope``s may appear anywhere in the coroutine hierarchy. Results returned from `runTest` can be ignored.
-* [x] ``TestScope``s may be nested.
-* [x] Multiple ``TestScope``s per test can be used.
+* [x] Single threaded execution
+* [x] Virtual time with delay skipping
+* [x] 60s timeout (configurable)
+* [x] Unhandled exception reporting
+* [x] `backgroundScope` with automatic job cancellation after finishing
+* [x] `testTimeSource`, and others
 --
 
 References considered:
