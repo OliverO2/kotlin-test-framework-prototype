@@ -8,7 +8,7 @@ import testFramework.internal.TestReport
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
-internal object IntellijTestLog : TestReport(FeedMode.ALL_ELEMENTS) {
+internal object IntellijTestLog : TestReport() {
     private val outputMutex = Mutex()
 
     override suspend fun add(event: TestEvent) {
@@ -77,10 +77,6 @@ internal object IntellijTestLog : TestReport(FeedMode.ALL_ELEMENTS) {
                         failureType(if (throwable is AssertionError) "assertionFailed" else "error")
                     }
                 }
-            }
-
-            is TestEvent.Skipped -> {
-                throw IllegalStateException("${TestEvent.Skipped::class.simpleName} reported unexpectedly")
             }
         }
     }

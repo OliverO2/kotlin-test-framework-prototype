@@ -122,28 +122,34 @@ internal class JUnitPlatformTestEngine : TestEngine {
 
         runBlocking {
             TestSession.global.execute(
-                object : TestReport(FeedMode.ENABLED_ELEMENTS) {
+                object : TestReport() {
                     override suspend fun add(event: TestEvent) {
                         when (event) {
                             is TestEvent.Starting -> {
-                                log { "${event.element.platformDescriptor}: ${event.element} starting" }
-                                listener.executionStarted(event.element.platformDescriptor)
+                                if (event.element.isEnabled) {
+                                    log { "${event.element.platformDescriptor}: ${event.element} starting" }
+                                    listener.executionStarted(event.element.platformDescriptor)
+                                } else {
+                                    if (event.element.parentSuite?.isEnabled == true) {
+                                        // Report skipping only if it has not already been reported by a parent.
+                                        // (Report nothing if this is the disabled root element.)
+                                        log { "${event.element.platformDescriptor}: ${event.element} skipped" }
+                                        listener.executionSkipped(event.element.platformDescriptor, "disabled")
+                                    }
+                                }
                             }
 
                             is TestEvent.Finished -> {
-                                log {
-                                    "${event.element.platformDescriptor}: ${event.element} finished," +
-                                        " result=${event.executionResult})"
+                                if (event.element.isEnabled) {
+                                    log {
+                                        "${event.element.platformDescriptor}: ${event.element} finished," +
+                                            " result=${event.executionResult})"
+                                    }
+                                    listener.executionFinished(
+                                        event.element.platformDescriptor,
+                                        event.executionResult
+                                    )
                                 }
-                                listener.executionFinished(
-                                    event.element.platformDescriptor,
-                                    event.executionResult
-                                )
-                            }
-
-                            is TestEvent.Skipped -> {
-                                log { "${event.element.platformDescriptor}: ${event.element} skipped" }
-                                listener.executionSkipped(event.element.platformDescriptor, "disabled")
                             }
                         }
                     }

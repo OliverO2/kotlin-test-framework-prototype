@@ -40,11 +40,6 @@ sealed class TestElement(
     internal abstract suspend fun execute(report: TestReport)
 
     internal suspend fun executeReporting(report: TestReport, action: suspend () -> Unit) {
-        if (!isEnabled && report.feedMode == TestReport.FeedMode.ENABLED_ELEMENTS) {
-            report.add(TestEvent.Skipped(this))
-            return
-        }
-
         val startingEvent = TestEvent.Starting(this)
 
         report.add(startingEvent)

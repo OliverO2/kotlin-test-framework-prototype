@@ -43,8 +43,6 @@ interface AbstractTestSession {
                 val startingEvent: Starting
                 val throwable: Throwable?
             }
-
-            interface Skipped
         }
     }
 }

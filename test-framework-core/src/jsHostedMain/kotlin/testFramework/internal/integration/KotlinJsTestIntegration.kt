@@ -69,9 +69,9 @@ private object TestSessionAdapter {
             GlobalScope.launch {
                 try {
                     TestSession.global.execute(
-                        object : TestReport(FeedMode.ENABLED_ELEMENTS) {
+                        object : TestReport() {
                             override suspend fun add(event: TestEvent) {
-                                if (event.element is Test && event is TestEvent.Finished) {
+                                if (event.element.isEnabled && event.element is Test && event is TestEvent.Finished) {
                                     testResults(event.element).send(event.throwable)
                                 }
                             }
