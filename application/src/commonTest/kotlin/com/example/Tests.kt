@@ -187,6 +187,29 @@ class TestSuite4 :
         }
     )
 
+@OptIn(ExperimentalCoroutinesApi::class)
+@TestSuiteDeclaration
+class TestSuite5 :
+    TestSuite(
+        {
+            aroundAll { childElementActions ->
+                withContext(UnconfinedTestDispatcher()) {
+                    childElementActions()
+                }
+            }
+
+            test("test1") {
+                delay(0.1.seconds)
+                log("in TestSuite5.test1, currentTime=${testScope.currentTime}")
+            }
+
+            test("test2") {
+                delay(0.2.seconds)
+                log("in TestSuite5.test2, currentTime=${testScope.currentTime}")
+            }
+        }
+    )
+
 private data class MyFirstFixture(
     val suite: TestSuite,
     var state: String = "open",

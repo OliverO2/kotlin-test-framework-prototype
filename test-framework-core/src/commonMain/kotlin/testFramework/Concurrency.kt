@@ -4,6 +4,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.withContext
 import testFramework.internal.runTestAwaitingCompletion
@@ -36,7 +37,11 @@ sealed interface Concurrency {
         TestConcurrency {
 
         override suspend fun runInContext(action: suspend (testScope: TestScope?) -> Unit) {
-            TestScope(currentCoroutineContext().minusKey(CoroutineDispatcher).minusKey(Job) + context)
+            var inheritableContext = currentCoroutineContext().minusKey(Job)
+            if (inheritableContext[CoroutineDispatcher] !is TestDispatcher) {
+                inheritableContext = inheritableContext.minusKey(CoroutineDispatcher)
+            }
+            TestScope(inheritableContext + context)
                 .runTestAwaitingCompletion(timeout = timeout) {
                     action(this)
                 }
