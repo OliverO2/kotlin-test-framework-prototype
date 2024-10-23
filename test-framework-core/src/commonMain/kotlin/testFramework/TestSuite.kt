@@ -6,15 +6,15 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import testFramework.internal.TestReport
 
-typealias TestSuiteComponentsDefinition = TestSuite.() -> Unit
-typealias TestSuiteAction = suspend TestSuite.() -> Unit
-typealias TestSuiteWrappingAction = suspend (suiteAction: TestSuiteAction) -> Unit
+typealias TestSuiteContent = TestSuite.() -> Unit
+typealias TestSuiteExecutionAction = suspend TestSuite.() -> Unit
+typealias TestSuiteExecutionWrappingAction = suspend (suiteAction: TestSuiteExecutionAction) -> Unit
 
 open class TestSuite internal constructor(
     parentSuite: TestSuite?,
     simpleNameOrNull: String? = null,
     configuration: TestElementConfiguration.() -> Unit = {},
-    private val componentsDefinition: TestSuiteComponentsDefinition? = null
+    private val content: TestSuiteContent? = null
 ) : TestElement(parentSuite, simpleNameOrNull, configuration),
     AbstractTestSuite {
 
@@ -23,31 +23,46 @@ open class TestSuite internal constructor(
     override var isEnabled by effectiveConfiguration::isEnabled
     override var isFocused by effectiveConfiguration::isFocused
 
-    private var aroundAllAction: TestSuiteWrappingAction? = null
+    private var aroundAllAction: TestSuiteExecutionWrappingAction? = null
 
     /** Fixtures created while executing this suite, in reverse order of fixture creation. */
     private val fixtures = mutableListOf<Fixture<*>>()
 
-    protected constructor(componentsDefinition: TestSuiteComponentsDefinition) : this(
+    protected constructor(content: TestSuiteContent) : this(
         parentSuite = TestSession.global.defaultCompartment,
-        componentsDefinition = componentsDefinition
+        content = content
+    )
+
+    protected constructor(
+        configuration: TestElementConfiguration.() -> Unit,
+        content: TestSuiteContent
+    ) : this(
+        parentSuite = TestSession.global.defaultCompartment,
+        configuration = configuration,
+        content = content
     )
 
     protected constructor(
         compartment: TestCompartment,
-        componentsDefinition: TestSuiteComponentsDefinition
-    ) : this(parentSuite = compartment, componentsDefinition = componentsDefinition)
+        content: TestSuiteContent
+    ) : this(parentSuite = compartment, content = content)
+
+    protected constructor(
+        compartment: TestCompartment,
+        configuration: TestElementConfiguration.() -> Unit,
+        content: TestSuiteContent
+    ) : this(parentSuite = compartment, configuration = configuration, content = content)
 
     internal fun registerChildElement(childElement: TestElement) {
         childElements.add(childElement)
     }
 
-    fun aroundAll(action: TestSuiteWrappingAction) {
+    fun aroundAll(action: TestSuiteExecutionWrappingAction) {
         aroundAllAction = action
     }
 
-    fun suite(name: String, componentsDefinition: TestSuiteComponentsDefinition) {
-        TestSuite(this, name, componentsDefinition = componentsDefinition)
+    fun suite(name: String, content: TestSuiteContent) {
+        TestSuite(this, name, content = content)
     }
 
     fun test(name: String, configuration: TestElementConfiguration.() -> Unit = {}, action: TestAction) {
@@ -57,7 +72,7 @@ open class TestSuite internal constructor(
     override fun configure(selection: Selection) {
         super.configure(selection)
 
-        componentsDefinition?.invoke(this)
+        content?.invoke(this)
 
         childElements.forEach {
             it.configure(selection)
@@ -82,22 +97,24 @@ open class TestSuite internal constructor(
         executeReporting(report) {
             if (isEnabled) {
                 val childElementActions = allChildElementsWrappingActions().wrappedAround {
+                    val invocationMode = ExecutionContext.Invocation.mode()
                     coroutineScope {
                         for (childElement in childElements) {
-                            if (effectiveConfiguration.suiteConcurrency is Concurrency.Sequential) {
-                                childElement.execute(report)
-                            } else {
-                                launch {
+                            when (invocationMode) {
+                                ExecutionContext.Invocation.Mode.SEQUENTIAL -> {
                                     childElement.execute(report)
+                                }
+                                ExecutionContext.Invocation.Mode.CONCURRENT -> {
+                                    launch {
+                                        childElement.execute(report)
+                                    }
                                 }
                             }
                         }
                     }
                 }
 
-                effectiveConfiguration.suiteConcurrency!!.runInContext {
-                    childElementActions()
-                }
+                childElementActions()
             } else {
                 // "Execute" disabled child elements for reporting only.
                 for (childElement in childElements) {
@@ -107,16 +124,26 @@ open class TestSuite internal constructor(
         }
     }
 
-    private fun List<TestSuiteWrappingAction>.wrappedAround(innermostAction: TestSuiteAction): TestSuiteAction =
-        fold(innermostAction) { innerAction, wrappingAction ->
-            { wrappingAction(innerAction) }
-        }
+    private fun List<TestSuiteExecutionWrappingAction>.wrappedAround(
+        innermostAction: TestSuiteExecutionAction
+    ): TestSuiteExecutionAction = fold(innermostAction) { innerAction, wrappingAction ->
+        { wrappingAction(innerAction) }
+    }
 
-    /** Returns actions wrapping around all child element's execution, innermost first. */
-    private fun allChildElementsWrappingActions(): List<TestSuiteWrappingAction> = listOfNotNull(
+    /** Returns actions wrapping the configuration contexts (innermost context first) around an inner action. */
+    private fun allChildElementsWrappingActions(): List<TestSuiteExecutionWrappingAction> = listOfNotNull(
         aroundAllAction,
         fixtureLifecycleAction()
-    )
+    ) +
+        configurationContextWrappingActions()
+
+    /** Returns actions wrapping the configuration contexts around all child elements' execution, innermost first. */
+    private fun configurationContextWrappingActions() =
+        effectiveConfiguration.contexts.map<ExecutionContext, TestSuiteExecutionWrappingAction> { context ->
+            { innerAction ->
+                context.wrappingAction { innerAction() }
+            }
+        }
 
     fun <Value : Any> fixture(value: TestSuite.() -> Value): Fixture<Value> = Fixture(this, value)
 
@@ -148,7 +175,7 @@ open class TestSuite internal constructor(
         }
     }
 
-    private fun fixtureLifecycleAction(): TestSuiteWrappingAction = { innerAction: TestSuiteAction ->
+    private fun fixtureLifecycleAction(): TestSuiteExecutionWrappingAction = { innerAction: TestSuiteExecutionAction ->
         var actionException: Throwable? = null
 
         try {

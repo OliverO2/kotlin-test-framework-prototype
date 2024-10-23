@@ -22,7 +22,7 @@ sealed class TestElement(
     }
 
     override val isEnabled by effectiveConfiguration::isEnabled
-    internal open val isFocused by effectiveConfiguration::isFocused
+    open val isFocused by effectiveConfiguration::isFocused
 
     init {
         @Suppress("LeakingThis")

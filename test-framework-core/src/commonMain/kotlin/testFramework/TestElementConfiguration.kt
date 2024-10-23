@@ -1,29 +1,30 @@
 package testFramework
 
+import kotlinx.coroutines.Dispatchers
+
 class TestElementConfiguration {
     var isEnabled: Boolean = true // children inherit a disabled state
     var isFocused: Boolean = false
 
-    var suiteConcurrency: Concurrency.SuiteConcurrency? = null // inheritable
-        set(value) {
-            if (value == null) throw IllegalArgumentException("suiteConcurrency may not be set to null")
-            field = value
-        }
+    internal var contexts: List<ExecutionContext> = emptyList()
 
-    var testConcurrency: Concurrency.TestConcurrency? = null // inheritable
-        set(value) {
-            if (value == null) throw IllegalArgumentException("testConcurrency may not be set to null")
-            field = value
-        }
+    fun context(vararg contexts: ExecutionContext) {
+        this.contexts = contexts.reversed()
+    }
 
     internal fun inheritFrom(parent: TestElementConfiguration?) {
         if (parent != null) {
             if (!parent.isEnabled) isEnabled = false // Inherit a 'disabled' state
-            if (suiteConcurrency == null) suiteConcurrency = parent.suiteConcurrency
-            if (testConcurrency == null) testConcurrency = parent.testConcurrency
-        } else {
-            if (suiteConcurrency == null) suiteConcurrency = Concurrency.Sequential
-            if (testConcurrency == null) testConcurrency = Concurrency.TestScoped()
+        }
+    }
+
+    companion object {
+        val Default: TestElementConfiguration.() -> Unit = {
+            context(
+                ExecutionContext.Invocation(ExecutionContext.Invocation.Mode.SEQUENTIAL),
+                ExecutionContext.CoroutineContext(Dispatchers.Default),
+                ExecutionContext.TestScope(true)
+            )
         }
     }
 }

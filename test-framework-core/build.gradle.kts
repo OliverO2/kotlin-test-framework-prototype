@@ -4,6 +4,7 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinHierarchyTemplate
 
 plugins {
     alias(libs.plugins.org.jetbrains.kotlin.multiplatform)
+    alias(libs.plugins.org.jetbrains.kotlin.atomicfu)
     alias(libs.plugins.org.jmailen.kotlinter)
 }
 
@@ -55,6 +56,7 @@ kotlin {
                 api(libs.org.jetbrains.kotlinx.coroutines.core)
                 api(libs.org.jetbrains.kotlinx.coroutines.test)
                 implementation(libs.org.jetbrains.kotlinx.datetime)
+                implementation(libs.org.jetbrains.kotlinx.atomicfu)
             }
         }
 

@@ -12,8 +12,9 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
-import testFramework.Concurrency
+import testFramework.ExecutionContext
 import testFramework.TestAction
+import testFramework.TestCompartment
 import testFramework.TestSuite
 import testFramework.annotations.TestSuiteDeclaration
 import kotlin.coroutines.coroutineContext
@@ -26,37 +27,42 @@ import kotlin.time.Duration.Companion.seconds
 @TestSuiteDeclaration
 class TestSuite1 :
     TestSuite(
+        // compartment = TestCompartment.Parallel,
         {
-            // compartment = TestCompartment.Parallel,
-
             val fixtureA = fixture { MyFirstFixture(this) } closeWith { closeSuspending() }
 
-            aroundAll { childElementActions ->
+            aroundAll { testActions ->
                 log("aroundAll TestSuite1 start")
                 withContext(CoroutineName("aroundAll TestSuite1")) {
-                    childElementActions()
+                    testActions()
                 }
                 log("aroundAll TestSuite1 end")
             }
 
             test("test1") {
-                log("in TestSuite1.test1 [${currentCoroutineContext()[CoroutineName]}], A=${fixtureA()}")
+                log(
+                    "in TestSuite1.test1 [${currentCoroutineContext()[CoroutineName]}], A=${fixtureA()}," +
+                        " invocation=${ExecutionContext.Invocation.mode()}"
+                )
                 fail("something wrong in TestSuite1.test1")
             }
 
             suite("child-suite2") {
                 val fixtureB = fixture { MySecondFixture(this) }
 
-                aroundAll { childElementActions ->
+                aroundAll { testActions ->
                     log("aroundAll TestSuite1.child-suite2 start")
                     withContext(CoroutineName("aroundAll TestSuite1.child-suite2")) {
-                        childElementActions()
+                        testActions()
                     }
                     log("aroundAll TestSuite1.child-suite2 end")
                 }
 
                 test("nested1") {
-                    log("in TestSuite1.child-suite2.nested1 – before delay, A=${fixtureA()}, B=${fixtureB()}")
+                    log(
+                        "in TestSuite1.child-suite2.nested1 – before delay, A=${fixtureA()}, B=${fixtureB()}," +
+                            " invocation=${ExecutionContext.Invocation.mode()}"
+                    )
                     delay(0.3.seconds)
                     log(
                         "in TestSuite1.child-suite2.nested1 – after delay [${currentCoroutineContext()[CoroutineName]}]"
@@ -165,10 +171,11 @@ class TestSuite4 :
             }
 
             test("unconfined dispatcher", configuration = {
-                testConcurrency = Concurrency.TestScoped(UnconfinedTestDispatcher())
+                context(ExecutionContext.CoroutineContext(UnconfinedTestDispatcher()))
             }) {
                 with(testScope) {
-                    log("$this starting, currentTime=$currentTime")
+                    val dispatcher = currentCoroutineContext()[CoroutineDispatcher]
+                    log("$this starting, currentTime=$currentTime, dispatcher=$dispatcher")
                     launch {
                         try {
                             log("$this launched job starting, currentTime=$currentTime")
@@ -191,16 +198,11 @@ class TestSuite4 :
 @TestSuiteDeclaration
 class TestSuite5 :
     TestSuite(
+        compartment = TestCompartment.UI(UnconfinedTestDispatcher()),
         {
-            aroundAll { childElementActions ->
-                withContext(UnconfinedTestDispatcher()) {
-                    childElementActions()
-                }
-            }
-
             test("test1") {
-                delay(0.1.seconds)
-                log("in TestSuite5.test1, currentTime=${testScope.currentTime}")
+                val dispatcher = currentCoroutineContext()[CoroutineDispatcher]
+                log("in TestSuite5.test1, currentTime=${testScope.currentTime}, dispatcher=$dispatcher")
             }
 
             test("test2") {

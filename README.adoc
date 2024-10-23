@@ -97,8 +97,9 @@ in an IDE run configuration with an environment variable setting:
 
 === TODO
 
-* Add support for Dispatchers.setMain: Auto clean-up and detecting/preventing concurrent mutations?
-* Make TestScoped.DEFAULT_TIMEOUT a TestSession configuration parameter?
+* Remove `isFocused`: It is not really needed and has the bug:
+** The comment says: // Disable all non-focused child elements (disabling does not propagate to transitive child elements).
+** Disabled detection in Reports relies on the invariant that disabling an element also disables all of its child elements, transitively.
 * Use https://github.com/JetBrains/kotlin/blob/d9ddcd991bf9c6122041f0276af644be0432fa38/libraries/tools/kotlin-gradle-plugin/src/common/kotlin/org/jetbrains/kotlin/gradle/targets/native/internal/KotlinNativeStackTraceParser.kt[KotlinNativeStackTraceParser.kt] to reference source locations in Native stack traces.
 * Check whether to use `@DslMarker` to avoid suite functions being available in tests.
 * Add an IntelliJ plugin.

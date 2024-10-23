@@ -1,7 +1,7 @@
 package testFramework
 
 open class TestSession protected constructor(
-    configuration: TestElementConfiguration.() -> Unit = {},
+    configuration: TestElementConfiguration.() -> Unit = TestElementConfiguration.Default,
     defaultCompartment: (() -> TestCompartment) = { TestCompartment.Default }
 ) : TestSuite(
     parentSuite = null,
@@ -22,7 +22,7 @@ open class TestSession protected constructor(
         singleton = this
     }
 
-    internal constructor() : this(configuration = {})
+    internal constructor() : this(configuration = TestElementConfiguration.Default)
 
     internal companion object {
         // This property is internal for compiler plugin testing only. Consider it private otherwise.

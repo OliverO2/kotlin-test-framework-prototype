@@ -60,13 +60,13 @@ fun testSessionDefault(): AbstractTestSession = TODO()
 
 // The test framework must provide, and other modules can provide functions declaring discoverable test elements, like:
 @TestDiscoverable
-fun suite(@TestName name: String, componentsDefinition: TestSuite.() -> Unit) {}
+fun suite(@TestName name: String, content: TestSuite.() -> Unit) {}
 
 @TestDiscoverable
-open class TestSuite(@TestName name: String, componentsDefinition: TestSuite.() -> Unit) : TestSuite {}
+open class TestSuite(@TestName name: String, content: TestSuite.() -> Unit) : TestSuite {}
 
 @TestDiscoverable
-fun TestSuite.suite(@TestName name: String, componentsDefinition: TestSuite.() -> Unit) {}
+fun TestSuite.suite(@TestName name: String, content: TestSuite.() -> Unit) {}
 
 @TestDiscoverable
 fun TestSuite.test(@TestName name: String, action: Test.() -> Unit) {}
@@ -95,6 +95,7 @@ These would be the compiler's responsibilities (or those of a compiler plugin):
 * Discover top-level test suites, which are
 ** top-level classes derived from a class annotated with `@TestDiscoverable` and having a `AbstractTestSuite` interface, or
 ** top-level properties initialized by a function annotated with `@TestDiscoverable` and returning a `AbstractTestSuite` (sub-)type.
+* Generate names for top-level test suites: If the parameter annotated with `@TestName` has a default value (to make the IDE happy without doing FIR transformations), and the actual parameter value is missing at the call site, the compiler inserts a value with the fully qualified name of the top-level class or property being declared, alleviating the need to specify a name twice (a property/class name and a test name).
 * Discover an optional top-level `AbstractTestSession`, which is
 ** a top-level class annotated with `@TestDiscoverable` and having a `AbstractTestSession` interface, or
 ** a top-level property initialized by a function annotated with `@TestDiscoverable` and returning a `AbstractTestSuite` (sub-)type.
