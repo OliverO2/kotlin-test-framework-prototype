@@ -92,7 +92,7 @@ class TestSuite2 :
     TestSuite(
         // compartment = TestCompartment.Parallel,
         {
-            test("!test1") {
+            test("test1", configuration = { isEnabled = false }) {
                 log("in TestSuite2.test1")
             }
 

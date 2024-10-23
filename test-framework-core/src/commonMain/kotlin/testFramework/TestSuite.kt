@@ -21,7 +21,6 @@ open class TestSuite internal constructor(
     override val childElements: MutableList<TestElement> = mutableListOf()
 
     override var isEnabled by effectiveConfiguration::isEnabled
-    override var isFocused by effectiveConfiguration::isFocused
 
     private var aroundAllAction: TestSuiteExecutionWrappingAction? = null
 
@@ -78,18 +77,8 @@ open class TestSuite internal constructor(
             it.configure(selection)
         }
 
-        if (isEnabled && childElements.isNotEmpty()) {
-            if (childElements.any { it.isFocused }) {
-                // Disable all non-focused child elements (disabling does not propagate to transitive child elements).
-                childElements.forEach {
-                    it.effectiveConfiguration.isEnabled = it.isFocused
-                }
-            } else {
-                // Disable this element if none of its child elements are enabled.
-                if (childElements.none { it.isEnabled }) {
-                    effectiveConfiguration.isEnabled = false
-                }
-            }
+        if (isEnabled && childElements.none { it.isEnabled }) {
+            isEnabled = false
         }
     }
 

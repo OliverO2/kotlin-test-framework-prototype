@@ -4,7 +4,6 @@ import kotlinx.coroutines.Dispatchers
 
 class TestElementConfiguration {
     var isEnabled: Boolean = true // children inherit a disabled state
-    var isFocused: Boolean = false
 
     internal var contexts: List<ExecutionContext> = emptyList()
 
