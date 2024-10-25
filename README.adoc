@@ -18,7 +18,8 @@ image:documentation/images/Test%20Run.png[Test Run.png]
 * Suites support a *suspending ``aroundAll``* action.
 * *Suite nesting* and *suspending suite-level actions* are *fully supported on JavaScript* engines, using the Kotlin/JS test infra.
 * A global *TestSession* provides configuration defaults. A customized variant can be declared.
-* *Compartments* isolate suites with different *concurrency requirements*.
+* *Compartments* isolate suites with different *configuration and concurrency requirements*.
+* Most configuration is done via an extensible set of `TestContext` elements with a user-defined (wrapping) order.
 * The entire framework is platform independent with almost zero redundancy.
 * The architecture favors simplicity and aims to avoid implicit constructs and indirection.
 
@@ -97,6 +98,7 @@ in an IDE run configuration with an environment variable setting:
 
 === TODO
 
-* Use https://github.com/JetBrains/kotlin/blob/d9ddcd991bf9c6122041f0276af644be0432fa38/libraries/tools/kotlin-gradle-plugin/src/common/kotlin/org/jetbrains/kotlin/gradle/targets/native/internal/KotlinNativeStackTraceParser.kt[KotlinNativeStackTraceParser.kt] to reference source locations in Native stack traces.
 * Check whether to use `@DslMarker` to avoid suite functions being available in tests.
+* Implement framework-agnostic API.
 * Add an IntelliJ plugin.
+* Use https://github.com/JetBrains/kotlin/blob/d9ddcd991bf9c6122041f0276af644be0432fa38/libraries/tools/kotlin-gradle-plugin/src/common/kotlin/org/jetbrains/kotlin/gradle/targets/native/internal/KotlinNativeStackTraceParser.kt[KotlinNativeStackTraceParser.kt] to reference source locations in Native stack traces.

@@ -22,7 +22,7 @@ open class TestSuite internal constructor(
 
     override var isEnabled by effectiveConfiguration::isEnabled
 
-    private var aroundAllAction: TestSuiteExecutionWrappingAction? = null
+    private var innerContext: TestContext = TestContext.fixtureLifecycleAction()
 
     /** Fixtures created while executing this suite, in reverse order of fixture creation. */
     private val fixtures = mutableListOf<Fixture<*>>()
@@ -57,7 +57,10 @@ open class TestSuite internal constructor(
     }
 
     fun aroundAll(action: TestSuiteExecutionWrappingAction) {
-        aroundAllAction = action
+        innerContext = innerContext wrapping { innerAction ->
+            val innerActionConverted: TestSuiteExecutionAction = { innerAction() }
+            action(innerActionConverted)
+        }
     }
 
     fun suite(name: String, content: TestSuiteContent) {
@@ -85,15 +88,16 @@ open class TestSuite internal constructor(
     override suspend fun execute(report: TestReport) {
         executeReporting(report) {
             if (isEnabled) {
-                val childElementActions = allChildElementsWrappingActions().wrappedAround {
-                    val invocationMode = ExecutionContext.Invocation.mode()
+                (effectiveConfiguration.context wrapping innerContext).executeWithin {
+                    val invocationMode = InvocationContext.mode()
                     coroutineScope {
                         for (childElement in childElements) {
                             when (invocationMode) {
-                                ExecutionContext.Invocation.Mode.SEQUENTIAL -> {
+                                InvocationContext.Mode.SEQUENTIAL -> {
                                     childElement.execute(report)
                                 }
-                                ExecutionContext.Invocation.Mode.CONCURRENT -> {
+
+                                InvocationContext.Mode.CONCURRENT -> {
                                     launch {
                                         childElement.execute(report)
                                     }
@@ -102,8 +106,6 @@ open class TestSuite internal constructor(
                         }
                     }
                 }
-
-                childElementActions()
             } else {
                 // "Execute" disabled child elements for reporting only.
                 for (childElement in childElements) {
@@ -112,27 +114,6 @@ open class TestSuite internal constructor(
             }
         }
     }
-
-    private fun List<TestSuiteExecutionWrappingAction>.wrappedAround(
-        innermostAction: TestSuiteExecutionAction
-    ): TestSuiteExecutionAction = fold(innermostAction) { innerAction, wrappingAction ->
-        { wrappingAction(innerAction) }
-    }
-
-    /** Returns actions wrapping the configuration contexts (innermost context first) around an inner action. */
-    private fun allChildElementsWrappingActions(): List<TestSuiteExecutionWrappingAction> = listOfNotNull(
-        aroundAllAction,
-        fixtureLifecycleAction()
-    ) +
-        configurationContextWrappingActions()
-
-    /** Returns actions wrapping the configuration contexts around all child elements' execution, innermost first. */
-    private fun configurationContextWrappingActions() =
-        effectiveConfiguration.contexts.map<ExecutionContext, TestSuiteExecutionWrappingAction> { context ->
-            { innerAction ->
-                context.wrappingAction { innerAction() }
-            }
-        }
 
     fun <Value : Any> fixture(value: TestSuite.() -> Value): Fixture<Value> = Fixture(this, value)
 
@@ -164,7 +145,7 @@ open class TestSuite internal constructor(
         }
     }
 
-    private fun fixtureLifecycleAction(): TestSuiteExecutionWrappingAction = { innerAction: TestSuiteExecutionAction ->
+    private fun TestContext.fixtureLifecycleAction(): TestContext = wrapping { innerAction ->
         var actionException: Throwable? = null
 
         try {

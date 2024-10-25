@@ -7,23 +7,22 @@ open class TestCompartment(name: String, configuration: TestElementConfiguration
 
     companion object {
         val Default by lazy {
-            TestCompartment(name = "Default", configuration = {}) // Use the session configuration
+            TestCompartment(name = "Default", configuration = {})
         }
 
         @Suppress("FunctionName")
         fun UI(dispatcher: CoroutineDispatcher, configuration: TestElementConfiguration.() -> Unit = {}) =
             TestCompartment(name = "UI", configuration = {
-                context(
-                    ExecutionContext.Invocation(ExecutionContext.Invocation.Mode.SEQUENTIAL),
-                    ExecutionContext.CoroutineContext(dispatcher),
-                    ExecutionContext.MainDispatcher(dispatcher)
-                )
                 configuration()
+                context = context
+                    .invocation(InvocationContext.Mode.SEQUENTIAL)
+                    .coroutineContext(dispatcher)
+                    .mainDispatcher(dispatcher)
             })
 
         val Parallel by lazy {
             TestCompartment(name = "Parallel", configuration = {
-                context(ExecutionContext.Invocation(ExecutionContext.Invocation.Mode.CONCURRENT))
+                context = TestContext.invocation(InvocationContext.Mode.CONCURRENT)
             })
         }
     }

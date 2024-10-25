@@ -28,20 +28,20 @@ class Test internal constructor(
     override suspend fun execute(report: TestReport) {
         executeReporting(report) {
             if (isEnabled) {
-                configurationContextWrappingActions().wrappedAround {
-                    val testScopeContext = ExecutionContext.TestScope.contextOrNull()
+                effectiveConfiguration.context.executeWithin {
+                    val testScopeContext = TestScopeContext.current()
 
                     if (testScopeContext != null) {
                         executeInTestScope(testScopeContext)
                     } else {
                         TestCoroutineScope(this, CoroutineScope(currentCoroutineContext()), null).action()
                     }
-                }.invoke()
+                }
             }
         }
     }
 
-    private suspend fun Test.executeInTestScope(testScopeContext: ExecutionContext.TestScope.Context) {
+    private suspend fun Test.executeInTestScope(testScopeContext: TestScopeContext) {
         var inheritableContext = currentCoroutineContext().minusKey(Job)
         if (inheritableContext[CoroutineDispatcher] !is TestDispatcher) {
             inheritableContext = inheritableContext.minusKey(CoroutineDispatcher)
@@ -55,14 +55,6 @@ class Test internal constructor(
                 ).action()
             }
     }
-
-    private fun List<ExecutionWrappingAction>.wrappedAround(innermostAction: suspend () -> Unit): suspend () -> Unit =
-        fold(innermostAction) { innerAction, wrappingAction ->
-            { wrappingAction(innerAction) }
-        }
-
-    /** Returns actions wrapping the configuration contexts (innermost context first) around an inner action. */
-    private fun configurationContextWrappingActions() = effectiveConfiguration.contexts.map { it.wrappingAction }
 }
 
 class TestCoroutineScope(private val test: Test, scope: CoroutineScope, private val testScopeOrNull: TestScope?) :

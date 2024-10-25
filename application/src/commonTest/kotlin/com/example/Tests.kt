@@ -12,11 +12,13 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
-import testFramework.ExecutionContext
+import testFramework.InvocationContext
 import testFramework.TestAction
 import testFramework.TestCompartment
+import testFramework.TestContext
 import testFramework.TestSuite
 import testFramework.annotations.TestSuiteDeclaration
+import testFramework.coroutineContext
 import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -42,7 +44,7 @@ class TestSuite1 :
             test("test1") {
                 log(
                     "in TestSuite1.test1 [${currentCoroutineContext()[CoroutineName]}], A=${fixtureA()}," +
-                        " invocation=${ExecutionContext.Invocation.mode()}"
+                        " invocation=${InvocationContext.mode()}"
                 )
                 fail("something wrong in TestSuite1.test1")
             }
@@ -61,7 +63,7 @@ class TestSuite1 :
                 test("nested1") {
                     log(
                         "in TestSuite1.child-suite2.nested1 – before delay, A=${fixtureA()}, B=${fixtureB()}," +
-                            " invocation=${ExecutionContext.Invocation.mode()}"
+                            " invocation=${InvocationContext.mode()}"
                     )
                     delay(0.3.seconds)
                     log(
@@ -171,7 +173,7 @@ class TestSuite4 :
             }
 
             test("unconfined dispatcher", configuration = {
-                context(ExecutionContext.CoroutineContext(UnconfinedTestDispatcher()))
+                context = TestContext.coroutineContext(UnconfinedTestDispatcher())
             }) {
                 with(testScope) {
                     val dispatcher = currentCoroutineContext()[CoroutineDispatcher]

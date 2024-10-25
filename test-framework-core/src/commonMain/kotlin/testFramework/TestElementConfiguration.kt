@@ -5,11 +5,7 @@ import kotlinx.coroutines.Dispatchers
 class TestElementConfiguration {
     var isEnabled: Boolean = true // children inherit a disabled state
 
-    internal var contexts: List<ExecutionContext> = emptyList()
-
-    fun context(vararg contexts: ExecutionContext) {
-        this.contexts = contexts.reversed()
-    }
+    var context: TestContext = TestContext
 
     internal fun inheritFrom(parent: TestElementConfiguration?) {
         if (parent != null) {
@@ -19,11 +15,9 @@ class TestElementConfiguration {
 
     companion object {
         val Default: TestElementConfiguration.() -> Unit = {
-            context(
-                ExecutionContext.Invocation(ExecutionContext.Invocation.Mode.SEQUENTIAL),
-                ExecutionContext.CoroutineContext(Dispatchers.Default),
-                ExecutionContext.TestScope(true)
-            )
+            context = TestContext.invocation(InvocationContext.Mode.SEQUENTIAL)
+                .coroutineContext(Dispatchers.Default)
+                .testScope(true)
         }
     }
 }
