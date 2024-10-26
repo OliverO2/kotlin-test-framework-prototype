@@ -2,6 +2,10 @@ package testFramework
 
 typealias TestElementPath = String
 
+@DslMarker
+annotation class TestElementDsl
+
+@TestElementDsl
 sealed interface AbstractTestElement {
     val parentSuite: AbstractTestSuite?
     val elementPath: TestElementPath

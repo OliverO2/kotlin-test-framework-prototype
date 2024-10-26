@@ -12,6 +12,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import testFramework.AbstractTestElement
 import testFramework.InvocationContext
 import testFramework.TestAction
 import testFramework.TestCompartment
@@ -268,7 +269,7 @@ fun TestSuite.test(name: String, timeout: Duration, action: TestAction) = test(n
     }
 }
 
-private fun TestSuite.log(message: String) {
+private fun AbstractTestElement.log(message: String) {
     // println("[${testPlatform.threadDisplayName()}] $elementName: $message")
     println("$elementPath: $message\n")
 }

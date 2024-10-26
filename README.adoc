@@ -98,7 +98,6 @@ in an IDE run configuration with an environment variable setting:
 
 === TODO
 
-* Check whether to use `@DslMarker` to avoid suite functions being available in tests.
 * Implement framework-agnostic API.
 * Add an IntelliJ plugin.
 * Use https://github.com/JetBrains/kotlin/blob/d9ddcd991bf9c6122041f0276af644be0432fa38/libraries/tools/kotlin-gradle-plugin/src/common/kotlin/org/jetbrains/kotlin/gradle/targets/native/internal/KotlinNativeStackTraceParser.kt[KotlinNativeStackTraceParser.kt] to reference source locations in Native stack traces.
