@@ -2,7 +2,7 @@ package testFramework
 
 import kotlinx.coroutines.CoroutineDispatcher
 
-open class TestCompartment(name: String, configuration: TestElementConfiguration.() -> Unit) :
+open class TestCompartment(name: String, configuration: Configuration.() -> Unit) :
     TestSuite(parentSuite = TestSession.global, simpleNameOrNull = "@$name", configuration = configuration) {
 
     companion object {
@@ -11,7 +11,7 @@ open class TestCompartment(name: String, configuration: TestElementConfiguration
         }
 
         @Suppress("FunctionName")
-        fun UI(dispatcher: CoroutineDispatcher, configuration: TestElementConfiguration.() -> Unit = {}) =
+        fun UI(dispatcher: CoroutineDispatcher, configuration: Configuration.() -> Unit = {}) =
             TestCompartment(name = "UI", configuration = {
                 configuration()
                 context = context

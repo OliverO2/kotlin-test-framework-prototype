@@ -33,7 +33,7 @@ open class TestSuite internal constructor(
     )
 
     protected constructor(
-        configuration: TestElementConfiguration.() -> Unit,
+        configuration: Configuration.() -> Unit,
         content: TestSuiteContent
     ) : this(
         parentSuite = TestSession.global.defaultCompartment,
@@ -48,7 +48,7 @@ open class TestSuite internal constructor(
 
     protected constructor(
         compartment: TestCompartment,
-        configuration: TestElementConfiguration.() -> Unit,
+        configuration: Configuration.() -> Unit,
         content: TestSuiteContent
     ) : this(parentSuite = compartment, configuration = configuration, content = content)
 

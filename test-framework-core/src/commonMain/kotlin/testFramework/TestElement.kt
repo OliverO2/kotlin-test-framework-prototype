@@ -1,12 +1,13 @@
 package testFramework
 
+import kotlinx.coroutines.Dispatchers
 import testFramework.internal.TestEvent
 import testFramework.internal.TestReport
 
 sealed class TestElement(
     override val parentSuite: TestSuite?,
     simpleNameOrNull: String?,
-    configuration: TestElementConfiguration.() -> Unit = {}
+    configuration: Configuration.() -> Unit = {}
 ) : AbstractTestElement {
     override val displayName: String by lazy {
         simpleNameOrNull ?: this::class.simpleName ?: "[TestElement]"
@@ -15,7 +16,27 @@ sealed class TestElement(
     override val elementPath: TestElementPath get() =
         if (parentSuite != null) "${parentSuite?.elementPath}.$displayName" else displayName
 
-    internal var effectiveConfiguration: TestElementConfiguration = TestElementConfiguration().apply {
+    class Configuration {
+        var isEnabled: Boolean = true // children inherit a disabled state
+
+        var context: TestContext = TestContext
+
+        internal fun inheritFrom(parent: Configuration?) {
+            if (parent != null) {
+                if (!parent.isEnabled) isEnabled = false // Inherit a 'disabled' state
+            }
+        }
+
+        companion object {
+            val Default: Configuration.() -> Unit = {
+                context = TestContext.invocation(InvocationContext.Mode.SEQUENTIAL)
+                    .coroutineContext(Dispatchers.Default)
+                    .testScope(true)
+            }
+        }
+    }
+
+    internal var effectiveConfiguration: Configuration = Configuration().apply {
         configuration()
     }
 

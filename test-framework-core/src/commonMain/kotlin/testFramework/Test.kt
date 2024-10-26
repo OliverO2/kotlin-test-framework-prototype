@@ -12,7 +12,7 @@ import testFramework.internal.runTestAwaitingCompletion
 class Test internal constructor(
     parentSuite: TestSuite,
     simpleName: String,
-    configuration: TestElementConfiguration.() -> Unit = {},
+    configuration: Configuration.() -> Unit = {},
     private val action: TestAction
 ) : TestElement(parentSuite, simpleName, configuration = configuration),
     AbstractTest {
