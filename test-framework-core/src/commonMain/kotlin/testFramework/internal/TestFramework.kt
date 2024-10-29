@@ -1,6 +1,7 @@
 package testFramework.internal
 
 import kotlinx.coroutines.test.TestScope
+import testFramework.AbstractTestSuite
 import testFramework.TestElement
 import testFramework.TestSession
 import testFramework.TestSuite
@@ -23,7 +24,7 @@ internal fun initializeTestFramework(testSession: TestSession?, arguments: Array
  *
  * The framework invokes this function with a list of top-level [TestSuite]s.
  */
-internal expect suspend fun runTests(suites: Array<TestSuite>)
+internal expect suspend fun runTests(suites: Array<AbstractTestSuite>)
 
 internal var argumentsBasedElementSelection: TestElement.Selection? = null
 

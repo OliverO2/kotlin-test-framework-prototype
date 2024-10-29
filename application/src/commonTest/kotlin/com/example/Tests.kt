@@ -18,16 +18,13 @@ import testFramework.TestAction
 import testFramework.TestCompartment
 import testFramework.TestContext
 import testFramework.TestSuite
-import testFramework.annotations.TestSuiteDeclaration
 import testFramework.coroutineContext
 import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-// @TestSessionDeclaration
 // class MyTestSession : TestSession(defaultCompartment = { TestCompartment.Parallel })
 
-@TestSuiteDeclaration
 class TestSuite1 :
     TestSuite(
         // compartment = TestCompartment.Parallel,
@@ -90,7 +87,6 @@ class TestSuite1 :
         }
     )
 
-@TestSuiteDeclaration
 class TestSuite2 :
     TestSuite(
         // compartment = TestCompartment.Parallel,
@@ -111,7 +107,6 @@ class TestSuite2 :
         }
     )
 
-@TestSuiteDeclaration
 class TestSuite3 :
     TestSuite(
         {
@@ -130,7 +125,6 @@ class TestSuite3 :
     )
 
 @OptIn(ExperimentalCoroutinesApi::class)
-@TestSuiteDeclaration
 class TestSuite4 :
     TestSuite(
         {
@@ -198,7 +192,6 @@ class TestSuite4 :
     )
 
 @OptIn(ExperimentalCoroutinesApi::class)
-@TestSuiteDeclaration
 class TestSuite5 :
     TestSuite(
         compartment = TestCompartment.UI(UnconfinedTestDispatcher()),

@@ -31,21 +31,18 @@ private class CompilerPluginTests {
                 """
                     $packageDeclaration
                     
-                    import testFramework.annotations.TestSuiteDeclaration
                     import testFramework.TestSuite
 
-                    @TestSuiteDeclaration
                     class TestSuiteOne : TestSuite({})
 
-                    @TestSuiteDeclaration
                     class TestSuiteTwo : TestSuite({})
                 """,
                 debugEnabled = true
             ) {
                 val packageNameDot = if (packageName.isEmpty()) "" else "$packageName."
 
-                assertTrue("Found test suite '${packageNameDot}TestSuiteOne'" in messages)
-                assertTrue("Found test suite '${packageNameDot}TestSuiteTwo'" in messages)
+                assertTrue("Found test discoverable '${packageNameDot}TestSuiteOne'" in messages)
+                assertTrue("Found test discoverable '${packageNameDot}TestSuiteTwo'" in messages)
             }
         }
     }
@@ -60,24 +57,19 @@ private class CompilerPluginTests {
             """
                 package $packageName
                 
-                import testFramework.annotations.TestSessionDeclaration
-                import testFramework.annotations.TestSuiteDeclaration
                 import testFramework.TestSession
                 import testFramework.TestSuite
 
-                @TestSuiteDeclaration
                 class TestSuiteOne : TestSuite({
                     println("$d{this::class.qualifiedName}")
                 })
                 
-                @TestSessionDeclaration
                 class MyTestSession : TestSession() {
                     init {
                         println("$d{this::class.qualifiedName}")
                     }
                 }
 
-                @TestSuiteDeclaration
                 class TestSuiteTwo : TestSuite({
                     println("$d{this::class.qualifiedName}")
                 })
@@ -98,58 +90,25 @@ private class CompilerPluginTests {
     }
 
     @Test
-    fun typeChecking() {
-        compilation(
-            """
-                package com.example
-                
-                import testFramework.annotations.TestSessionDeclaration
-                import testFramework.annotations.TestSuiteDeclaration
-                import testFramework.TestSuite
-
-                @TestSuiteDeclaration
-                class NoTestSuite
-                
-                @TestSessionDeclaration
-                class NoTestSession : TestSuite({})
-            """,
-            expectedExitCode = KotlinCompilation.ExitCode.COMPILATION_ERROR
-        ) {
-            assertTrue(
-                "'NoTestSuite' does not conform to the expected type of 'testFramework.TestSuite'" in messages
-            )
-            assertTrue(
-                "'NoTestSession' does not conform to the expected type of 'testFramework.TestSession'" in messages
-            )
-        }
-    }
-
-    @Test
     fun insistOnSingleTestSession() {
         compilation(
             """
                 package com.example
                 
-                import testFramework.annotations.TestSessionDeclaration
-                import testFramework.annotations.TestSuiteDeclaration
                 import testFramework.TestSession
                 import testFramework.TestSuite
 
-                @TestSuiteDeclaration
                 class TestSuiteOne : TestSuite({})
                 
-                @TestSessionDeclaration
                 class MyTestSession : TestSession()
 
-                @TestSuiteDeclaration
                 class TestSuiteTwo : TestSuite({})
                 
-                @TestSessionDeclaration
                 class MyOtherTestSession : TestSession()
             """,
             expectedExitCode = KotlinCompilation.ExitCode.COMPILATION_ERROR
         ) {
-            assertTrue("Found multiple annotations @TestSessionDeclaration" in messages)
+            assertTrue("Found multiple test sessions annotated with @TestDiscoverable" in messages)
         }
     }
 
@@ -157,15 +116,13 @@ private class CompilerPluginTests {
     fun debugEnabled() {
         compilation(
             """
-                import testFramework.annotations.TestSuiteDeclaration
                 import testFramework.TestSuite
                 
-                @TestSuiteDeclaration
                 class TestSuiteOne : TestSuite({})
             """,
             debugEnabled = true
         ) {
-            assertTrue("[DEBUG] Found test suite 'TestSuiteOne'" in messages)
+            assertTrue("[DEBUG] Found test discoverable 'TestSuiteOne'" in messages)
         }
     }
 

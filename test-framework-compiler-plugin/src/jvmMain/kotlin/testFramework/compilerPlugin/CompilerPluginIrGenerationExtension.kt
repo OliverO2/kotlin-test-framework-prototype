@@ -49,6 +49,7 @@ import org.jetbrains.kotlin.ir.util.defaultType
 import org.jetbrains.kotlin.ir.util.dump
 import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.packageFqName
+import org.jetbrains.kotlin.ir.util.superClass
 import org.jetbrains.kotlin.javac.resolve.classId
 import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.FqName
@@ -84,22 +85,21 @@ private class Configuration(compilerConfiguration: CompilerConfiguration, overri
     IrPluginContextOwner {
 
     private val publicPackageName = "testFramework"
-    private val annotationsPackageName = "testFramework.annotations"
     private val internalPackageName = "testFramework.internal"
 
     val debugEnabled = Options.debug.value(compilerConfiguration)
     val jvmStandaloneEnabled = Options.jvmStandalone.value(compilerConfiguration)
 
-    val suiteClassSymbol = irClassSymbol(publicPackageName, "TestSuite")
-    val sessionClassSymbol = irClassSymbol(publicPackageName, "TestSession")
+    val suiteClassSymbol = irClassSymbol(publicPackageName, "AbstractTestSuite")
+    val sessionClassSymbol = irClassSymbol(publicPackageName, "AbstractTestSession")
+    val testDiscoverableAnnotationSymbol = irClassSymbol(publicPackageName, "TestDiscoverable")
 
-    val suiteAnnotationSymbol = irClassSymbol(annotationsPackageName, "TestSuiteDeclaration")
-    val sessionAnnotationSymbol = irClassSymbol(annotationsPackageName, "TestSessionDeclaration")
     val initializeTestFrameworkFunctionSymbol = irFunctionSymbol(internalPackageName, "initializeTestFramework")
     val runTestsFunctionSymbol = irFunctionSymbol(internalPackageName, "runTests")
     val runTestsBlockingFunctionSymbol by lazy { irFunctionSymbol(internalPackageName, "runTestsBlocking") }
 }
 
+@OptIn(UnsafeDuringIrConstructionAPI::class)
 private class ModuleTransformer(
     override val pluginContext: IrPluginContext,
     val messageCollector: MessageCollector,
@@ -108,7 +108,7 @@ private class ModuleTransformer(
     IrPluginContextOwner {
 
     val rootSuiteClasses = mutableListOf<IrClass>()
-    var rootSessionClass: IrClass? = null
+    var customSessionClass: IrClass? = null
 
     var sourceFileForReporting: IrFile? = null
 
@@ -125,34 +125,28 @@ private class ModuleTransformer(
         val irClass = declaration
 
         withErrorReporting(irClass, "Could not analyze class '${irClass.name}'") {
-            when {
-                irClass.hasAnnotation(configuration.suiteAnnotationSymbol) -> {
-                    if (configuration.debugEnabled) {
-                        reportDebug("Found test suite '${irClass.fqName()}'", irClass)
-                    }
+            // Fast path: Ignore non-suite classes.
+            if (!irClass.isSameOrSubTypeOf(configuration.suiteClassSymbol)) return@withErrorReporting
 
-                    if (irClass.isSameOrSubTypeOfWithReporting(configuration.suiteClassSymbol)) {
-                        rootSuiteClasses.add(irClass)
-                    }
+            // Consider classes with a @TestDiscoverable superclass.
+            if (irClass.superClass?.hasAnnotation(configuration.testDiscoverableAnnotationSymbol) == true) {
+                if (configuration.debugEnabled) {
+                    reportDebug("Found test discoverable '${irClass.fqName()}'", irClass)
                 }
 
-                irClass.hasAnnotation(configuration.sessionAnnotationSymbol) -> {
-                    if (configuration.debugEnabled) {
-                        reportDebug("Found test session '${irClass.fqName()}'", irClass)
+                if (irClass.isSameOrSubTypeOf(configuration.sessionClassSymbol)) {
+                    if (customSessionClass == null) {
+                        customSessionClass = irClass
+                    } else {
+                        reportError(
+                            "Found multiple test sessions annotated with" +
+                                " @${configuration.testDiscoverableAnnotationSymbol.owner.name}," +
+                                " but expected at most one.",
+                            irClass
+                        )
                     }
-
-                    if (irClass.isSameOrSubTypeOfWithReporting(configuration.sessionClassSymbol)) {
-                        if (rootSessionClass == null) {
-                            rootSessionClass = irClass
-                        } else {
-                            @OptIn(UnsafeDuringIrConstructionAPI::class) // safe: annotation exists
-                            reportError(
-                                "Found multiple annotations @${configuration.sessionAnnotationSymbol.owner.name}," +
-                                    " but expected at most one.",
-                                irClass
-                            )
-                        }
-                    }
+                } else {
+                    rootSuiteClasses.add(irClass)
                 }
             }
         }
@@ -178,8 +172,8 @@ private class ModuleTransformer(
                 reportDebug(
                     "Generating code in module '${moduleFragment.name}'," +
                         " file '${entryPointsFile.nameWithPackage}'," +
-                        " for ${rootSuiteClasses.size} root suite(s)" +
-                        " and ${if (rootSessionClass == null) "no" else "one"} root configuration.",
+                        " for ${rootSuiteClasses.size} root suite(s)," +
+                        " custom session: ${if (customSessionClass == null) "default" else "${customSessionClass?.name}"}",
                     moduleFragment
                 )
             }
@@ -218,7 +212,7 @@ private class ModuleTransformer(
      *
      * ```
      * suspend fun main(arguments: Array<String>) {
-     *     initializeTestFramework(rootSessionOrNull, arguments)
+     *     initializeTestFramework(customSessionOrNull, arguments)
      *     runTests(TS1(), ..., TSn())
      * }
      * ```
@@ -236,7 +230,7 @@ private class ModuleTransformer(
         body = DeclarationIrBuilder(pluginContext, symbol).irBlockBody {
             +irSimpleFunctionCall(
                 configuration.initializeTestFrameworkFunctionSymbol,
-                rootSessionClass?.let { irConstructorCall(it.symbol) },
+                customSessionClass?.let { irConstructorCall(it.symbol) },
                 irGet(irArgumentsValueParameter)
             )
             +irSimpleFunctionCall(configuration.runTestsFunctionSymbol, irArrayOfRootSuites())
@@ -249,7 +243,7 @@ private class ModuleTransformer(
      * ```
      * @EagerInitialization
      * private val testFrameworkEntryPoint: Unit = run {
-     *     initializeTestFramework(rootSessionOrNull)
+     *     initializeTestFramework(customSessionOrNull)
      *     runTestsBlocking(TS1(), ..., TSn())
      * }
      * ```
@@ -279,7 +273,7 @@ private class ModuleTransformer(
                     DeclarationIrBuilder(pluginContext, symbol).irBlock {
                         +irSimpleFunctionCall(
                             configuration.initializeTestFrameworkFunctionSymbol,
-                            rootSessionClass?.let { irConstructorCall(it.symbol) }
+                            customSessionClass?.let { irConstructorCall(it.symbol) }
                         )
                         +irSimpleFunctionCall(configuration.runTestsBlockingFunctionSymbol, irArrayOfRootSuites())
                     }
@@ -298,7 +292,6 @@ private class ModuleTransformer(
      * Returns an array expression containing the list of instantiated [rootSuiteClasses].
      */
     private fun IrBuilderWithScope.irArrayOfRootSuites(): IrExpression {
-        @OptIn(UnsafeDuringIrConstructionAPI::class) // safe: suite class exists
         val irElementType = configuration.suiteClassSymbol.owner.defaultType
         val irArrayType = pluginContext.irBuiltIns.arrayClass.typeWith(irElementType)
         val irSuitesVararg = rootSuiteClasses.map { irClass ->
@@ -343,22 +336,14 @@ private class ModuleTransformer(
         }
 
     private fun IrBuilderWithScope.irConstructorCall(irClassSymbol: IrClassSymbol): IrConstructorCall {
-        @OptIn(UnsafeDuringIrConstructionAPI::class) // safe: module fragment has been completely processed
         val irConstructor = irClassSymbol.constructors.singleOrNull()
             ?: throw IllegalArgumentException("$irClassSymbol must have a single constructor")
 
         return irCall(irConstructor)
     }
 
-    @OptIn(UnsafeDuringIrConstructionAPI::class) // safe: module fragment has been completely processed
-    fun IrClass.isSameOrSubTypeOfWithReporting(irSupertypeClassSymbol: IrClassSymbol): Boolean {
-        if (symbol.owner.defaultType.isSubtypeOfClass(irSupertypeClassSymbol)) return true
-        reportError(
-            "'$name' does not conform to the expected type of '${irSupertypeClassSymbol.owner.fqName()}'",
-            this
-        )
-        return false
-    }
+    fun IrClass.isSameOrSubTypeOf(irSupertypeClassSymbol: IrClassSymbol): Boolean =
+        symbol.owner.defaultType.isSubtypeOfClass(irSupertypeClassSymbol)
 
     fun <Result> withErrorReporting(declaration: IrElement, failureDescription: String, block: () -> Result): Result =
         try {

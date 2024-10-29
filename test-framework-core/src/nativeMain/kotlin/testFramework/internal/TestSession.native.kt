@@ -4,11 +4,11 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.toKString
 import kotlinx.coroutines.runBlocking
 import platform.posix.getenv
+import testFramework.AbstractTestSuite
 import testFramework.TestSession
-import testFramework.TestSuite
 import testFramework.internal.integration.IntellijTestLog
 
-internal actual suspend fun runTests(suites: Array<TestSuite>) {
+internal actual suspend fun runTests(suites: Array<AbstractTestSuite>) {
     // `suites` is unused because test suites register themselves with `TestSession`.
 
     configureTestsCatching {
@@ -23,6 +23,6 @@ internal actual suspend fun runTests(suites: Array<TestSuite>) {
     }
 }
 
-internal fun runTestsBlocking(suites: Array<TestSuite>) {
+internal fun runTestsBlocking(suites: Array<AbstractTestSuite>) {
     runBlocking { runTests(suites) }
 }

@@ -17,12 +17,12 @@ import org.junit.platform.engine.discovery.PackageNameFilter
 import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
 import org.junit.platform.engine.support.descriptor.ClassSource
 import org.junit.platform.engine.support.descriptor.EngineDescriptor
+import testFramework.AbstractTestSession
 import testFramework.Test
 import testFramework.TestCompartment
 import testFramework.TestElement
 import testFramework.TestSession
 import testFramework.TestSuite
-import testFramework.annotations.TestSessionDeclaration
 import testFramework.internal.EnvironmentBasedElementSelection
 import testFramework.internal.TestEvent
 import testFramework.internal.TestReport
@@ -62,35 +62,34 @@ internal class JUnitPlatformTestEngine : TestEngine {
             return EngineDescriptor(UniqueId.forEngine(id), "${this::class.qualifiedName}")
         }
 
-        // If a session class has been declared, instantiate it.
-        val testSessionClassesUninitialized = withClassGraphAnnotationScan {
-            getClassesWithAnnotation(TestSessionDeclaration::class.java)
+        // Find classes directly derived from `TestSession`.
+        val customTestSessionsUninitialized = withClassGraphScan {
+            getClassesImplementing(AbstractTestSession::class.java)
+                .filter { it.superclass.name == TestSession::class.qualifiedName }
                 .map { Class.forName(it.name, false, this::class.java.classLoader) }
         }
 
-        val testSession = when (testSessionClassesUninitialized.size) {
+        val customTestSession = when (customTestSessionsUninitialized.size) {
             0 -> null
 
             1 -> {
-                testSessionClassesUninitialized.single().let {
+                customTestSessionsUninitialized.single().let {
                     Class.forName(it.name).getDeclaredConstructor().newInstance() as? TestSession
                         ?: throw IllegalArgumentException(
-                            "Could not instantiate a ${TestSession::class.simpleName}" +
-                                " from ${it.name} annotated with @${TestSessionDeclaration::class.simpleName}."
+                            "Could not instantiate the ${TestSession::class.simpleName}-derived class ${it.name}."
                         )
                 } // instantiate
             }
 
             else -> throw IllegalArgumentException(
-                "Found ${testSessionClassesUninitialized.size} classes" +
-                    " annotated with @${TestSessionDeclaration::class.simpleName}," +
+                "Found ${customTestSessionsUninitialized.size} ${TestSession::class.simpleName}-derived classes" +
                     " but expected at most one." +
-                    "\n\tAnnotated classes: $testSessionClassesUninitialized"
+                    "\n\tClasses found: $customTestSessionsUninitialized"
             )
         }
 
         // Initialize the framework first...
-        initializeTestFramework(testSession)
+        initializeTestFramework(customTestSession)
 
         // ...then instantiate top-level suites,
         classLevelTestSuites = testSuiteClassesUninitialized
@@ -216,7 +215,7 @@ private val TestEvent.Finished.executionResult: TestExecutionResult get() =
         else -> TestExecutionResult.aborted(throwable)
     }
 
-private fun <Result> withClassGraphAnnotationScan(action: ScanResult.() -> Result): Result = ClassGraph()
+private fun <Result> withClassGraphScan(action: ScanResult.() -> Result): Result = ClassGraph()
     .disableModuleScanning()
     .disableNestedJarScanning()
     .rejectPackages(
@@ -230,7 +229,6 @@ private fun <Result> withClassGraphAnnotationScan(action: ScanResult.() -> Resul
         "org.jetbrains.kotlin.*",
         "org.junit.*"
     )
-    .enableAnnotationInfo()
     .scan().use { scanResult ->
         scanResult.action()
     }

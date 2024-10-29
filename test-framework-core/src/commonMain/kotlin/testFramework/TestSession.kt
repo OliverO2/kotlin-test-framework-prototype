@@ -1,5 +1,6 @@
 package testFramework
 
+@TestDiscoverable
 open class TestSession protected constructor(
     configuration: Configuration.() -> Unit = Configuration.Default,
     defaultCompartment: (() -> TestCompartment) = { TestCompartment.Default }
@@ -7,7 +8,8 @@ open class TestSession protected constructor(
     parentSuite = null,
     simpleNameOrNull = "${testPlatform.displayName} session",
     configuration = configuration
-) {
+),
+    AbstractTestSession {
     val defaultCompartment: TestCompartment by lazy { defaultCompartment() }
 
     init {

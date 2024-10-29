@@ -10,10 +10,11 @@ typealias TestSuiteContent = TestSuite.() -> Unit
 typealias TestSuiteExecutionAction = suspend TestSuite.() -> Unit
 typealias TestSuiteExecutionWrappingAction = suspend (suiteAction: TestSuiteExecutionAction) -> Unit
 
+@TestDiscoverable
 open class TestSuite internal constructor(
     parentSuite: TestSuite?,
-    simpleNameOrNull: String? = null,
-    configuration: TestElementConfiguration.() -> Unit = {},
+    @TestName simpleNameOrNull: String? = null,
+    configuration: Configuration.() -> Unit = {},
     private val content: TestSuiteContent? = null
 ) : TestElement(parentSuite, simpleNameOrNull, configuration),
     AbstractTestSuite {
@@ -63,11 +64,13 @@ open class TestSuite internal constructor(
         }
     }
 
-    fun suite(name: String, content: TestSuiteContent) {
+    @TestDiscoverable
+    fun suite(@TestName name: String, content: TestSuiteContent) {
         TestSuite(this, name, content = content)
     }
 
-    fun test(name: String, configuration: TestElementConfiguration.() -> Unit = {}, action: TestAction) {
+    @TestDiscoverable
+    fun test(@TestName name: String, configuration: Configuration.() -> Unit = {}, action: TestAction) {
         Test(this, name, configuration = configuration, action)
     }
 
