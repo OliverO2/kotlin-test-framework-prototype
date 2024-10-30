@@ -46,18 +46,14 @@ Of course, I've also been researching how to integrate with build tooling, Intel
 
 Based on my research, there is a xref:documentation/Framework-Agnostic API.adoc[proposal (WIP) for a framework-agnostic API] which the Kotlin core ecosystem (compiler, stdlib, IDE plugin) could offer to integrate a variety of powerful test frameworks with minimal effort. You can also find an https://gitlab.com/opensavvy/groundwork/kotlin-test-initiative/-/merge_requests/1#note_2158155204[ongoing discussion about this proposal and an alternative] in the OpenSavvy Prepared project.
 
-=== Bootstrapping A Local Build
+=== Sample Application
 
-This project builds a Gradle plugin. Its sample application depends on accessing the Gradle plugin from a repository. Initially, it will not be there. To bootstrap this project using a local repository:
-
-[arabic]
-. In ``application/build.gradle.kts``: comment out the line``alias(libs.plugins.test.framework.prototype)``.
-. ``./gradlew clean publishAllPublicationsToLocalRepository``
-. In ``application/build.gradle.kts``: re-enable the line``alias(libs.plugins.test.framework.prototype)``.
-
-=== Running Tests
+Running all tests:
 
 * `./gradlew -p application --quiet cleanAllTests allTests`
+
+Running tests for individual targets:
+
 * `./gradlew -p application --quiet cleanAllTests jvmTest`
 * `./gradlew -p application --quiet cleanAllTests jsNodeTest`
 * `./gradlew -p application --quiet cleanAllTests jsBrowserTest`

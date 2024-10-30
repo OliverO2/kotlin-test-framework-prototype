@@ -43,8 +43,6 @@ org-junit-platform-engine = "org.junit.platform:junit-platform-engine:1.10.2"
 ##                                                                ⬆ :1.11.1"
 ##                                                                ⬆ :1.11.2"
 
-test-framework-prototype-core = "kotlin-test-framework-prototype:test-framework-core:unspecified"
-
 [plugins]
 
 # https://github.com/gmazzo/gradle-buildconfig-plugin/releases
@@ -76,5 +74,3 @@ org-jetbrains-kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform"
 
 # https://github.com/jeremymailen/kotlinter-gradle/releases
 org-jmailen-kotlinter = "org.jmailen.kotlinter:4.4.1"
-
-test-framework-prototype = "com.example.testFramework:unspecified"

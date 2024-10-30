@@ -36,3 +36,5 @@ include(":test-framework-gradle-plugin")
 include(":test-framework-compiler-plugin")
 
 include(":application")
+
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")

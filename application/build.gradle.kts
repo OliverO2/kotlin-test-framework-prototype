@@ -1,12 +1,18 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.plugin.KotlinHierarchyTemplate
+import org.jetbrains.kotlin.gradle.plugin.NATIVE_COMPILER_PLUGIN_CLASSPATH_CONFIGURATION_NAME
+import org.jetbrains.kotlin.gradle.plugin.PLUGIN_CLASSPATH_CONFIGURATION_NAME
 
 plugins {
     alias(libs.plugins.org.jetbrains.kotlin.multiplatform)
     alias(libs.plugins.org.jetbrains.kotlin.atomicfu)
-    alias(libs.plugins.test.framework.prototype)
     alias(libs.plugins.org.jmailen.kotlinter)
+}
+
+dependencies {
+    add(PLUGIN_CLASSPATH_CONFIGURATION_NAME, projects.testFrameworkCompilerPlugin)
+    add(NATIVE_COMPILER_PLUGIN_CLASSPATH_CONFIGURATION_NAME, projects.testFrameworkCompilerPlugin)
 }
 
 val jdkVersion = project.property("local.jdk.version").toString().toInt()
@@ -60,8 +66,7 @@ kotlin {
     sourceSets {
         commonTest {
             dependencies {
-                implementation(project(":test-framework-core"))
-                // implementation(libs.test.framework.prototype.core)
+                implementation(projects.testFrameworkCore)
                 implementation(libs.org.jetbrains.kotlinx.atomicfu)
             }
         }

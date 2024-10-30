@@ -30,7 +30,7 @@ kotlin {
         jvmTest {
             dependencies {
                 implementation(libs.dev.zacsweers.kctfork)
-                implementation(project(":test-framework-core"))
+                implementation(projects.testFrameworkCore)
                 implementation(kotlin("test"))
             }
         }
