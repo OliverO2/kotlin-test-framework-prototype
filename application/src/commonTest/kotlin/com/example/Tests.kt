@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalCoroutinesApi::class)
+
 package com.example
 
 import kotlinx.atomicfu.atomic
@@ -19,6 +21,7 @@ import testFramework.TestCompartment
 import testFramework.TestContext
 import testFramework.TestSuite
 import testFramework.coroutineContext
+import testFramework.suite
 import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -87,25 +90,21 @@ class TestSuite1 :
         }
     )
 
-class TestSuite2 :
-    TestSuite(
-        // compartment = TestCompartment.Parallel,
-        {
-            test("test1", configuration = { isEnabled = false }) {
-                log("in TestSuite2.test1")
-            }
+val testSuite2 by suite("testSuite2") {
+    test("test1", configuration = { isEnabled = false }) {
+        log("in TestSuite2.test1")
+    }
 
-            test("test2 with strange characters <&>'Ä\" and a –\t– tab", timeout = 0.1.seconds) {
-                log("in TestSuite2.test2 – before delay")
-                delay(0.3.seconds)
-                log("in TestSuite2.test2 – after delay")
-            }
+    test("test2 with strange characters <&>'Ä\" and a –\t– tab", timeout = 0.1.seconds) {
+        log("in TestSuite2.test2 – before delay")
+        delay(0.3.seconds)
+        log("in TestSuite2.test2 – after delay")
+    }
 
-            test("test3 (disabled)", configuration = { isEnabled = false }) {
-                log("in TestSuite2.test1")
-            }
-        }
-    )
+    test("test3 (disabled)", configuration = { isEnabled = false }) {
+        log("in TestSuite2.test1")
+    }
+}
 
 class TestSuite3 :
     TestSuite(
@@ -124,7 +123,6 @@ class TestSuite3 :
         }
     )
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class TestSuite4 :
     TestSuite(
         {
@@ -191,7 +189,6 @@ class TestSuite4 :
         }
     )
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class TestSuite5 :
     TestSuite(
         compartment = TestCompartment.UI(UnconfinedTestDispatcher()),

@@ -6,16 +6,44 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import testFramework.internal.TestReport
 
-typealias TestSuiteContent = TestSuite.() -> Unit
 typealias TestSuiteExecutionAction = suspend TestSuite.() -> Unit
 typealias TestSuiteExecutionWrappingAction = suspend (suiteAction: TestSuiteExecutionAction) -> Unit
+
+@TestDiscoverable
+fun suite(
+    @TestName name: String,
+    compartment: TestCompartment,
+    configuration: TestElement.Configuration.() -> Unit = {},
+    content: TestSuite.() -> Unit
+): Lazy<TestSuite> = lazy {
+    TestSuite(
+        parentSuite = compartment,
+        simpleNameOrNull = name,
+        configuration = configuration,
+        content = content
+    )
+}
+
+@TestDiscoverable
+fun suite(
+    @TestName name: String,
+    configuration: TestElement.Configuration.() -> Unit = {},
+    content: TestSuite.() -> Unit
+): Lazy<TestSuite> = lazy {
+    TestSuite(
+        parentSuite = TestSession.global.defaultCompartment,
+        simpleNameOrNull = name,
+        configuration = configuration,
+        content = content
+    )
+}
 
 @TestDiscoverable
 open class TestSuite internal constructor(
     parentSuite: TestSuite?,
     @TestName simpleNameOrNull: String? = null,
     configuration: Configuration.() -> Unit = {},
-    private val content: TestSuiteContent? = null
+    private val content: TestSuite.() -> Unit = {}
 ) : TestElement(parentSuite, simpleNameOrNull, configuration),
     AbstractTestSuite {
 
@@ -28,14 +56,14 @@ open class TestSuite internal constructor(
     /** Fixtures created while executing this suite, in reverse order of fixture creation. */
     private val fixtures = mutableListOf<Fixture<*>>()
 
-    protected constructor(content: TestSuiteContent) : this(
+    protected constructor(content: TestSuite.() -> Unit) : this(
         parentSuite = TestSession.global.defaultCompartment,
         content = content
     )
 
     protected constructor(
         configuration: Configuration.() -> Unit,
-        content: TestSuiteContent
+        content: TestSuite.() -> Unit
     ) : this(
         parentSuite = TestSession.global.defaultCompartment,
         configuration = configuration,
@@ -44,13 +72,13 @@ open class TestSuite internal constructor(
 
     protected constructor(
         compartment: TestCompartment,
-        content: TestSuiteContent
+        content: TestSuite.() -> Unit
     ) : this(parentSuite = compartment, content = content)
 
     protected constructor(
         compartment: TestCompartment,
         configuration: Configuration.() -> Unit,
-        content: TestSuiteContent
+        content: TestSuite.() -> Unit
     ) : this(parentSuite = compartment, configuration = configuration, content = content)
 
     internal fun registerChildElement(childElement: TestElement) {
@@ -65,7 +93,7 @@ open class TestSuite internal constructor(
     }
 
     @TestDiscoverable
-    fun suite(@TestName name: String, content: TestSuiteContent) {
+    fun suite(@TestName name: String, content: TestSuite.() -> Unit) {
         TestSuite(this, name, content = content)
     }
 
@@ -77,7 +105,7 @@ open class TestSuite internal constructor(
     override fun configure(selection: Selection) {
         super.configure(selection)
 
-        content?.invoke(this)
+        content()
 
         childElements.forEach {
             it.configure(selection)

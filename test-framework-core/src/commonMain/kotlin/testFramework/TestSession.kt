@@ -10,6 +10,7 @@ open class TestSession protected constructor(
     configuration = configuration
 ),
     AbstractTestSession {
+
     val defaultCompartment: TestCompartment by lazy { defaultCompartment() }
 
     init {

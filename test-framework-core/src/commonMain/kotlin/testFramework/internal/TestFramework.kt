@@ -1,18 +1,21 @@
 package testFramework.internal
 
 import kotlinx.coroutines.test.TestScope
+import testFramework.AbstractTestSession
 import testFramework.AbstractTestSuite
 import testFramework.TestElement
 import testFramework.TestSession
 import testFramework.TestSuite
 import kotlin.time.Duration
 
+internal class TestFrameworkDiscoveryResult(val topLevelTestSuites: Array<AbstractTestSuite>)
+
 /**
  * Initialize the test framework with a [TestSession].
  *
  * The framework invokes this function before creating any top-level test suites.
  */
-internal fun initializeTestFramework(testSession: TestSession?, arguments: Array<String>? = null) {
+internal fun initializeTestFramework(testSession: AbstractTestSession?, arguments: Array<String>? = null) {
     if (!arguments.isNullOrEmpty()) {
         argumentsBasedElementSelection = ArgumentsBasedElementSelection(arguments)
     }

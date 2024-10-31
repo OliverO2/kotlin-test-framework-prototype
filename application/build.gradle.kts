@@ -54,6 +54,11 @@ kotlin {
     }
 
     @OptIn(ExperimentalKotlinGradlePluginApi::class)
+    compilerOptions {
+        // freeCompilerArgs = listOf("-P", "plugin:com.example.testFramework:debug=true")
+    }
+
+    @OptIn(ExperimentalKotlinGradlePluginApi::class)
     applyHierarchyTemplate(KotlinHierarchyTemplate.default) {
         group("common") {
             group("jsHosted") {

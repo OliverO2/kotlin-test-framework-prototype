@@ -94,6 +94,12 @@ in an IDE run configuration with an environment variable setting:
 
 === TODO
 
-* Implement framework-agnostic API.
 * Add an IntelliJ plugin.
+* Add auto-naming for `@TestName` parameters.
 * Use https://github.com/JetBrains/kotlin/blob/d9ddcd991bf9c6122041f0276af644be0432fa38/libraries/tools/kotlin-gradle-plugin/src/common/kotlin/org/jetbrains/kotlin/gradle/targets/native/internal/KotlinNativeStackTraceParser.kt[KotlinNativeStackTraceParser.kt] to reference source locations in Native stack traces.
+* Add checks that a `TestCompartment` does not register with a `TestSession` before the framework is initialized.
+* Investigate initialization order effects on `TestCompartment` registering with a `TestSession` in these cases:
+** custom `TestSession`, default compartments,
+** custom `TestSession` (1), custom `TestCompartment` (2) in
+*** same source, ordered (1), (2) and (2), (1),
+*** different sources, ordered (1), (2) and (2), (1).

@@ -32,10 +32,14 @@ private class CompilerPluginTests {
                     $packageDeclaration
                     
                     import testFramework.TestSuite
+                    import testFramework.suite
+                    import kotlin.getValue
 
                     class TestSuiteOne : TestSuite({})
 
                     class TestSuiteTwo : TestSuite({})
+
+                    val testSuiteThree by suite("testSuiteThree") {}
                 """,
                 debugEnabled = true
             ) {
@@ -43,6 +47,7 @@ private class CompilerPluginTests {
 
                 assertTrue("Found test discoverable '${packageNameDot}TestSuiteOne'" in messages)
                 assertTrue("Found test discoverable '${packageNameDot}TestSuiteTwo'" in messages)
+                assertTrue("Found test discoverable '${packageNameDot}testSuiteThree'" in messages)
             }
         }
     }
@@ -59,6 +64,8 @@ private class CompilerPluginTests {
                 
                 import testFramework.TestSession
                 import testFramework.TestSuite
+                import testFramework.suite
+                import kotlin.getValue
 
                 class TestSuiteOne : TestSuite({
                     println("$d{this::class.qualifiedName}")
@@ -73,6 +80,10 @@ private class CompilerPluginTests {
                 class TestSuiteTwo : TestSuite({
                     println("$d{this::class.qualifiedName}")
                 })
+
+                val testSuiteThree by suite("testSuiteThree") {
+                    println("$d{this::class.qualifiedName}")
+                }
             """,
             debugEnabled = true,
             executionPackageName = packageName
@@ -83,6 +94,7 @@ private class CompilerPluginTests {
                     $packageName.MyTestSession
                     $packageName.TestSuiteOne
                     $packageName.TestSuiteTwo
+                    testFramework.TestSuite
                 """.trimIndent() in capturedStdout,
                 capturedStdout
             )
