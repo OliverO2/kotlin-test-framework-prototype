@@ -58,14 +58,19 @@ import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
 import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.packageFqName
 import org.jetbrains.kotlin.ir.util.superClass
-import org.jetbrains.kotlin.javac.resolve.classId
 import org.jetbrains.kotlin.name.CallableId
+import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.platform.isJs
 import org.jetbrains.kotlin.platform.isWasm
 import org.jetbrains.kotlin.platform.jvm.isJvm
 import org.jetbrains.kotlin.platform.konan.isNative
+import testFramework.AbstractTestSession
+import testFramework.AbstractTestSuite
+import testFramework.TestDiscoverable
+import testFramework.internal.TestFrameworkDiscoveryResult
+import kotlin.reflect.KClass
 
 class CompilerPluginIrGenerationExtension(private val compilerConfiguration: CompilerConfiguration) :
     IrGenerationExtension {
@@ -92,20 +97,19 @@ private interface IrPluginContextOwner {
 private class Configuration(compilerConfiguration: CompilerConfiguration, override val pluginContext: IrPluginContext) :
     IrPluginContextOwner {
 
-    private val publicPackageName = "testFramework"
     private val internalPackageName = "testFramework.internal"
 
     val debugEnabled = Options.debug.value(compilerConfiguration)
     val jvmStandaloneEnabled = Options.jvmStandalone.value(compilerConfiguration)
 
-    val abstractSuiteSymbol = irClassSymbol(publicPackageName, "AbstractTestSuite")
-    val abstractSessionSymbol = irClassSymbol(publicPackageName, "AbstractTestSession")
-    val testDiscoverableAnnotationSymbol = irClassSymbol(publicPackageName, "TestDiscoverable")
+    val abstractSuiteSymbol = irClassSymbol(AbstractTestSuite::class)
+    val abstractSessionSymbol = irClassSymbol(AbstractTestSession::class)
+    val testDiscoverableAnnotationSymbol = irClassSymbol(TestDiscoverable::class)
+    val testFrameworkDiscoveryResultSymbol = irClassSymbol(TestFrameworkDiscoveryResult::class)
 
     val initializeTestFrameworkFunctionSymbol = irFunctionSymbol(internalPackageName, "initializeTestFramework")
     val runTestsFunctionSymbol = irFunctionSymbol(internalPackageName, "runTests")
     val runTestsBlockingFunctionSymbol by lazy { irFunctionSymbol(internalPackageName, "runTestsBlocking") }
-    val testFrameworkDiscoveryResultSymbol = irClassSymbol(internalPackageName, "TestFrameworkDiscoveryResult")
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
@@ -291,7 +295,7 @@ private class ModuleTransformer(
             visibility = DescriptorVisibilities.PRIVATE
         }.apply {
             parent = entryPointsTargetFile
-            annotations += irConstructorCall(irClassSymbol("kotlin.native", "EagerInitialization"))
+            annotations += irConstructorCall(irClassSymbol("kotlin.native.EagerInitialization"))
 
             initializeWith(propertyName, pluginContext.irBuiltIns.unitType) {
                 +irSimpleFunctionCall(
@@ -412,7 +416,7 @@ private class ModuleTransformer(
      * `startUnitTests()` is invoked by Kotlin/Wasm and must be present. It has no effect with this framework.
      */
     private fun irWasmStartUnitTestsFunctionOrNull(): IrSimpleFunction? {
-        val wasmExportSymbol = irClassSymbolOrNull("kotlin.wasm", "WasmExport") ?: return null
+        val wasmExportSymbol = irClassSymbolOrNull("kotlin.wasm.WasmExport") ?: return null
 
         return pluginContext.irFactory.buildFun {
             name = Name.identifier("startUnitTests")
@@ -485,12 +489,13 @@ private fun IrBuilderWithScope.irSimpleFunctionCall(
     }
 }
 
-private fun IrPluginContextOwner.irClassSymbolOrNull(packageName: String, className: String): IrClassSymbol? =
-    pluginContext.referenceClass(classId(packageName, className))
+private fun IrPluginContextOwner.irClassSymbol(kClass: KClass<*>): IrClassSymbol = irClassSymbol(kClass.qualifiedName!!)
 
-private fun IrPluginContextOwner.irClassSymbol(packageName: String, className: String): IrClassSymbol =
-    irClassSymbolOrNull(packageName, className)
-        ?: throw IllegalStateException("Class '$packageName.$className' $MISSING_CLASSPATH_INFO")
+private fun IrPluginContextOwner.irClassSymbolOrNull(fqName: String): IrClassSymbol? =
+    pluginContext.referenceClass(ClassId.topLevel(FqName(fqName)))
+
+private fun IrPluginContextOwner.irClassSymbol(fqName: String): IrClassSymbol = irClassSymbolOrNull(fqName)
+    ?: throw IllegalStateException("Class '$fqName' $MISSING_CLASSPATH_INFO")
 
 private fun IrPluginContextOwner.irFunctionSymbol(packageName: String, functionName: String): IrSimpleFunctionSymbol =
     pluginContext.referenceFunctions(CallableId(FqName(packageName), Name.identifier(functionName))).singleOrNull()

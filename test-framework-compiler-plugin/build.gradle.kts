@@ -20,6 +20,12 @@ kotlin {
     }
 
     sourceSets {
+        commonMain {
+            dependencies {
+                implementation(projects.testFrameworkAbstractions)
+            }
+        }
+
         jvmMain {
             dependencies {
                 implementation(kotlin("compiler-embeddable"))
@@ -30,7 +36,6 @@ kotlin {
         jvmTest {
             dependencies {
                 implementation(libs.dev.zacsweers.kctfork)
-                implementation(projects.testFrameworkCore)
                 implementation(kotlin("test"))
             }
         }

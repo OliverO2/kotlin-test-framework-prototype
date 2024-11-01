@@ -8,8 +8,6 @@ import testFramework.TestSession
 import testFramework.TestSuite
 import kotlin.time.Duration
 
-internal class TestFrameworkDiscoveryResult(val topLevelTestSuites: Array<AbstractTestSuite>)
-
 /**
  * Initialize the test framework with a [TestSession].
  *

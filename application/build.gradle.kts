@@ -13,6 +13,8 @@ plugins {
 dependencies {
     add(PLUGIN_CLASSPATH_CONFIGURATION_NAME, projects.testFrameworkCompilerPlugin)
     add(NATIVE_COMPILER_PLUGIN_CLASSPATH_CONFIGURATION_NAME, projects.testFrameworkCompilerPlugin)
+    // WORKAROUND https://youtrack.jetbrains.com/issue/KT-53477 – KGP misses transitive compiler plugin dependencies
+    add(NATIVE_COMPILER_PLUGIN_CLASSPATH_CONFIGURATION_NAME, projects.testFrameworkAbstractions)
 }
 
 val jdkVersion = project.property("local.jdk.version").toString().toInt()

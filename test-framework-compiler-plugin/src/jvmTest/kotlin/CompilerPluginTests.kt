@@ -1,5 +1,3 @@
-package testFramework.compilerPlugin
-
 import buildConfig.BuildConfig
 import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
@@ -9,7 +7,8 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.jetbrains.kotlin.incremental.deleteRecursivelyOrThrow
-import testFramework.TestSession
+import testFramework.compilerPlugin.CompilerPluginCommandLineProcessor
+import testFramework.compilerPlugin.CompilerPluginRegistrar
 import java.io.ByteArrayOutputStream
 import java.io.OutputStream
 import java.io.PrintStream
@@ -31,13 +30,13 @@ private class CompilerPluginTests {
                 """
                     $packageDeclaration
                     
-                    import testFramework.TestSuite
-                    import testFramework.suite
+                    import fakeTestFramework.FakeTestSuite
+                    import fakeTestFramework.suite
                     import kotlin.getValue
 
-                    class TestSuiteOne : TestSuite({})
+                    class TestSuiteOne : FakeTestSuite({})
 
-                    class TestSuiteTwo : TestSuite({})
+                    class TestSuiteTwo : FakeTestSuite({})
 
                     val testSuiteThree by suite("testSuiteThree") {}
                 """,
@@ -62,27 +61,27 @@ private class CompilerPluginTests {
             """
                 package $packageName
                 
-                import testFramework.TestSession
-                import testFramework.TestSuite
-                import testFramework.suite
+                import fakeTestFramework.FakeTestSession
+                import fakeTestFramework.FakeTestSuite
+                import fakeTestFramework.suite
                 import kotlin.getValue
 
-                class TestSuiteOne : TestSuite({
+                class TestSuiteOne : FakeTestSuite({
                     println("$d{this::class.qualifiedName}")
                 })
                 
-                class MyTestSession : TestSession() {
+                class MyTestSession : FakeTestSession() {
                     init {
                         println("$d{this::class.qualifiedName}")
                     }
                 }
 
-                class TestSuiteTwo : TestSuite({
+                class TestSuiteTwo : FakeTestSuite({
                     println("$d{this::class.qualifiedName}")
                 })
 
                 val testSuiteThree by suite("testSuiteThree") {
-                    println("$d{this::class.qualifiedName}")
+                    println("$d{elementPath}")
                 }
             """,
             debugEnabled = true,
@@ -94,7 +93,7 @@ private class CompilerPluginTests {
                     $packageName.MyTestSession
                     $packageName.TestSuiteOne
                     $packageName.TestSuiteTwo
-                    testFramework.TestSuite
+                    testSuiteThree
                 """.trimIndent() in capturedStdout,
                 capturedStdout
             )
@@ -107,16 +106,16 @@ private class CompilerPluginTests {
             """
                 package com.example
                 
-                import testFramework.TestSession
-                import testFramework.TestSuite
+                import fakeTestFramework.FakeTestSession
+                import fakeTestFramework.FakeTestSuite
 
-                class TestSuiteOne : TestSuite({})
+                class TestSuiteOne : FakeTestSuite({})
                 
-                class MyTestSession : TestSession()
+                class MyTestSession : FakeTestSession()
 
-                class TestSuiteTwo : TestSuite({})
+                class TestSuiteTwo : FakeTestSuite({})
                 
-                class MyOtherTestSession : TestSession()
+                class MyOtherTestSession : FakeTestSession()
             """,
             expectedExitCode = KotlinCompilation.ExitCode.COMPILATION_ERROR
         ) {
@@ -128,9 +127,9 @@ private class CompilerPluginTests {
     fun debugEnabled() {
         compilation(
             """
-                import testFramework.TestSuite
+                import fakeTestFramework.FakeTestSuite
                 
-                class TestSuiteOne : TestSuite({})
+                class TestSuiteOne : FakeTestSuite({})
             """,
             debugEnabled = true
         ) {
@@ -187,17 +186,6 @@ private fun compilation(
             var capturedStdout = ""
 
             if (executionPackageName != null) {
-                // The following hack un-initializes the framework. This is necessary because the framework's classes
-                // are loaded into the test JVM. JVM-static members of such classes will then retain their state
-                // across test runs, but the framework expects such members to have a freshly initialized state
-                // on each run.
-                // FIXME: Loading `TestSessionKt` multiple times leads to inconsistencies regarding compartments.
-                //     TestCompartments used repeatedly in multiple test runs will have an earlier test run's
-                //     TestSession as their parent. It would be better to load MainKt and all dependencies in an
-                //     isolated class loader per invocation. See https://stackoverflow.com/a/3726742/2529022
-                @Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
-                TestSession.singleton = null
-
                 val packageNameDot = if (executionPackageName.isEmpty()) "" else "$executionPackageName."
                 val entryPointClass = classLoader.loadClass("${packageNameDot}MainKt")
                 capturedStdout = capturedStdout {

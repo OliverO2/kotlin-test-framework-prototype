@@ -1,6 +1,7 @@
 plugins {
     // https://github.com/Splitties/refreshVersions/releases
     id("de.fayard.refreshVersions") version "0.60.5"
+    id("org.gradle.toolchains.foojay-resolver-convention") version "0.8.0"
 }
 
 @Suppress("UnstableApiUsage")
@@ -31,6 +32,7 @@ fun RepositoryHandler.specialRepositories() {
 
 rootProject.name = "kotlin-test-framework-prototype"
 
+include(":test-framework-abstractions")
 include(":test-framework-core")
 include(":test-framework-gradle-plugin")
 include(":test-framework-compiler-plugin")

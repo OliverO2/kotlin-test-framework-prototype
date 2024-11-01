@@ -53,6 +53,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
+                api(projects.testFrameworkAbstractions)
                 api(libs.org.jetbrains.kotlinx.coroutines.core)
                 api(libs.org.jetbrains.kotlinx.coroutines.test)
                 implementation(libs.org.jetbrains.kotlinx.datetime)
