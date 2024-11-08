@@ -198,6 +198,13 @@ private class ModuleTransformer(
         // Add the generated entry points to the first IR source file (return if none exists).
         val entryPointsFile = moduleFragment.files.firstOrNull() ?: return moduleFragment
 
+        fun addEntryPoint(declaration: IrDeclaration) {
+            entryPointsFile.addChild(declaration)
+            if (configuration.debugEnabled) {
+                reportDebug("Generated:\n${declaration.dump().prependIndent("\t")}")
+            }
+        }
+
         withErrorReporting(
             moduleFragment,
             "Could not generate entry point code in '${entryPointsFile.nameWithPackage}'"
@@ -214,32 +221,25 @@ private class ModuleTransformer(
             }
 
             val platform = pluginContext.platform
-            val entryPointDeclarations: List<IrDeclaration> = when {
-                platform.isJvm() -> listOfNotNull(
+            when {
+                platform.isJvm() -> {
                     if (configuration.jvmStandaloneEnabled) {
-                        irSuspendMainFunction()
+                        addEntryPoint(irSuspendMainFunction())
                     } else {
-                        irTestFrameworkDiscoveryResultProperty(entryPointsFile)
+                        addEntryPoint(irTestFrameworkDiscoveryResultProperty(entryPointsFile))
                     }
-                )
+                }
 
-                platform.isJs() || platform.isWasm() -> listOfNotNull(
-                    irSuspendMainFunction(),
-                    irWasmStartUnitTestsFunctionOrNull()
-                )
+                platform.isJs() || platform.isWasm() -> {
+                    addEntryPoint(irSuspendMainFunction())
+                    irWasmStartUnitTestsFunctionOrNull()?.let { addEntryPoint(it) }
+                }
 
-                platform.isNative() -> listOfNotNull(
-                    irTestFrameworkEntryPointProperty(entryPointsFile)
-                )
+                platform.isNative() -> {
+                    addEntryPoint(irTestFrameworkEntryPointProperty(entryPointsFile))
+                }
 
                 else -> throw UnsupportedOperationException("Cannot generate entry points for platform '$platform'")
-            }
-
-            entryPointDeclarations.forEach { entryPointDeclaration ->
-                entryPointsFile.addChild(entryPointDeclaration)
-                if (configuration.debugEnabled) {
-                    reportDebug("Generated:\n${entryPointDeclaration.dump().prependIndent("\t")}")
-                }
             }
         }
 
@@ -317,14 +317,14 @@ private class ModuleTransformer(
      * }
      * ```
      */
-    private fun irTestFrameworkDiscoveryResultProperty(entryPointsTargetFile: IrFile): IrProperty {
+    private fun irTestFrameworkDiscoveryResultProperty(entryPointsFile: IrFile): IrProperty {
         val propertyName = Name.identifier("testFrameworkDiscoveryResult")
 
         return pluginContext.irFactory.buildProperty {
             name = propertyName
             visibility = DescriptorVisibilities.INTERNAL
         }.apply {
-            parent = entryPointsTargetFile
+            parent = entryPointsFile
 
             initializeWith(propertyName, configuration.testFrameworkDiscoveryResultSymbol.owner.defaultType) {
                 +irSimpleFunctionCall(
