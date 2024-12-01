@@ -145,23 +145,24 @@ private class TestElementJUnitPlatformDescriptor(
 }
 
 private fun TestElement.newPlatformDescriptor(parentUniqueId: UniqueId): TestElementJUnitPlatformDescriptor {
-    val source: TestSource?
     val uniqueId: UniqueId
     val element = this
+    var source: TestSource? = null
 
-    if (element is AbstractTestSuite && topLevelTestSuites.contains(element)) {
-        uniqueId = parentUniqueId.append("class", element::class.qualifiedName!!)
-        source = ClassSource.from(element::class.java)
-    } else {
-        val segmentType = when (element) {
-            is Test -> "test"
-            is TestSession -> "session"
-            is TestCompartment -> "compartment"
-            is TestSuite -> "suite"
+    val segmentType = when (element) {
+        is Test -> "test"
+        is TestSession -> "session"
+        is TestCompartment -> "compartment"
+        is TestSuite -> {
+            if (topLevelTestSuites.contains(element)) {
+                source = ClassSource.from(elementName)
+                "class"
+            } else {
+                "suite"
+            }
         }
-        uniqueId = parentUniqueId.append(segmentType, displayName)
-        source = null
     }
+    uniqueId = parentUniqueId.append(segmentType, elementName)
 
     return TestElementJUnitPlatformDescriptor(
         uniqueId = uniqueId,

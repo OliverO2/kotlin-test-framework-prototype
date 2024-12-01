@@ -6,7 +6,7 @@ open class TestSession protected constructor(
     defaultCompartment: (() -> TestCompartment) = { TestCompartment.Default }
 ) : TestSuite(
     parentSuite = null,
-    simpleNameOrNull = "${testPlatform.displayName} session",
+    elementName = "${testPlatform.displayName} session",
     configuration = configuration
 ),
     AbstractTestSession {

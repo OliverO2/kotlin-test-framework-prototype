@@ -6,6 +6,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import testFramework.Test
+import testFramework.TestCompartment
 import testFramework.TestElement
 import testFramework.TestSession
 import testFramework.TestSuite
@@ -21,12 +22,25 @@ internal suspend fun configureAndRunJsHostedTests() {
     fun TestElement.registerWithKotlinJsTestFramework() {
         when (this) {
             is Test -> {
-                kotlinJsTestFramework.test(displayName, ignored = !isEnabled) {
+                kotlinJsTestFramework.test(elementName, ignored = !isEnabled) {
                     TestSessionAdapter.produceTestResult(this)
                 }
             }
+
+            is TestSession, is TestCompartment -> {
+                // Skip registering session and compartments, so that there is no pseudo-suite appearing above our
+                // real top-level suites. This is required for test filtering expressions to work without wildcards.
+                // Example: `TestSuite1.test1` can be found this way, otherwise we'd need to use `*TestSuite1.test1`,
+                // which can be ambiguous.
+                if (isEnabled) {
+                    childElements.forEach {
+                        it.registerWithKotlinJsTestFramework()
+                    }
+                }
+            }
+
             is TestSuite -> {
-                kotlinJsTestFramework.suite(displayName, ignored = !isEnabled) {
+                kotlinJsTestFramework.suite(elementName, ignored = !isEnabled) {
                     childElements.forEach {
                         it.registerWithKotlinJsTestFramework()
                     }

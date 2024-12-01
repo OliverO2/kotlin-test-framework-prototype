@@ -2,26 +2,24 @@ package fakeTestFramework
 
 import testFramework.AbstractTestSuite
 import testFramework.TestDiscoverable
-import testFramework.TestName
+import testFramework.TestElementName
 
 @TestDiscoverable
-fun suite(@TestName name: String, content: FakeTestSuite.() -> Unit): Lazy<FakeTestSuite> = lazy {
+fun suite(@TestElementName name: String = "", content: FakeTestSuite.() -> Unit): Lazy<FakeTestSuite> = lazy {
     FakeTestSuite(
-        simpleNameOrNull = name,
+        elementName = name,
         content = content
     )
 }
 
 @TestDiscoverable
-open class FakeTestSuite(@TestName simpleNameOrNull: String? = null, content: FakeTestSuite.() -> Unit = {}) :
-    FakeTestElement(null, simpleNameOrNull),
+open class FakeTestSuite(@TestElementName elementName: String = "", content: FakeTestSuite.() -> Unit = {}) :
+    FakeTestElement(null, elementName),
     AbstractTestSuite {
 
     init {
         content()
     }
-
-    constructor(content: FakeTestSuite.() -> Unit = {}) : this(null, content)
 
     override val childElements: MutableList<FakeTestElement> = mutableListOf()
 

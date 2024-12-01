@@ -34,7 +34,7 @@ internal open class ListsBasedElementSelection protected constructor(
     private val excludePatterns: List<Regex>
 ) : TestElement.Selection {
     protected constructor(includePatterns: String?, excludePatterns: String?) :
-        this(includePatterns.toRegexPatterns(), excludePatterns.toRegexPatterns())
+        this(includePatterns.toRegexList(), excludePatterns.toRegexList())
 
     private var used = false
 
@@ -52,13 +52,26 @@ internal open class ListsBasedElementSelection protected constructor(
         "${this::class.simpleName}(includePatterns=$includePatterns, excludePatterns=$excludePatterns)"
 
     companion object {
-        private fun String?.toRegexPatterns(): List<Regex> = this?.split(',')?.map {
+        /**
+         * Returns a list of regular expressions from a string of comma-separated patterns with `*` wildcards.
+         */
+        private fun String?.toRegexList(): List<Regex> = this?.split(',')?.map {
             try {
-                it.toRegex()
+                buildString {
+                    for (character in it) {
+                        when (character) {
+                            '*' -> append(".*")
+                            in REGEX_META_CHARACTERS -> append("\\$character")
+                            else -> append(character)
+                        }
+                    }
+                }.toRegex()
             } catch (throwable: Throwable) {
                 throw IllegalArgumentException("Could not convert regex pattern '$it'.", throwable)
             }
         } ?: listOf()
+
+        private val REGEX_META_CHARACTERS = "\\[].^${'$'}?+{}|()".toSet()
     }
 }
 

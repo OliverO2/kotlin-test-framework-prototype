@@ -14,7 +14,7 @@ kotlin {
     jvm {
         @OptIn(ExperimentalKotlinGradlePluginApi::class)
         compilerOptions {
-            freeCompilerArgs = listOf("-Xjdk-release=$jdkVersion")
+            freeCompilerArgs.addAll("-Xjdk-release=$jdkVersion")
         }
     }
 

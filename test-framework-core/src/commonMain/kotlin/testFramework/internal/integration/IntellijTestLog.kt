@@ -90,7 +90,9 @@ internal object IntellijTestLog : TestReport() {
     }
 
     private class IjLog(private val entry: StringBuilder) {
-        // For the IntelliJ test event logging format, see:
+        // For the IntelliJ test integration and its event logging format, see:
+        // https://github.com/JetBrains/intellij-community/blob/b062eaa5ede0db49499e2c6b09f1c3286e773952/plugins/kotlin/docs/GradleTestRunConfigurations.md#gradle-idea-interaction
+        // https://github.com/JetBrains/intellij-community/blob/87a141216db0931620ec11f9e1ccd644f6b8668d/plugins/gradle/java/src/execution/test/runner/events/TestEventXPPXmlView.java
         // https://github.com/JetBrains/intellij-community/blob/41cf54c6d3037b65733ae6c233af192ac7b723d0/plugins/gradle/tooling-extension-impl/src/org/jetbrains/plugins/gradle/tooling/internal/init/TestEventLogger.gradle
         // https://github.com/Kotlin/kotlinx-benchmark/blob/3b88587ade401b2016d1835b12c6470654d0d2a7/runtime/commonMain/src/kotlinx/benchmark/IntelliJLog.kt
 

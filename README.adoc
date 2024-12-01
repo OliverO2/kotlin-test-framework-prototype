@@ -73,29 +73,37 @@ Running tests for individual targets:
 ** It does not support running individual tests via editor gutters or the test run window.
 ** It does not support "rerun failed tests" from the test run window.
 ** It does not support running failed tests from the inspections window.
-* Selecting tests via Gradle invocations is possible for targets checkmarked below. Depending on the target, selection supports command line arguments, environment variables, or system properties. Sometimes regular expressions are used, sometimes glob-like patterns, depending on the existing Gradle infrastructure.
+* Selecting tests via Gradle invocations is possible for targets checkmarked below. Depending on the target, selection supports command line arguments, environment variables, or system properties. Selection patterns support the wildcard `*`.
 +
 --
 NOTE: Environment variables and system properties must be relayed to the test task (see xref:application/build.gradle.kts[application/build.gradle.kts]).
 --
-** [x] `++./gradlew -p application --quiet cleanAllTests jvmTest -DTEST_INCLUDE=.*TestSuite1\.test.* -DTEST_EXCLUDE=.*test3-2++`
-** [x] `++./gradlew -p application --quiet cleanAllTests jsNodeTest --tests *TestSuite1.test1++`
-** [x] `++./gradlew -p application --quiet cleanAllTests jsBrowserTest --tests *TestSuite1.test1++`
-** [x] `++./gradlew -p application --quiet cleanAllTests wasmJsNodeTest --tests .*TestSuite1.test1++`
-** [ ] `++./gradlew -p application --quiet cleanAllTests wasmJsBrowserTest --tests .*TestSuite1.test1++`
-** [ ] `++./gradlew -p application --quiet cleanAllTests wasmWasiNodeTest --tests .*TestSuite1.test1++`
+** [x] `++./gradlew -p application --quiet cleanAllTests jvmTest -DTEST_INCLUDE=com.example.TestSuite1.test1++`
++
+--
+NOTE: The JVM test task does not tolerate a `--tests` option without a wildcard in the fully qualified "class" name. Specifying it leads to "No tests found for given includes: [com.example.TestSuite1.test1](--tests filter)".
+--
+** [x] `++./gradlew -p application --quiet cleanAllTests jsNodeTest --tests com.example.TestSuite1.test1++`
++
+--
+NOTE: The `jsNodeTest` supports post-run selection only: It runs all tests, then displays the selected ones in the IDE's test results tree window.
+--
+** [x] `++./gradlew -p application --quiet cleanAllTests jsBrowserTest --tests com.example.TestSuite1.test1++`
+** [x] `++./gradlew -p application --quiet cleanAllTests wasmJsNodeTest --tests com.example.TestSuite1.test1++`
+** [ ] `++./gradlew -p application --quiet cleanAllTests wasmJsBrowserTest --tests com.example.TestSuite1.test1++`
+** [ ] `++./gradlew -p application --quiet cleanAllTests wasmWasiNodeTest --tests com.example.TestSuite1.test1++`
 ** [x] `++./gradlew -p application --quiet cleanAllTests linuxX64Test++`
 +
 --
 in an IDE run configuration with an environment variable setting:
 
-* `++TEST_INCLUDE=.*TestSuite1\.test.*;TEST_EXCLUDE=.*test3-2++`
+* `++TEST_INCLUDE=com.example.TestSuite1.test1++`
 --
 
 === TODO
 
-* Add an IntelliJ plugin.
-* Add auto-naming for `@TestName` parameters.
+* [ ] Add an IntelliJ plugin.
+* [ ] Use `testSuite` instead of `suite` for top-level properties?
 * Use https://github.com/JetBrains/kotlin/blob/d9ddcd991bf9c6122041f0276af644be0432fa38/libraries/tools/kotlin-gradle-plugin/src/common/kotlin/org/jetbrains/kotlin/gradle/targets/native/internal/KotlinNativeStackTraceParser.kt[KotlinNativeStackTraceParser.kt] to reference source locations in Native stack traces.
 * Add checks that a `TestCompartment` does not register with a `TestSession` before the framework is initialized.
 * Investigate initialization order effects on `TestCompartment` registering with a `TestSession` in these cases:
@@ -103,3 +111,4 @@ in an IDE run configuration with an environment variable setting:
 ** custom `TestSession` (1), custom `TestCompartment` (2) in
 *** same source, ordered (1), (2) and (2), (1),
 *** different sources, ordered (1), (2) and (2), (1).
+* Add a "fail fast" configuration option, stopping a test (suite/compartment/session) execution after a configurable number of test failures.

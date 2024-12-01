@@ -3,7 +3,7 @@ package testFramework
 import kotlinx.coroutines.CoroutineDispatcher
 
 open class TestCompartment(name: String, configuration: Configuration.() -> Unit) :
-    TestSuite(parentSuite = TestSession.global, simpleNameOrNull = "@$name", configuration = configuration) {
+    TestSuite(parentSuite = TestSession.global, elementName = "@$name", configuration = configuration) {
 
     companion object {
         val Default by lazy {

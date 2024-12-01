@@ -5,5 +5,5 @@ import testFramework.TestDiscoverable
 
 @TestDiscoverable
 open class FakeTestSession :
-    FakeTestSuite(simpleNameOrNull = "FakeTestSession"),
+    FakeTestSuite(elementName = "FakeTestSession"),
     AbstractTestSession

@@ -5,7 +5,6 @@ import org.jetbrains.kotlin.gradle.plugin.PLUGIN_CLASSPATH_CONFIGURATION_NAME
 
 plugins {
     alias(libs.plugins.org.jetbrains.kotlin.multiplatform)
-    alias(libs.plugins.org.jetbrains.kotlin.atomicfu)
     alias(libs.plugins.org.jmailen.kotlinter)
     // alias(libs.plugins.test.framework.prototype) // Use this outside of this project
 }
@@ -64,13 +63,6 @@ kotlin {
             dependencies {
                 // implementation(libs.test.framework.prototype.core) // Use this outside of this project
                 implementation(projects.testFrameworkCore)
-                implementation(libs.org.jetbrains.kotlinx.atomicfu)
-            }
-        }
-
-        jvmTest {
-            dependencies {
-                implementation(libs.org.jetbrains.kotlinx.coroutines.debug)
             }
         }
     }

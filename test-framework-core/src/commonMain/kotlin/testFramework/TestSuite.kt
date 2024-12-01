@@ -11,14 +11,16 @@ typealias TestSuiteExecutionWrappingAction = suspend (suiteAction: TestSuiteExec
 
 @TestDiscoverable
 fun suite(
-    @TestName name: String,
+    @TestElementName name: String = "",
+    @TestDisplayName displayName: String = name,
     compartment: TestCompartment,
     configuration: TestElement.Configuration.() -> Unit = {},
     content: TestSuite.() -> Unit
 ): Lazy<TestSuite> = lazy {
     TestSuite(
         parentSuite = compartment,
-        simpleNameOrNull = name,
+        elementName = name,
+        displayName = displayName,
         configuration = configuration,
         content = content
     )
@@ -26,13 +28,15 @@ fun suite(
 
 @TestDiscoverable
 fun suite(
-    @TestName name: String,
+    @TestElementName name: String = "",
+    @TestDisplayName displayName: String = name,
     configuration: TestElement.Configuration.() -> Unit = {},
     content: TestSuite.() -> Unit
 ): Lazy<TestSuite> = lazy {
     TestSuite(
         parentSuite = TestSession.global.defaultCompartment,
-        simpleNameOrNull = name,
+        elementName = name,
+        displayName = displayName,
         configuration = configuration,
         content = content
     )
@@ -41,10 +45,11 @@ fun suite(
 @TestDiscoverable
 open class TestSuite internal constructor(
     parentSuite: TestSuite?,
-    @TestName simpleNameOrNull: String? = null,
+    elementName: String,
+    displayName: String = elementName,
     configuration: Configuration.() -> Unit = {},
     private val content: TestSuite.() -> Unit = {}
-) : TestElement(parentSuite, simpleNameOrNull, configuration),
+) : TestElement(parentSuite, elementName = elementName, displayName = displayName, configuration),
     AbstractTestSuite {
 
     override val childElements: MutableList<TestElement> = mutableListOf()
@@ -56,30 +61,51 @@ open class TestSuite internal constructor(
     /** Fixtures created while executing this suite, in reverse order of fixture creation. */
     private val fixtures = mutableListOf<Fixture<*>>()
 
-    protected constructor(content: TestSuite.() -> Unit) : this(
-        parentSuite = TestSession.global.defaultCompartment,
-        content = content
-    )
-
-    protected constructor(
-        configuration: Configuration.() -> Unit,
+    constructor(
+        @TestElementName name: String = "",
+        @TestDisplayName displayName: String = name,
         content: TestSuite.() -> Unit
     ) : this(
         parentSuite = TestSession.global.defaultCompartment,
-        configuration = configuration,
+        elementName = name,
+        displayName = displayName,
         content = content
     )
 
-    protected constructor(
-        compartment: TestCompartment,
-        content: TestSuite.() -> Unit
-    ) : this(parentSuite = compartment, content = content)
-
-    protected constructor(
-        compartment: TestCompartment,
+    constructor(
+        @TestElementName name: String = "",
+        @TestDisplayName displayName: String = name,
         configuration: Configuration.() -> Unit,
         content: TestSuite.() -> Unit
-    ) : this(parentSuite = compartment, configuration = configuration, content = content)
+    ) :
+        this(
+            parentSuite = TestSession.global.defaultCompartment,
+            elementName = name,
+            displayName = displayName,
+            configuration = configuration,
+            content = content
+        )
+
+    constructor(
+        @TestElementName name: String = "",
+        @TestDisplayName displayName: String = name,
+        compartment: TestCompartment,
+        content: TestSuite.() -> Unit
+    ) : this(parentSuite = compartment, elementName = name, displayName = displayName, content = content)
+
+    constructor(
+        @TestElementName name: String = "",
+        @TestDisplayName displayName: String = name,
+        compartment: TestCompartment,
+        configuration: Configuration.() -> Unit = {},
+        content: TestSuite.() -> Unit
+    ) : this(
+        parentSuite = compartment,
+        elementName = name,
+        displayName = displayName,
+        configuration = configuration,
+        content = content
+    )
 
     internal fun registerChildElement(childElement: TestElement) {
         childElements.add(childElement)
@@ -93,12 +119,12 @@ open class TestSuite internal constructor(
     }
 
     @TestDiscoverable
-    fun suite(@TestName name: String, content: TestSuite.() -> Unit) {
-        TestSuite(this, name, content = content)
+    fun suite(@TestElementName name: String, content: TestSuite.() -> Unit) {
+        TestSuite(this, elementName = name, displayName = name, content = content)
     }
 
     @TestDiscoverable
-    fun test(@TestName name: String, configuration: Configuration.() -> Unit = {}, action: TestAction) {
+    fun test(@TestElementName name: String, configuration: Configuration.() -> Unit = {}, action: TestAction) {
         Test(this, name, configuration = configuration, action)
     }
 

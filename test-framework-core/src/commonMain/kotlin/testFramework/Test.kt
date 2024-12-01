@@ -11,10 +11,10 @@ import testFramework.internal.runTestAwaitingCompletion
 
 class Test internal constructor(
     parentSuite: TestSuite,
-    simpleName: String,
+    elementName: String,
     configuration: Configuration.() -> Unit = {},
     private val action: TestAction
-) : TestElement(parentSuite, simpleName, configuration = configuration),
+) : TestElement(parentSuite, elementName = elementName, configuration = configuration),
     AbstractTest {
 
     override fun configure(selection: Selection) {

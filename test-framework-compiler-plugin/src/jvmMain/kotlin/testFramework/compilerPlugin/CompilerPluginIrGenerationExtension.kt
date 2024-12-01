@@ -14,6 +14,7 @@ import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
+import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
 import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.IrSingleStatementBuilder
@@ -28,6 +29,7 @@ import org.jetbrains.kotlin.ir.builders.irBlockBody
 import org.jetbrains.kotlin.ir.builders.irCall
 import org.jetbrains.kotlin.ir.builders.irGet
 import org.jetbrains.kotlin.ir.builders.irNull
+import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.builders.irVararg
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrDeclaration
@@ -37,11 +39,15 @@ import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
 import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 import org.jetbrains.kotlin.ir.declarations.IrSymbolOwner
+import org.jetbrains.kotlin.ir.declarations.IrValueParameter
 import org.jetbrains.kotlin.ir.declarations.createBlockBody
 import org.jetbrains.kotlin.ir.declarations.nameWithPackage
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
+import org.jetbrains.kotlin.ir.expressions.IrDelegatingConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
+import org.jetbrains.kotlin.ir.expressions.IrExpressionBody
+import org.jetbrains.kotlin.ir.expressions.impl.IrDelegatingConstructorCallImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrGetFieldImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrReturnImpl
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
@@ -52,12 +58,16 @@ import org.jetbrains.kotlin.ir.types.isSubtypeOfClass
 import org.jetbrains.kotlin.ir.types.typeWith
 import org.jetbrains.kotlin.ir.util.addChild
 import org.jetbrains.kotlin.ir.util.constructors
+import org.jetbrains.kotlin.ir.util.copyTypeAndValueArgumentsFrom
 import org.jetbrains.kotlin.ir.util.defaultType
 import org.jetbrains.kotlin.ir.util.dump
 import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
 import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.packageFqName
+import org.jetbrains.kotlin.ir.util.primaryConstructor
+import org.jetbrains.kotlin.ir.util.statements
 import org.jetbrains.kotlin.ir.util.superClass
+import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
@@ -69,6 +79,8 @@ import org.jetbrains.kotlin.platform.konan.isNative
 import testFramework.AbstractTestSession
 import testFramework.AbstractTestSuite
 import testFramework.TestDiscoverable
+import testFramework.TestDisplayName
+import testFramework.TestElementName
 import testFramework.internal.TestFrameworkDiscoveryResult
 import kotlin.reflect.KClass
 
@@ -105,6 +117,8 @@ private class Configuration(compilerConfiguration: CompilerConfiguration, overri
     val abstractSuiteSymbol = irClassSymbol(AbstractTestSuite::class)
     val abstractSessionSymbol = irClassSymbol(AbstractTestSession::class)
     val testDiscoverableAnnotationSymbol = irClassSymbol(TestDiscoverable::class)
+    val testElementNameAnnotationSymbol = irClassSymbol(TestElementName::class)
+    val testDisplayNameAnnotationSymbol = irClassSymbol(TestDisplayName::class)
     val testFrameworkDiscoveryResultSymbol = irClassSymbol(TestFrameworkDiscoveryResult::class)
 
     val initializeTestFrameworkFunctionSymbol = irFunctionSymbol(internalPackageName, "initializeTestFramework")
@@ -157,6 +171,7 @@ private class ModuleTransformer(
                         )
                     }
                 } else {
+                    irClass.addNameValueArgumentsToConstructorIfApplicable()
                     discoveredSuiteExpressions.add { irConstructorCall(irClass.symbol) }
                 }
             }
@@ -173,13 +188,20 @@ private class ModuleTransformer(
             if (!(irProperty.isDelegated && irProperty.parent is IrFile)) return@withErrorReporting
 
             // Look for an initialization via a function call.
-            val initializerCall =
-                (irProperty.backingField?.initializer?.expression as? IrCall) ?: return@withErrorReporting
+            val initializer = irProperty.backingField?.initializer ?: return@withErrorReporting
+            val initializerCall = initializer.expression as? IrCall ?: return@withErrorReporting
+            val initializerCallFunction = initializerCall.symbol.owner
 
-            if (initializerCall.symbol.owner.hasAnnotation(configuration.testDiscoverableAnnotationSymbol)) {
+            if (initializerCallFunction.hasAnnotation(configuration.testDiscoverableAnnotationSymbol)) {
                 if (configuration.debugEnabled) {
                     reportDebug("Found test discoverable '${irProperty.fqNameWhenAvailable}'", irProperty)
                 }
+
+                irProperty.addNameValueArgumentsToInitializerCallIfApplicable(
+                    initializer,
+                    initializerCall,
+                    initializerCallFunction
+                )
 
                 discoveredSuiteExpressions.add { irCall(irProperty.getter!!.symbol) }
             }
@@ -245,6 +267,158 @@ private class ModuleTransformer(
 
         return moduleFragment
     }
+
+    /**
+     * Adds value arguments for element and display name to [this] class's primary constructor, if applicable.
+     *
+     * Parameters are added according to `@[TestElementName]` and `@[TestDisplayName]` annotations.
+     */
+    private fun IrClass.addNameValueArgumentsToConstructorIfApplicable() {
+        val irClass = this
+        val primaryConstructor = irClass.primaryConstructor ?: return
+        val superClassConstructorCall =
+            primaryConstructor.body?.statements?.firstOrNull() as IrDelegatingConstructorCall? ?: return
+        val valueParameters = superClassConstructorCall.symbol.owner.valueParameters
+        val valueArguments = superClassConstructorCall.valueArguments
+
+        val nameValueArgumentsToAdd = nameValueArgumentsToAdd(
+            mapOf(
+                configuration.testElementNameAnnotationSymbol to { irClass.fqName() },
+                configuration.testDisplayNameAnnotationSymbol to { "${irClass.name}" }
+            ),
+            valueParameters,
+            valueArguments
+        )
+
+        if (nameValueArgumentsToAdd.isEmpty()) return
+
+        primaryConstructor.transformChildren(
+            object : IrElementTransformerVoid() {
+                var constructorCallProcessed = false
+
+                override fun visitDelegatingConstructorCall(expression: IrDelegatingConstructorCall): IrExpression {
+                    // Fast path: Skip all constructor calls after the first one.
+                    if (constructorCallProcessed) super.visitDelegatingConstructorCall(expression)
+                    constructorCallProcessed = true
+
+                    val originalCall = expression
+                    return DeclarationIrBuilder(
+                        pluginContext,
+                        currentScope!!.scope.scopeOwnerSymbol,
+                        originalCall.startOffset,
+                        originalCall.endOffset
+                    ).run {
+                        @Suppress("DuplicatedCode")
+                        IrDelegatingConstructorCallImpl.fromSymbolOwner(
+                            originalCall.startOffset,
+                            originalCall.endOffset,
+                            originalCall.type,
+                            originalCall.symbol,
+                            originalCall.typeArgumentsCount,
+                            originalCall.valueArgumentsCount
+                        ).apply {
+                            copyTypeAndValueArgumentsFrom(originalCall)
+                            nameValueArgumentsToAdd.forEach { index, value ->
+                                putValueArgument(index, irString(value))
+                                if (configuration.debugEnabled) {
+                                    reportDebug(
+                                        "${irClass.fqName()}: Setting parameter '${valueParameters[index].name}'" +
+                                            " to '$value'"
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            null
+        )
+    }
+
+    /**
+     * Adds value arguments for element and display name to [this] property's initializer function call, if applicable.
+     *
+     * Parameters are added according to `@[TestElementName]` and `@[TestDisplayName]` annotations.
+     */
+    private fun IrProperty.addNameValueArgumentsToInitializerCallIfApplicable(
+        initializer: IrExpressionBody,
+        initializerCall: IrCall,
+        initializerCallFunction: IrSimpleFunction
+    ) {
+        val irProperty = this
+        val valueParameters = initializerCallFunction.valueParameters
+        val valueArguments = initializerCall.valueArguments
+
+        val nameValueArgumentsToAdd = nameValueArgumentsToAdd(
+            mapOf(
+                configuration.testElementNameAnnotationSymbol to { irProperty.fqName() },
+                configuration.testDisplayNameAnnotationSymbol to { "${irProperty.name}" }
+            ),
+            valueParameters,
+            valueArguments
+        )
+
+        if (nameValueArgumentsToAdd.isEmpty()) return
+
+        initializer.transformChildren(
+            object : IrElementTransformerVoid() {
+                var callProcessed = false
+
+                override fun visitCall(expression: IrCall): IrExpression {
+                    // Fast path: Skip all calls after the first one.
+                    if (callProcessed) return super.visitCall(expression)
+                    callProcessed = true
+
+                    val originalCall = expression
+                    return DeclarationIrBuilder(
+                        pluginContext,
+                        currentScope!!.scope.scopeOwnerSymbol,
+                        originalCall.startOffset,
+                        originalCall.endOffset
+                    ).run {
+                        @Suppress("DuplicatedCode")
+                        irCall(originalCall.symbol).apply {
+                            copyTypeAndValueArgumentsFrom(originalCall)
+                            nameValueArgumentsToAdd.forEach { index, value ->
+                                putValueArgument(index, irString(value))
+                                if (configuration.debugEnabled) {
+                                    reportDebug(
+                                        "${irProperty.fqName()}: Setting parameter '${valueParameters[index].name}'" +
+                                            " to '$value'"
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            null
+        )
+    }
+
+    /**
+     * Returns an (index -> value) map of value arguments to add for element and display name.
+     *
+     * [generatedValuesByAnnotation] specifies which annotation translates to which generated argument value.
+     * Annotated candidates in a call's [valueParameters], which are missing a [valueArguments], generate
+     * a value argument in the result map.
+     */
+    private fun nameValueArgumentsToAdd(
+        generatedValuesByAnnotation: Map<IrClassSymbol, () -> String>,
+        valueParameters: List<IrValueParameter>,
+        valueArguments: List<IrExpression?>
+    ): Map<Int, String> = valueParameters.mapNotNull { valueParameter ->
+        generatedValuesByAnnotation.firstNotNullOfOrNull { (annotationSymbol, value) ->
+            // Annotated parameters with a missing value argument only.
+            if (valueParameter.hasAnnotation(annotationSymbol) && valueArguments[valueParameter.index] == null) {
+                Pair(valueParameter.index, value())
+            } else {
+                null
+            }
+        }
+    }.toMap()
+
+    private fun IrProperty.fqName(): String = fqNameWhenAvailable.toString()
 
     /**
      * Returns a `main` function declaration for [discoveredSuiteExpressions] returning s1...sn:

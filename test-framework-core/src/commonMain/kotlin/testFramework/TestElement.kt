@@ -6,15 +6,15 @@ import testFramework.internal.TestReport
 
 sealed class TestElement(
     override val parentSuite: TestSuite?,
-    simpleNameOrNull: String?,
+    override val elementName: String,
+    override val displayName: String = elementName,
     configuration: Configuration.() -> Unit = {}
 ) : AbstractTestElement {
-    override val displayName: String by lazy {
-        simpleNameOrNull ?: this::class.simpleName ?: "[TestElement]"
-    }
-
     override val elementPath: TestElementPath get() =
-        if (parentSuite != null) "${parentSuite?.elementPath}.$displayName" else displayName
+        when (parentSuite) {
+            null, is TestCompartment, is TestSession -> elementName
+            else -> "${parentSuite?.elementPath}.$elementName"
+        }
 
     class Configuration {
         var isEnabled: Boolean = true // children inherit a disabled state

@@ -32,13 +32,10 @@ private class CompilerPluginTests {
                     
                     import fakeTestFramework.FakeTestSuite
                     import fakeTestFramework.suite
-                    import kotlin.getValue
 
-                    class TestSuiteOne : FakeTestSuite({})
+                    val TestSuiteOne by suite {}
 
-                    class TestSuiteTwo : FakeTestSuite({})
-
-                    val testSuiteThree by suite("testSuiteThree") {}
+                    class TestSuiteTwo : FakeTestSuite(content = {})
                 """,
                 debugEnabled = true
             ) {
@@ -46,7 +43,6 @@ private class CompilerPluginTests {
 
                 assertTrue("Found test discoverable '${packageNameDot}TestSuiteOne'" in messages)
                 assertTrue("Found test discoverable '${packageNameDot}TestSuiteTwo'" in messages)
-                assertTrue("Found test discoverable '${packageNameDot}testSuiteThree'" in messages)
             }
         }
     }
@@ -64,11 +60,10 @@ private class CompilerPluginTests {
                 import fakeTestFramework.FakeTestSession
                 import fakeTestFramework.FakeTestSuite
                 import fakeTestFramework.suite
-                import kotlin.getValue
 
-                class TestSuiteOne : FakeTestSuite({
-                    println("$d{this::class.qualifiedName}")
-                })
+                val TestSuiteOne by suite {
+                    println("$d{elementPath}")
+                }
                 
                 class MyTestSession : FakeTestSession() {
                     init {
@@ -76,11 +71,11 @@ private class CompilerPluginTests {
                     }
                 }
 
-                class TestSuiteTwo : FakeTestSuite({
-                    println("$d{this::class.qualifiedName}")
+                class TestSuiteTwo : FakeTestSuite(content = {
+                    println("$d{elementPath}")
                 })
 
-                val testSuiteThree by suite("testSuiteThree") {
+                val testSuiteThree by suite("my test suite three") {
                     println("$d{elementPath}")
                 }
             """,
@@ -93,7 +88,7 @@ private class CompilerPluginTests {
                     $packageName.MyTestSession
                     $packageName.TestSuiteOne
                     $packageName.TestSuiteTwo
-                    testSuiteThree
+                    my test suite three
                 """.trimIndent() in capturedStdout,
                 capturedStdout
             )
@@ -107,14 +102,8 @@ private class CompilerPluginTests {
                 package com.example
                 
                 import fakeTestFramework.FakeTestSession
-                import fakeTestFramework.FakeTestSuite
 
-                class TestSuiteOne : FakeTestSuite({})
-                
                 class MyTestSession : FakeTestSession()
-
-                class TestSuiteTwo : FakeTestSuite({})
-                
                 class MyOtherTestSession : FakeTestSession()
             """,
             expectedExitCode = KotlinCompilation.ExitCode.COMPILATION_ERROR
@@ -127,9 +116,9 @@ private class CompilerPluginTests {
     fun debugEnabled() {
         compilation(
             """
-                import fakeTestFramework.FakeTestSuite
+                import fakeTestFramework.suite
                 
-                class TestSuiteOne : FakeTestSuite({})
+                val TestSuiteOne by suite {}
             """,
             debugEnabled = true
         ) {
