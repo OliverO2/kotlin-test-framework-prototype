@@ -39,4 +39,7 @@ include(":test-framework-compiler-plugin")
 
 include(":application")
 
+include(":samples:using-kotlin-test")
+include(":samples:using-prototype")
+
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
