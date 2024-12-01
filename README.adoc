@@ -23,7 +23,7 @@ image:documentation/images/Test%20Run.png[Test Run.png]
 * The entire framework is platform independent with almost zero redundancy.
 * The architecture favors simplicity and aims to avoid implicit constructs and indirection.
 
-link:application/src/commonTest/kotlin/com/example/Tests.kt[This example] shows how it looks like.
+link:samples/prototype-scenarios/src/commonTest/kotlin/com/example/Tests.kt[This example] shows how it looks like.
 
 === Background
 
@@ -50,7 +50,7 @@ Based on my research, there is a xref:documentation/Framework-Agnostic API.adoc[
 
 ==== Running all tests
 
-* `./gradlew -p application --quiet cleanAllTests allTests`
+* `./gradlew -p samples/prototype-scenarios --quiet cleanAllTests allTests`
 
 '''
 
@@ -59,13 +59,13 @@ Based on my research, there is a xref:documentation/Framework-Agnostic API.adoc[
 
 ==== Running tests for individual targets
 
-* `./gradlew -p application --quiet cleanAllTests jvmTest`
-* `./gradlew -p application --quiet cleanAllTests jsNodeTest`
-* `./gradlew -p application --quiet cleanAllTests jsBrowserTest`
-* `./gradlew -p application --quiet cleanAllTests wasmJsNodeTest`
-* `./gradlew -p application --quiet cleanAllTests wasmJsBrowserTest`
-* `./gradlew -p application --quiet cleanAllTests wasmWasiNodeTest`
-* `./gradlew -p application --quiet cleanAllTests linuxX64Test`
+* `./gradlew -p samples/prototype-scenarios --quiet cleanAllTests jvmTest`
+* `./gradlew -p samples/prototype-scenarios --quiet cleanAllTests jsNodeTest`
+* `./gradlew -p samples/prototype-scenarios --quiet cleanAllTests jsBrowserTest`
+* `./gradlew -p samples/prototype-scenarios --quiet cleanAllTests wasmJsNodeTest`
+* `./gradlew -p samples/prototype-scenarios --quiet cleanAllTests wasmJsBrowserTest`
+* `./gradlew -p samples/prototype-scenarios --quiet cleanAllTests wasmWasiNodeTest`
+* `./gradlew -p samples/prototype-scenarios --quiet cleanAllTests linuxX64Test`
 
 '''
 
@@ -74,40 +74,48 @@ Based on my research, there is a xref:documentation/Framework-Agnostic API.adoc[
 
 ==== Running tests for compiler plugin debugging
 
-1. `./gradlew -p application -Dorg.gradle.debug=true -Pkotlin.compiler.execution.strategy=in-process clean compileTestKotlinJvm`
+1. `./gradlew -p samples/prototype-scenarios -Dorg.gradle.debug=true -Pkotlin.compiler.execution.strategy=in-process clean compileTestKotlinJvm`
 2. Attach the debugger to port 5005.
 
 === Limitations
 
-* Test reporting:
-** The IDE does not report more than one level of suite nesting for tests using the Kotlin/JS infra (JS/Browser, JS/Node, Wasm/JS/Browser). While all suites appear, they are not properly nested, because the names of intermediate levels are cut out on their way from the test framework to the IDE.
-** Gradle XML test reports are incomplete: Wasm/JS/Node, Wasm/WASI and Native are missing.
-* Integration for IntelliJ IDEA is grossly incomplete:
-** It supports class-level actions (run, debug, jump to source) from the test run window for JVM tests only.
-** It does not support non-class suite/test actions from the test run window.
-** It does not support running individual tests via editor gutters or the test run window.
-** It does not support "rerun failed tests" from the test run window.
-** It does not support running failed tests from the inspections window.
-* Selecting tests via Gradle invocations is possible for targets checkmarked below. Depending on the target, selection supports command line arguments, environment variables, or system properties. Selection patterns support the wildcard `*`.
-+
---
-NOTE: Environment variables and system properties must be relayed to the test task (see xref:application/build.gradle.kts[application/build.gradle.kts]).
---
-** [x] `++./gradlew -p application --quiet cleanAllTests jvmTest -DTEST_INCLUDE=com.example.TestSuite1.test1++`
+==== Test reporting
+
+* The IDE does not report more than one level of suite nesting for tests using the Kotlin/JS infra (JS/Browser, JS/Node, Wasm/JS/Browser). While all suites appear, they are not properly nested, because the names of intermediate levels are cut out on their way from the test framework to the IDE.
+* Gradle XML test reports are incomplete: Wasm/JS/Node, Wasm/WASI and Native are missing.
+
+==== IntelliJ IDEA integration
+
+* An IntelliJ IDEA plugin supports running individual tests or suites from source code via gutter icons.
+
+In IntelliJ IDEA, it is currently not possible to
+* run tests from the test run window,
+* rerun failed tests from the test run window,
+* run failed tests from the inspections window.
+
+==== Gradle Test Filtering
+
+Depending on the target, selection supports command line arguments, environment variables, or system properties. Selection patterns support the wildcard `*`.
+
+NOTE: Environment variables and system properties must be relayed to the test task (see xref:samples/prototype-scenarios/build.gradle.kts[samples/prototype-scenarios/build.gradle.kts]).
+
+Selecting tests via Gradle invocations is possible for targets checkmarked below.
+
+* [x] `++./gradlew -p samples/prototype-scenarios --quiet cleanAllTests jvmTest -DTEST_INCLUDE=com.example.TestSuite1.test1++`
 +
 --
 NOTE: The JVM test task does not tolerate a `--tests` option without a wildcard in the fully qualified "class" name. Specifying it leads to "No tests found for given includes: [com.example.TestSuite1.test1](--tests filter)".
 --
-** [x] `++./gradlew -p application --quiet cleanAllTests jsNodeTest --tests com.example.TestSuite1.test1++`
+* [x] `++./gradlew -p samples/prototype-scenarios --quiet cleanAllTests jsNodeTest --tests com.example.TestSuite1.test1++`
 +
 --
 NOTE: The `jsNodeTest` supports post-run selection only: It runs all tests, then displays the selected ones in the IDE's test results tree window.
 --
-** [x] `++./gradlew -p application --quiet cleanAllTests jsBrowserTest --tests com.example.TestSuite1.test1++`
-** [x] `++./gradlew -p application --quiet cleanAllTests wasmJsNodeTest --tests com.example.TestSuite1.test1++`
-** [ ] `++./gradlew -p application --quiet cleanAllTests wasmJsBrowserTest --tests com.example.TestSuite1.test1++`
-** [ ] `++./gradlew -p application --quiet cleanAllTests wasmWasiNodeTest --tests com.example.TestSuite1.test1++`
-** [x] `++./gradlew -p application --quiet cleanAllTests linuxX64Test++`
+* [x] `++./gradlew -p samples/prototype-scenarios --quiet cleanAllTests jsBrowserTest --tests com.example.TestSuite1.test1++`
+* [x] `++./gradlew -p samples/prototype-scenarios --quiet cleanAllTests wasmJsNodeTest --tests com.example.TestSuite1.test1++`
+* [ ] `++./gradlew -p samples/prototype-scenarios --quiet cleanAllTests wasmJsBrowserTest --tests com.example.TestSuite1.test1++`
+* [ ] `++./gradlew -p samples/prototype-scenarios --quiet cleanAllTests wasmWasiNodeTest --tests com.example.TestSuite1.test1++`
+* [x] `++./gradlew -p samples/prototype-scenarios --quiet cleanAllTests linuxX64Test++`
 +
 --
 in an IDE run configuration with an environment variable setting:
@@ -117,13 +125,17 @@ in an IDE run configuration with an environment variable setting:
 
 === TODO
 
-* [ ] Add an IntelliJ plugin.
 * [ ] Use `testSuite` instead of `suite` for top-level properties?
-* Use https://github.com/JetBrains/kotlin/blob/d9ddcd991bf9c6122041f0276af644be0432fa38/libraries/tools/kotlin-gradle-plugin/src/common/kotlin/org/jetbrains/kotlin/gradle/targets/native/internal/KotlinNativeStackTraceParser.kt[KotlinNativeStackTraceParser.kt] to reference source locations in Native stack traces.
-* Add checks that a `TestCompartment` does not register with a `TestSession` before the framework is initialized.
-* Investigate initialization order effects on `TestCompartment` registering with a `TestSession` in these cases:
+* [ ] Add comments.
+* [ ] Regroup utility functions.
+* [ ] Add tests.
+* [ ] Shorten stack traces from failed assertions.
+* [ ] Verify exception reporting standards (e.g. expect/actual) against kotlin-test baseline.
+* [ ] Use https://github.com/JetBrains/kotlin/blob/d9ddcd991bf9c6122041f0276af644be0432fa38/libraries/tools/kotlin-gradle-plugin/src/common/kotlin/org/jetbrains/kotlin/gradle/targets/native/internal/KotlinNativeStackTraceParser.kt[KotlinNativeStackTraceParser.kt] to reference source locations in Native stack traces.
+* [ ] Add checks that a `TestCompartment` does not register with a `TestSession` before the framework is initialized.
+* [ ] Investigate initialization order effects on `TestCompartment` registering with a `TestSession` in these cases:
 ** custom `TestSession`, default compartments,
 ** custom `TestSession` (1), custom `TestCompartment` (2) in
 *** same source, ordered (1), (2) and (2), (1),
 *** different sources, ordered (1), (2) and (2), (1).
-* Add a "fail fast" configuration option, stopping a test (suite/compartment/session) execution after a configurable number of test failures.
+* [ ] Add a "fail fast" configuration option, stopping a test (suite/compartment/session) execution after a configurable number of test failures.

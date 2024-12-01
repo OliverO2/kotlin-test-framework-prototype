@@ -37,8 +37,7 @@ include(":test-framework-core")
 include(":test-framework-gradle-plugin")
 include(":test-framework-compiler-plugin")
 
-include(":application")
-
+include(":samples:prototype-scenarios")
 include(":samples:using-kotlin-test")
 include(":samples:using-prototype")
 
