@@ -50,6 +50,7 @@ import org.jetbrains.kotlin.ir.expressions.IrExpressionBody
 import org.jetbrains.kotlin.ir.expressions.impl.IrDelegatingConstructorCallImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrGetFieldImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrReturnImpl
+import org.jetbrains.kotlin.ir.expressions.impl.fromSymbolOwner
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
@@ -314,8 +315,7 @@ private class ModuleTransformer(
                             originalCall.endOffset,
                             originalCall.type,
                             originalCall.symbol,
-                            originalCall.typeArgumentsCount,
-                            originalCall.valueArgumentsCount
+                            originalCall.typeArgumentsCount
                         ).apply {
                             copyTypeAndValueArgumentsFrom(originalCall)
                             nameValueArgumentsToAdd.forEach { index, value ->
@@ -526,6 +526,7 @@ private class ModuleTransformer(
         val field = pluginContext.irFactory.buildField {
             name = propertyName
             type = resultType
+            visibility = DescriptorVisibilities.PRIVATE
             isFinal = true
             isExternal = false
             isStatic = true // a top-level val must be static
