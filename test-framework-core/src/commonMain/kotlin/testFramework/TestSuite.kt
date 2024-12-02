@@ -61,10 +61,14 @@ open class TestSuite internal constructor(
     /** Fixtures created while executing this suite, in reverse order of fixture creation. */
     private val fixtures = mutableListOf<Fixture<*>>()
 
+    // region – We need these constructor variants for proper overload resolution with default parameters,
+    // because Kotlin determines argument positions before default values are filled in.
+    // See https://youtrack.jetbrains.com/issue/KT-48521.
+
     constructor(
+        content: TestSuite.() -> Unit,
         @TestElementName name: String = "",
-        @TestDisplayName displayName: String = name,
-        content: TestSuite.() -> Unit
+        @TestDisplayName displayName: String = name
     ) : this(
         parentSuite = TestSession.global.defaultCompartment,
         elementName = name,
@@ -73,10 +77,10 @@ open class TestSuite internal constructor(
     )
 
     constructor(
-        @TestElementName name: String = "",
-        @TestDisplayName displayName: String = name,
         configuration: Configuration.() -> Unit,
-        content: TestSuite.() -> Unit
+        content: TestSuite.() -> Unit,
+        @TestElementName name: String = "",
+        @TestDisplayName displayName: String = name
     ) :
         this(
             parentSuite = TestSession.global.defaultCompartment,
@@ -87,18 +91,23 @@ open class TestSuite internal constructor(
         )
 
     constructor(
-        @TestElementName name: String = "",
-        @TestDisplayName displayName: String = name,
         compartment: TestCompartment,
-        content: TestSuite.() -> Unit
-    ) : this(parentSuite = compartment, elementName = name, displayName = displayName, content = content)
+        content: TestSuite.() -> Unit,
+        @TestElementName name: String = "",
+        @TestDisplayName displayName: String = name
+    ) : this(
+        parentSuite = compartment,
+        elementName = name,
+        displayName = displayName,
+        content = content
+    )
 
     constructor(
-        @TestElementName name: String = "",
-        @TestDisplayName displayName: String = name,
         compartment: TestCompartment,
         configuration: Configuration.() -> Unit = {},
-        content: TestSuite.() -> Unit
+        content: TestSuite.() -> Unit,
+        @TestElementName name: String = "",
+        @TestDisplayName displayName: String = name
     ) : this(
         parentSuite = compartment,
         elementName = name,
@@ -106,6 +115,47 @@ open class TestSuite internal constructor(
         configuration = configuration,
         content = content
     )
+
+    constructor(
+        name: String,
+        compartment: TestCompartment,
+        content: TestSuite.() -> Unit,
+        @TestDisplayName displayName: String = name
+    ) : this(
+        parentSuite = compartment,
+        elementName = name,
+        displayName = displayName,
+        content = content
+    )
+
+    constructor(
+        name: String,
+        configuration: Configuration.() -> Unit,
+        content: TestSuite.() -> Unit,
+        @TestDisplayName displayName: String = name
+    ) : this(
+        parentSuite = TestSession.global.defaultCompartment,
+        elementName = name,
+        displayName = displayName,
+        configuration = configuration,
+        content = content
+    )
+
+    constructor(
+        name: String,
+        compartment: TestCompartment,
+        configuration: Configuration.() -> Unit,
+        content: TestSuite.() -> Unit,
+        @TestDisplayName displayName: String = name
+    ) : this(
+        parentSuite = compartment,
+        elementName = name,
+        displayName = displayName,
+        configuration = configuration,
+        content = content
+    )
+
+    // endregion
 
     internal fun registerChildElement(childElement: TestElement) {
         childElements.add(childElement)

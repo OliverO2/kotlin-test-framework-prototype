@@ -185,11 +185,10 @@ val TestSuite4 by suite {
 }
 
 // Using a class as an alternative way of defining a test suite.
-// Unfortunately, overload resolution differs from properties, which means we need to use named parameters here.
 class TestSuite5 :
     TestSuite(
         compartment = TestCompartment.UI(UnconfinedTestDispatcher()),
-        content = {
+        {
             test("test1") {
                 val dispatcher = currentCoroutineContext()[CoroutineDispatcher]
                 log("in TestSuite5.test1, currentTime=${testScope.currentTime}, dispatcher=$dispatcher")

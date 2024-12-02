@@ -125,7 +125,6 @@ in an IDE run configuration with an environment variable setting:
 
 === TODO
 
-* [ ] Check constructor type inference with Kotlin 2.1.
 * [ ] Use `testSuite` instead of `suite` for top-level properties?
 * [ ] Add comments.
 * [ ] Regroup utility functions.
