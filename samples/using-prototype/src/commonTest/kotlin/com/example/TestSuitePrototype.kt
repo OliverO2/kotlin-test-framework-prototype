@@ -1,9 +1,9 @@
 package com.example
 
 import testFramework.AbstractTestElement
-import testFramework.suite
+import testFramework.testSuite
 
-val TestSuitePrototype by suite {
+val TestSuitePrototype by testSuite {
     log("configuring $elementName (displayName=$displayName)")
 
     test("test1") {
@@ -11,7 +11,7 @@ val TestSuitePrototype by suite {
         fail("something wrong in $elementPath")
     }
 
-    suite("inner suite") {
+    testSuite("inner suite") {
         test("test2") {
             log("in $elementName")
         }

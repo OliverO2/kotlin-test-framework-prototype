@@ -3,9 +3,9 @@ package fakeTestFramework
 import testFramework.AbstractTestElement
 import testFramework.TestElementPath
 
-sealed class FakeTestElement(
-    override val parentSuite: FakeTestSuite?,
-    override val elementName: String = "[FakeTestElement]",
+sealed class TestElement(
+    override val parentSuite: TestSuite?,
+    override val elementName: String = "[TestElement]",
     override val displayName: String = elementName
 ) : AbstractTestElement {
 

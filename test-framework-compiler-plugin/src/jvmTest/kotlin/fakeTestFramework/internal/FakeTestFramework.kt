@@ -1,5 +1,6 @@
 @file:Suppress("PackageDirectoryMismatch")
 
+// The compiler plugin requires this package name.
 package testFramework.internal
 
 import testFramework.AbstractTestSession

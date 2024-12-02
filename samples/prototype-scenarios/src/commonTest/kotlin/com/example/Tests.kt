@@ -21,7 +21,7 @@ import testFramework.TestCompartment
 import testFramework.TestContext
 import testFramework.TestSuite
 import testFramework.coroutineContext
-import testFramework.suite
+import testFramework.testSuite
 import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -29,7 +29,7 @@ import kotlin.time.Duration.Companion.seconds
 // class MyTestSession : TestSession(defaultCompartment = { TestCompartment.Parallel })
 
 // val TestSuite1 by suite(compartment = TestCompartment.Parallel) {
-val TestSuite1 by suite {
+val TestSuite1 by testSuite {
     val fixtureA = fixture { MyFirstFixture(this) } closeWith { closeSuspending() }
 
     aroundAll { testActions ->
@@ -48,7 +48,7 @@ val TestSuite1 by suite {
         fail("something wrong in TestSuite1.test1")
     }
 
-    suite("child-suite2") {
+    testSuite("child-suite2") {
         val fixtureB = fixture { MySecondFixture(this) }
 
         aroundAll { testActions ->
@@ -87,7 +87,7 @@ val TestSuite1 by suite {
     }
 }
 
-val TestSuite2 by suite {
+val TestSuite2 by testSuite {
     test("test1", configuration = { isEnabled = false }) {
         log("in TestSuite2.test1")
     }
@@ -107,7 +107,7 @@ val TestSuite2 by suite {
     }
 }
 
-val TestSuite3 by suite(name = "TestSuite3XX") {
+val TestSuite3 by testSuite(name = "TestSuite3XX") {
     val fixtureC = fixture { MyFirstFixture(this) }
 
     isEnabled = false
@@ -121,7 +121,7 @@ val TestSuite3 by suite(name = "TestSuite3XX") {
     }
 }
 
-val TestSuite4 by suite {
+val TestSuite4 by testSuite {
     test("unhandled exceptions") {
         with(testScope) {
             log("$this starting, currentTime=$currentTime")

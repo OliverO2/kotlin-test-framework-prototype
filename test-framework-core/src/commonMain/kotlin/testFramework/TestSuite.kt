@@ -10,7 +10,7 @@ typealias TestSuiteExecutionAction = suspend TestSuite.() -> Unit
 typealias TestSuiteExecutionWrappingAction = suspend (suiteAction: TestSuiteExecutionAction) -> Unit
 
 @TestDiscoverable
-fun suite(
+fun testSuite(
     @TestElementName name: String = "",
     @TestDisplayName displayName: String = name,
     compartment: TestCompartment,
@@ -27,7 +27,7 @@ fun suite(
 }
 
 @TestDiscoverable
-fun suite(
+fun testSuite(
     @TestElementName name: String = "",
     @TestDisplayName displayName: String = name,
     configuration: TestElement.Configuration.() -> Unit = {},
@@ -169,7 +169,7 @@ open class TestSuite internal constructor(
     }
 
     @TestDiscoverable
-    fun suite(@TestElementName name: String, content: TestSuite.() -> Unit) {
+    fun testSuite(@TestElementName name: String, content: TestSuite.() -> Unit) {
         TestSuite(this, elementName = name, displayName = name, content = content)
     }
 

@@ -30,12 +30,12 @@ private class CompilerPluginTests {
                 """
                     $packageDeclaration
                     
-                    import fakeTestFramework.FakeTestSuite
-                    import fakeTestFramework.suite
+                    import fakeTestFramework.TestSuite
+                    import fakeTestFramework.testSuite
 
-                    val TestSuiteOne by suite {}
+                    val TestSuiteOne by testSuite {}
 
-                    class TestSuiteTwo : FakeTestSuite(content = {})
+                    class TestSuiteTwo : TestSuite(content = {})
                 """,
                 debugEnabled = true
             ) {
@@ -57,25 +57,25 @@ private class CompilerPluginTests {
             """
                 package $packageName
                 
-                import fakeTestFramework.FakeTestSession
-                import fakeTestFramework.FakeTestSuite
-                import fakeTestFramework.suite
+                import fakeTestFramework.TestSession
+                import fakeTestFramework.TestSuite
+                import fakeTestFramework.testSuite
 
-                val TestSuiteOne by suite {
+                val TestSuiteOne by testSuite {
                     println("$d{elementPath}")
                 }
                 
-                class MyTestSession : FakeTestSession() {
+                class MyTestSession : TestSession() {
                     init {
                         println("$d{this::class.qualifiedName}")
                     }
                 }
 
-                class TestSuiteTwo : FakeTestSuite(content = {
+                class TestSuiteTwo : TestSuite(content = {
                     println("$d{elementPath}")
                 })
 
-                val testSuiteThree by suite("my test suite three") {
+                val testSuiteThree by testSuite("my test suite three") {
                     println("$d{elementPath}")
                 }
             """,
@@ -101,10 +101,10 @@ private class CompilerPluginTests {
             """
                 package com.example
                 
-                import fakeTestFramework.FakeTestSession
+                import fakeTestFramework.TestSession
 
-                class MyTestSession : FakeTestSession()
-                class MyOtherTestSession : FakeTestSession()
+                class MyTestSession : TestSession()
+                class MyOtherTestSession : TestSession()
             """,
             expectedExitCode = KotlinCompilation.ExitCode.COMPILATION_ERROR
         ) {
@@ -116,9 +116,9 @@ private class CompilerPluginTests {
     fun debugEnabled() {
         compilation(
             """
-                import fakeTestFramework.suite
+                import fakeTestFramework.testSuite
                 
-                val TestSuiteOne by suite {}
+                val TestSuiteOne by testSuite {}
             """,
             debugEnabled = true
         ) {

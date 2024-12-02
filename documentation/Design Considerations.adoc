@@ -79,10 +79,10 @@ Selectively running tests is required for build tool functions, like actions to 
 An IDE plugin should support the following:
 
 * Discover test elements during source code analysis, specifically:
-** [ ] top-level tests suites,
-** [ ] test elements defined dynamically as children of top-level test suites (recursively).
+** [x] top-level tests suites,
+** [x] test elements defined dynamically as children of top-level test suites (recursively).
 * In editor windows:
-** [ ] Show test run gutters for each test element discovered with actions for run and debug.
+** [x] Show test run gutters for each test element discovered with actions for run and debug.
 * In the test run window:
 ** [ ] For each test element, offer actions for run, debug, and jump to source.
 ** [ ] Offer the action "rerun failed tests".
