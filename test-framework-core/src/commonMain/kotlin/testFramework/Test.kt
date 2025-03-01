@@ -9,6 +9,9 @@ import kotlinx.coroutines.test.TestScope
 import testFramework.internal.TestReport
 import testFramework.internal.runTestAwaitingCompletion
 
+/**
+ * A test containing a test [action] which raises assertion errors on failure. The [action] may suspend.
+ */
 class Test internal constructor(
     parentSuite: TestSuite,
     elementName: String,
@@ -41,6 +44,9 @@ class Test internal constructor(
         }
     }
 
+    /**
+     * Executes the test action in [kotlinx.coroutines.test.TestScope].
+     */
     private suspend fun Test.executeInTestScope(testScopeContext: TestScopeContext) {
         var inheritableContext = currentCoroutineContext().minusKey(Job)
         if (inheritableContext[CoroutineDispatcher] !is TestDispatcher) {
@@ -65,4 +71,7 @@ class TestCoroutineScope(private val test: Test, scope: CoroutineScope, private 
         ?: throw IllegalArgumentException("$test is not executing in a TestScope.")
 }
 
+/**
+ * A test's action: test logic which raises assertion errors on failure. The action may suspend.
+ */
 typealias TestAction = suspend TestCoroutineScope.() -> Unit

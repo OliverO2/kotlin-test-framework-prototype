@@ -29,6 +29,12 @@ import java.util.concurrent.ConcurrentHashMap
 private var topLevelTestSuites = setOf<AbstractTestSuite>()
 private val testElementDescriptors = ConcurrentHashMap<TestElement, AbstractTestDescriptor>()
 
+/**
+ * The [TestEngine] interfacing with JUnit Platform (JVM only).
+ *
+ * This class is registered via the `ServiceLoader` mechanism with a provider configuration file on the classpath.
+ * JUnit Platform will instantiate it and invoke its methods.
+ */
 internal class JUnitPlatformTestEngine : TestEngine {
     override fun getId(): String = "kotlin-test-framework-prototype"
 
@@ -88,23 +94,25 @@ internal class JUnitPlatformTestEngine : TestEngine {
             return
         }
 
-        val listener = request.engineExecutionListener
+        val jUnitListener = request.engineExecutionListener
 
         runBlocking {
             TestSession.global.execute(
-                object : TestReport() {
+                report = object : TestReport() {
+                    // A TestReport relaying each TestEvent to the JUnit listener.
+
                     override suspend fun add(event: TestEvent) {
                         when (event) {
                             is TestEvent.Starting -> {
                                 if (event.element.isEnabled) {
                                     log { "${event.element.platformDescriptor}: ${event.element} starting" }
-                                    listener.executionStarted(event.element.platformDescriptor)
+                                    jUnitListener.executionStarted(event.element.platformDescriptor)
                                 } else {
                                     if (event.element.parentSuite?.isEnabled == true) {
                                         // Report skipping only if it has not already been reported by a parent.
                                         // (Report nothing if this is the disabled root element.)
                                         log { "${event.element.platformDescriptor}: ${event.element} skipped" }
-                                        listener.executionSkipped(event.element.platformDescriptor, "disabled")
+                                        jUnitListener.executionSkipped(event.element.platformDescriptor, "disabled")
                                     }
                                 }
                             }
@@ -115,7 +123,7 @@ internal class JUnitPlatformTestEngine : TestEngine {
                                         "${event.element.platformDescriptor}: ${event.element} finished," +
                                             " result=${event.executionResult})"
                                     }
-                                    listener.executionFinished(
+                                    jUnitListener.executionFinished(
                                         event.element.platformDescriptor,
                                         event.executionResult
                                     )

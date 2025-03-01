@@ -26,9 +26,9 @@ import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-// class MyTestSession : TestSession(defaultCompartment = { TestCompartment.Parallel })
+// class MyTestSession : TestSession(defaultCompartment = { TestCompartment.Concurrent })
 
-// val TestSuite1 by suite(compartment = TestCompartment.Parallel) {
+// val TestSuite1 by suite(compartment = TestCompartment.Concurrent) {
 val TestSuite1 by testSuite {
     val fixtureA = fixture { MyFirstFixture(this) } closeWith { closeSuspending() }
 

@@ -2,7 +2,8 @@ package testFramework.internal.integration
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.promise
-import testFramework.isNodeJs
+import testFramework.TestPlatformJsHosted
+import testFramework.TestPlatformWasmJs
 import kotlin.js.Promise
 
 internal actual fun kotlinJsTestFrameworkAvailable(): Boolean =
@@ -45,10 +46,10 @@ internal actual val kotlinJsTestFramework: KotlinJsTestFramework = object : Kotl
 internal actual fun CoroutineScope.testFunctionPromise(testFunction: suspend () -> Unit): JsPromiseLike? =
     promise { testFunction() }
 
-@Suppress("UNUSED_PARAMETER")
+@Suppress("unused")
 private fun jsThrow(jsException: JsAny): Nothing = js("{ throw jsException; }")
 
-@Suppress("UNUSED_PARAMETER")
+@Suppress("unused")
 private fun throwableToJsError(message: String, stack: String): JsAny =
     js("{ const e = new Error(); e.message = message; e.stack = stack; return e; }")
 
@@ -56,7 +57,7 @@ private fun Throwable.toJsError(): JsAny = throwableToJsError(message ?: "", sta
 
 // Jasmine test framework functions
 
-@Suppress("UNUSED_PARAMETER")
+@Suppress("unused")
 private fun describe(description: String, suiteFn: () -> Unit) {
     // Here we disable the default 2s timeout.
     // The strange invocation is necessary to avoid using a JS arrow function which would bind `this` to a
@@ -64,12 +65,17 @@ private fun describe(description: String, suiteFn: () -> Unit) {
     js("describe(description, function () { this.timeout(0); suiteFn(); })")
 }
 
+@Suppress("unused")
 private external fun xdescribe(name: String, testFn: () -> Unit)
+
+@Suppress("unused")
 private external fun it(name: String, testFn: () -> JsAny?)
+
+@Suppress("unused")
 private external fun xit(name: String, testFn: () -> JsAny?)
 
 internal actual fun processArguments(): Array<String>? {
-    if (!isNodeJs) return null
+    if (TestPlatformWasmJs.runtime != TestPlatformJsHosted.Runtime.NODE) return null
     val rawArguments = nodeProcessArguments()
     return Array(rawArguments.length) { rawArguments[it].toString() }
 }

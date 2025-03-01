@@ -10,108 +10,134 @@ import testFramework.TestCompartment
 import testFramework.TestElement
 import testFramework.TestSession
 import testFramework.TestSuite
-import testFramework.internal.ArgumentsBasedElementSelection
 import testFramework.internal.TestEvent
 import testFramework.internal.TestReport
-import testFramework.internal.argumentsBasedElementSelection
-import testFramework.internal.configureTestsCatching
+import testFramework.testPlatform
 
 internal typealias JsPromiseLike = Any
 
-internal suspend fun configureAndRunJsHostedTests() {
-    fun TestElement.registerWithKotlinJsTestFramework() {
-        when (this) {
-            is Test -> {
-                kotlinJsTestFramework.test(elementName, ignored = !isEnabled) {
-                    TestSessionAdapter.produceTestResult(this)
-                }
-            }
-
-            is TestSession, is TestCompartment -> {
-                // Skip registering session and compartments, so that there is no pseudo-suite appearing above our
-                // real top-level suites. This is required for test filtering expressions to work without wildcards.
-                // Example: `TestSuite1.test1` can be found this way, otherwise we'd need to use `*TestSuite1.test1`,
-                // which can be ambiguous.
-                if (isEnabled) {
-                    childElements.forEach {
-                        it.registerWithKotlinJsTestFramework()
-                    }
-                }
-            }
-
-            is TestSuite -> {
-                kotlinJsTestFramework.suite(elementName, ignored = !isEnabled) {
-                    childElements.forEach {
-                        it.registerWithKotlinJsTestFramework()
-                    }
+/**
+ * Registers [this] element with the Kotlin/JS test framework.
+ */
+internal fun TestElement.registerWithKotlinJsTestFramework() {
+    when (this) {
+        is TestSession, is TestCompartment -> {
+            // Skip registering session and compartments, so that there is no pseudo-suite appearing above our
+            // real top-level suites. This is required for test filtering expressions to work without wildcards.
+            // Example: `TestSuite1.test1` can be found this way, otherwise we'd need to use `*TestSuite1.test1`,
+            // which can be ambiguous.
+            if (isEnabled) {
+                childElements.forEach {
+                    it.registerWithKotlinJsTestFramework()
                 }
             }
         }
-    }
 
-    configureTestsCatching {
-        TestSession.global.configure(
-            argumentsBasedElementSelection
-                ?: processArguments()?.let { ArgumentsBasedElementSelection(it) }
-                ?: TestElement.AllInSelection
-        )
-    }.onSuccess {
-        if (kotlinJsTestFrameworkAvailable()) {
-            TestSession.global.registerWithKotlinJsTestFramework()
-        } else {
-            TestSession.global.execute(IntellijTestLog)
+        is TestSuite -> {
+            kotlinJsTestFramework.suite(elementName, ignored = !isEnabled) {
+                childElements.forEach {
+                    it.registerWithKotlinJsTestFramework()
+                }
+            }
+        }
+
+        is Test -> {
+            kotlinJsTestFramework.test(elementName, ignored = !isEnabled) {
+                TestSessionAdapter.testResult(this)
+            }
         }
     }
 }
 
+/**
+ * An adapter translating between our test framework and a Kotlin/JS test framework.
+ *
+ * Our framework needs to execute the elements of its [TestSession] in a cohesive hierarchy, preserving the
+ * coroutine context nesting, hierarchical fixtures, and executing test elements according to their configuration.
+ *
+ * While Kotlin/JS test frameworks support structuring tests in a hierarchy, they execute each test in isolation,
+ * outside any parent test element's context.
+ *
+ * This adapter runs the [TestSession] and the Kotlin/JS test framework concurrently, side-by-side.
+ * The `TestSession` produces tests results as they become available, and provides them via
+ * `Promise`s to the Kotlin/JS test framework, which picks them up asynchronously at its own pace.
+ */
 private object TestSessionAdapter {
     private var sessionIsExecuting = false
     private var sessionFailure: Throwable? = null
-    private val testResults = mutableMapOf<Test, Channel<Throwable?>>()
+    private val testResultChannels = mutableMapOf<Test, Channel<Throwable?>>()
 
-    private fun testResults(test: Test): Channel<Throwable?> =
-        testResults[test] ?: Channel<Throwable?>(capacity = 1).also { testResults[test] = it }
+    init {
+        check(testPlatform.parallelism == 1) {
+            "${this::class.simpleName} requires a single-threaded platform," +
+                " but ${testPlatform.displayName} supports ${testPlatform.parallelism} parallel threads"
+        }
+    }
 
-    fun produceTestResult(test: Test): JsPromiseLike? {
+    /**
+     * Returns the result channel for [test], creating it as necessary.
+     */
+    private fun testResultChannel(test: Test): Channel<Throwable?> =
+        testResultChannels[test] ?: Channel<Throwable?>(capacity = 1).also { testResultChannels[test] = it }
+
+    /**
+     * Returns the result of [test]'s execution.
+     */
+    fun testResult(test: Test): JsPromiseLike? {
         if (!sessionIsExecuting) {
-            // Execute the entire test session top-down, independently of the JS framework's invocations,
-            // storing results for each test in its own channel.
-
             sessionIsExecuting = true
-
-            @OptIn(DelicateCoroutinesApi::class)
-            GlobalScope.launch {
-                try {
-                    TestSession.global.execute(
-                        object : TestReport() {
-                            override suspend fun add(event: TestEvent) {
-                                if (event.element.isEnabled && event.element is Test && event is TestEvent.Finished) {
-                                    testResults(event.element).send(event.throwable)
-                                }
-                            }
-                        }
-                    )
-                } catch (throwable: Throwable) {
-                    sessionFailure = throwable
-                }
-            }
+            executeTestSessionConcurrently()
         }
 
-        // Produce the test result, waiting for it to arrive from the concurrently executing session.
-        // If the entire session has failed, relay its failure to every remaining test result.
+        // Return the `Promise` waiting for its test result to arrive from the concurrently executing `TestSession`.
+        // If the entire session has failed, relay its failure with each remaining test result.
         @OptIn(DelicateCoroutinesApi::class)
         return GlobalScope.testFunctionPromise {
-            testResults(test).receive()?.let { testFailure ->
+            testResultChannel(test).receive()?.let { testFailure ->
                 sessionFailure?.let { testFailure.addSuppressed(it) }
                 throw testFailure
             }
             sessionFailure?.let { throw it }
         }
     }
+
+    /**
+     * Executes the [TestSession] concurrently.
+     *
+     * Provides results for each test in the test's own [testResultChannel] channel.
+     */
+    private fun executeTestSessionConcurrently() {
+        @OptIn(DelicateCoroutinesApi::class)
+        GlobalScope.launch {
+            try {
+                TestSession.global.execute(
+                    report = object : TestReport() {
+                        // A TestReport relaying TestEvent.Finished to the respective test element's result channel.
+
+                        override suspend fun add(event: TestEvent) {
+                            if (event.element.isEnabled && event.element is Test && event is TestEvent.Finished) {
+                                testResultChannel(event.element).send(event.throwable)
+                            }
+                        }
+                    }
+                )
+            } catch (throwable: Throwable) {
+                sessionFailure = throwable
+            }
+        }
+    }
 }
 
+/**
+ * Returns true if a Kotlin/JS test framework is available
+ *
+ * The availability depends on the platform (JS/Wasm) and runtime (browser, node).
+ */
 internal expect fun kotlinJsTestFrameworkAvailable(): Boolean
 
+/**
+ * The Kotlin/JS test framework (valid only if `kotlinJsTestFrameworkAvailable() == true`).
+ */
 internal expect val kotlinJsTestFramework: KotlinJsTestFramework
 
 /**

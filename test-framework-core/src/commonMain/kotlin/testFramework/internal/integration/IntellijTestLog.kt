@@ -8,6 +8,9 @@ import testFramework.internal.TestReport
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
+/**
+ * A [TestReport] in IntelliJ IDEA's IjLog format on stdout.
+ */
 internal object IntellijTestLog : TestReport() {
     private val outputMutex = Mutex()
 

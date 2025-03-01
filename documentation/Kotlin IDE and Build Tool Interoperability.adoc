@@ -9,7 +9,7 @@ Engines] must
 
 * discover tests from an
 https://junit.org/junit5/docs/current/api/org.junit.platform.engine/org/junit/platform/engine/EngineDiscoveryRequest.html[`EngineDiscoveryRequest`],
-yielding a tree of test descriptors, and
+yielding a hierarchy of test descriptors, and
 * execute tests according to an
 https://junit.org/junit5/docs/current/api/org.junit.platform.engine/org/junit/platform/engine/ExecutionRequest.html[`ExecutionRequest`],
 starting at the root test descriptor and observing tests events via a
@@ -18,7 +18,7 @@ dynamically registered during execution).
 
 A
 https://junit.org/junit5/docs/current/api/org.junit.platform.engine/org/junit/platform/engine/TestDescriptor.html[test
-descriptor] describes a node in the test tree (a suite or a test). Each
+descriptor] describes a node in the test hierarchy (a suite or a test). Each
 node has a
 https://junit.org/junit5/docs/current/api/org.junit.platform.engine/org/junit/platform/engine/UniqueId.html[unique
 identifier], comprised of a list of type/value segments. Segment type

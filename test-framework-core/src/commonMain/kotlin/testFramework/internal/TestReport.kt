@@ -4,15 +4,18 @@ import kotlinx.datetime.Clock
 import testFramework.TestElement
 
 /**
- * A report containing a sequence of test events, each of which will be added via [add] during execution.
+ * A report containing a sequence of test events, each of which will be [add]ed during execution.
  *
  * During execution, a report is expected to contain [TestEvent.Starting] and [TestEvent.Finished] for every
- * element in the element tree. This includes events for disabled elements.
+ * element in the element hierarchy. This includes events for disabled elements.
  */
 internal abstract class TestReport {
     abstract suspend fun add(event: TestEvent)
 }
 
+/**
+ * An event occurring as part of a test element's execution.
+ */
 internal sealed class TestEvent(val element: TestElement) {
     val instant = Clock.System.now()
 

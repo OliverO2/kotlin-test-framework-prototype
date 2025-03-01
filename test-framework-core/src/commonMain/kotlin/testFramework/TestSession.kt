@@ -1,5 +1,23 @@
 package testFramework
 
+/**
+ * A compilation module's root test suite, holding the module-wide default configuration.
+ *
+ * A compilation module may declare at most one test session. It becomes the parent of all top-level suites.
+ * The test framework's generated code invokes `initializeTestFramework` at module initialization time, making
+ * sure that a valid [TestSession] exists before instantiating any top-level suite.
+ *
+ * A custom [TestSession] specifying a global configuration can be declared like this:
+ * ```
+ * class MyTestSession :
+ *     TestSession(
+ *         configuration = {
+ *             context = TestContext.coroutineContext(UnconfinedTestDispatcher())
+ *         },
+ *         defaultCompartment = { TestCompartment.Concurrent }
+ *     )
+ * ```
+ */
 @TestDiscoverable
 open class TestSession protected constructor(
     configuration: Configuration.() -> Unit = Configuration.Default,

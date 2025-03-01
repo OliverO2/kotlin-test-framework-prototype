@@ -69,6 +69,7 @@ Of course, I've also been researching how to integrate with build tooling, Intel
 
 * `./gradlew -p samples/using-kotlin-test --quiet cleanAllTests jvmTest`
 * `./gradlew -p samples/using-prototype --quiet cleanAllTests clean jvmTest`
+* `./gradlew -p samples/using-prototype --quiet cleanAllTests clean jsNodeTest`
 
 ==== Running tests for compiler plugin debugging
 
@@ -108,7 +109,7 @@ NOTE: The JVM test task does not tolerate a `--tests` option without a wildcard 
 * [x] `++./gradlew -p samples/prototype-scenarios --quiet cleanAllTests jsNodeTest --tests com.example.TestSuite1.test1++`
 +
 --
-NOTE: The `jsNodeTest` supports post-run selection only: It runs all tests, then displays the selected ones in the IDE's test results tree window.
+NOTE: The `jsNodeTest` supports post-run selection only: It runs all tests, then displays the selected ones in the IDE's test results hierarchy window.
 --
 * [x] `++./gradlew -p samples/prototype-scenarios --quiet cleanAllTests jsBrowserTest --tests com.example.TestSuite1.test1++`
 * [x] `++./gradlew -p samples/prototype-scenarios --quiet cleanAllTests wasmJsNodeTest --tests com.example.TestSuite1.test1++`
@@ -124,7 +125,7 @@ in an IDE run configuration with an environment variable setting:
 
 === TODO
 
-* [ ] Add comments.
+* [x] Add comments.
 * [ ] Regroup utility functions.
 * [ ] Add tests.
 * [ ] Shorten stack traces from failed assertions.
@@ -137,3 +138,4 @@ in an IDE run configuration with an environment variable setting:
 *** same source, ordered (1), (2) and (2), (1),
 *** different sources, ordered (1), (2) and (2), (1).
 * [ ] Add a "fail fast" configuration option, stopping a test (suite/compartment/session) execution after a configurable number of test failures.
+* [ ] Provide integration for Kotest assertions

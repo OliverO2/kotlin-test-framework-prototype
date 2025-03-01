@@ -9,6 +9,18 @@ import testFramework.internal.TestReport
 typealias TestSuiteExecutionAction = suspend TestSuite.() -> Unit
 typealias TestSuiteExecutionWrappingAction = suspend (suiteAction: TestSuiteExecutionAction) -> Unit
 
+/**
+ * Declares a test suite with a number of child test elements (tests and/or suites). A suite may not contain test logic.
+ *
+ * [compartment] is the optional [TestCompartment]
+ *
+ * Usage:
+ * ```
+ * val myTestSuite by testSuite(compartment = TestCompartment.Concurrent) {
+ *     // test suite content
+ * }
+ * ```
+ */
 @TestDiscoverable
 fun testSuite(
     @TestElementName name: String = "",
@@ -26,6 +38,16 @@ fun testSuite(
     )
 }
 
+/**
+ * Declares a test suite with a number of child test elements (tests and/or suites). A suite may not contain test logic.
+ *
+ * Usage:
+ * ```
+ * val myTestSuite by testSuite {
+ *     // test suite content
+ * }
+ * ```
+ */
 @TestDiscoverable
 fun testSuite(
     @TestElementName name: String = "",
@@ -42,6 +64,9 @@ fun testSuite(
     )
 }
 
+/**
+ * A test suite declaring a number of child test elements (tests and/or suites). A suite may not contain test logic.
+ */
 @TestDiscoverable
 open class TestSuite internal constructor(
     parentSuite: TestSuite?,
@@ -161,6 +186,20 @@ open class TestSuite internal constructor(
         childElements.add(childElement)
     }
 
+    /**
+     * Declares an [action] wrapping the actions of this test suite's child elements.
+     *
+     * The wrapping action will be invoked only if at least one child elements is enabled.
+     *
+     * Usage:
+     * ```
+     *     aroundAll { testActions ->
+     *         withContext(CoroutineName("parent coroutine configured by aroundAll")) {
+     *             testActions()
+     *         }
+     *     }
+     * ```
+     */
     fun aroundAll(action: TestSuiteExecutionWrappingAction) {
         innerContext = innerContext wrapping { innerAction ->
             val innerActionConverted: TestSuiteExecutionAction = { innerAction() }
@@ -168,11 +207,17 @@ open class TestSuite internal constructor(
         }
     }
 
+    /**
+     * Declares a test suite with a number of child test elements (tests and/or suites). A suite may not contain test logic.
+     */
     @TestDiscoverable
     fun testSuite(@TestElementName name: String, content: TestSuite.() -> Unit) {
         TestSuite(this, elementName = name, displayName = name, content = content)
     }
 
+    /**
+     * Declares a test with an [action] containing test logic.
+     */
     @TestDiscoverable
     fun test(@TestElementName name: String, configuration: Configuration.() -> Unit = {}, action: TestAction) {
         Test(this, name, configuration = configuration, action)
@@ -222,8 +267,35 @@ open class TestSuite internal constructor(
         }
     }
 
+    /**
+     * Declares a fixture, a state holder for a lazily initialized [Value] with a lifetime of `this` test suite.
+     *
+     * Characteristics:
+     * - The fixture is lazily initialized on first use by the [value] lambda.
+     * - If [Value] is an [AutoCloseable], the fixture will call `close` at the end of its lifetime, otherwise
+     *   `closeWith` can declare a specific action to be called on close.
+     * - All test elements within its suite share the same fixture value.
+     *
+     * Usage:
+     *
+     * Declare a fixture at the suite level like this:
+     * ```
+     * val repository = fixture { MyRepository(this) } closeWith { disconnect() }
+     * ```
+     *
+     * Use its value in the suite's child elements by invoking the fixture like this:
+     * ```
+     * repository().getScore(...)
+     * ```
+     */
     fun <Value : Any> fixture(value: TestSuite.() -> Value): Fixture<Value> = Fixture(this, value)
 
+    /**
+     * A fixture is a state holder for a lazily initialized [Value] with a lifetime of the test suite declaring it.
+     *
+     * If [Value] is an [AutoCloseable], the fixture will call [close()] at the end of its lifetime, otherwise
+     * [closeWith] can declare a specific action to be called on close.
+     */
     class Fixture<Value : Any> internal constructor(
         private val suite: TestSuite,
         private val newValue: suspend TestSuite.() -> Value
@@ -231,6 +303,7 @@ open class TestSuite internal constructor(
         private var value: Value? = null
         private var close: suspend Value.() -> Unit = { (this as? AutoCloseable)?.close() }
 
+        /** Returns the fixture's value, instantiating it on first use. */
         suspend operator fun invoke(): Value {
             if (value == null) {
                 value = suite.newValue()
@@ -239,6 +312,7 @@ open class TestSuite internal constructor(
             return value!!
         }
 
+        /** Declares [action] to be called when this fixture's lifetime ends. */
         infix fun closeWith(action: suspend Value.() -> Unit): Fixture<Value> {
             close = action
             return this

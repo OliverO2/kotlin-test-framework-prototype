@@ -38,5 +38,15 @@ annotation class TestElementName
 @Retention(AnnotationRetention.BINARY)
 annotation class TestDisplayName
 
+/**
+ * Makes the annotated class part of the test element DSL. See the Kotlin docs on [DslMarker] for details.
+ */
 @DslMarker
 annotation class TestElementDsl
+
+/**
+ * Indicates that the function or constructor is invoked by framework-generated code.
+ */
+@Target(AnnotationTarget.FUNCTION, AnnotationTarget.CONSTRUCTOR)
+@Retention(AnnotationRetention.SOURCE)
+annotation class TestFrameworkInvokedByGeneratedCode

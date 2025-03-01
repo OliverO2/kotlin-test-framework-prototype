@@ -4,6 +4,7 @@ import testFramework.AbstractTestSuite
 import testFramework.TestDiscoverable
 import testFramework.TestElementName
 
+@Suppress("unused")
 @TestDiscoverable
 fun testSuite(@TestElementName name: String = "", content: TestSuite.() -> Unit): Lazy<TestSuite> = lazy {
     TestSuite(

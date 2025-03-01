@@ -13,23 +13,42 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-typealias ExecutionWrappingAction = suspend (innerAction: suspend () -> Unit) -> Unit
-
-open class TestContext(private val wrappingAction: ExecutionWrappingAction) {
-    open infix fun wrapping(innerWrapAround: ExecutionWrappingAction): TestContext = TestContext { innerAction ->
-        wrappingAction {
-            innerWrapAround(innerAction)
+/**
+ * A test element execution context, containing configuration parts which modify the execution of tests and suites.
+ *
+ * The configuration parts of a [TestContext] apply to all [Test]s in a hierarchy unless some or all
+ * parts are overridden via another [TestContext].
+ *
+ * Use an existing context or the empty [TestContext] object as the starting point, then invoke the [TestContext]'s
+ * methods to return modified contexts. Modifications can be chained, with the last modification gaining precedence
+ * over previous modifications of the same kind.
+ *
+ * Example:
+ * ```
+ * context = TestContext.coroutineContext(UnconfinedTestDispatcher()).invocation(InvocationContext.Mode.CONCURRENT)
+ * ```
+ */
+open class TestContext private constructor(private val wrappingAction: ExecutionWrappingAction) {
+    /** Returns a [TestContext] which wraps `this` context's [wrappingAction] around [innerWrapAround]. */
+    internal open infix fun wrapping(innerWrapAround: ExecutionWrappingAction): TestContext =
+        TestContext { innerAction ->
+            wrappingAction {
+                innerWrapAround(innerAction)
+            }
         }
-    }
 
-    infix fun wrapping(innerContext: TestContext): TestContext = wrapping(innerContext.wrappingAction)
+    /** Returns a [TestContext] which wraps `this` context's [wrappingAction] around that of [innerContext]. */
+    internal infix fun wrapping(innerContext: TestContext): TestContext = wrapping(innerContext.wrappingAction)
 
-    open suspend fun executeWithin(innerAction: suspend () -> Unit) {
+    internal open suspend fun executeWithin(innerAction: suspend () -> Unit) {
         wrappingAction {
             innerAction()
         }
     }
 
+    /**
+     * The initial (empty) test context without any configuration.
+     */
     companion object : TestContext({}) {
         override infix fun wrapping(innerWrapAround: ExecutionWrappingAction): TestContext =
             TestContext(innerWrapAround)
@@ -38,13 +57,16 @@ open class TestContext(private val wrappingAction: ExecutionWrappingAction) {
     }
 }
 
+private typealias ExecutionWrappingAction = suspend (innerAction: suspend () -> Unit) -> Unit
+
+/** Returns a test context combining [this] with an invocation [mode]. */
 fun TestContext.invocation(mode: InvocationContext.Mode): TestContext = wrapping { innerAction ->
     withContext(InvocationContext(mode)) {
         innerAction()
     }
 }
 
-class InvocationContext(val mode: Mode) : AbstractCoroutineContextElement(Key) {
+class InvocationContext internal constructor(val mode: Mode) : AbstractCoroutineContextElement(Key) {
     enum class Mode { SEQUENTIAL, CONCURRENT }
 
     companion object {
@@ -54,18 +76,30 @@ class InvocationContext(val mode: Mode) : AbstractCoroutineContextElement(Key) {
     }
 }
 
+/** Returns a test context combining [this] with a coroutine [context]. */
 fun TestContext.coroutineContext(context: CoroutineContext): TestContext = wrapping { innerAction ->
     withContext(context) {
         innerAction()
     }
 }
 
+/**
+ * Returns a test context combining [this] with a main dispatcher (see [Dispatchers.setMain]).
+ *
+ * This configuration may not be overridden at lower levels of the [TestElement] hierarchy.
+ */
 fun TestContext.mainDispatcher(dispatcher: CoroutineDispatcher): TestContext = wrapping { innerAction ->
     withMainDispatcher(dispatcher) {
         innerAction()
     }
 }
 
+/**
+ * Returns a test context combining [this] with a [kotlinx.coroutines.test.TestScope] setting.
+ *
+ * If [isEnabled] is true, tests will run in a [kotlinx.coroutines.test.TestScope] with the given [timeout].
+ * Setting [isEnabled] to false will disable a previously enabled `TestScope` setting.
+ */
 fun TestContext.testScope(isEnabled: Boolean, timeout: Duration = TestScopeContext.DEFAULT_TIMEOUT): TestContext =
     wrapping { innerAction ->
         withContext(TestScopeContext(isEnabled, timeout)) {
@@ -73,7 +107,11 @@ fun TestContext.testScope(isEnabled: Boolean, timeout: Duration = TestScopeConte
         }
     }
 
-class TestScopeContext(internal val isEnabled: Boolean, val timeout: Duration) : AbstractCoroutineContextElement(Key) {
+/**
+ * A context element, which, when present and enabled, makes a test execute in [kotlinx.coroutines.test.TestScope].
+ */
+internal class TestScopeContext(internal val isEnabled: Boolean, val timeout: Duration) :
+    AbstractCoroutineContextElement(Key) {
     companion object {
         private val Key = object : CoroutineContext.Key<TestScopeContext> {}
 
@@ -83,13 +121,19 @@ class TestScopeContext(internal val isEnabled: Boolean, val timeout: Duration) :
     }
 }
 
+/**
+ * Runs [action] with [dispatcher] set up as the main dispatcher, which will be reset afterward.
+ *
+ * See [Dispatchers.setMain] for details. This function, if used exclusively, ensures that only one main dispatcher
+ * is active at any point in time.
+ */
 @OptIn(ExperimentalCoroutinesApi::class)
 suspend fun withMainDispatcher(dispatcher: CoroutineDispatcher, action: suspend () -> Unit) {
     val previouslyChanged = mainDispatcherChanged.getAndSet(true)
     require(!previouslyChanged) {
         "Another invocation of withMainDispatcher() is still active." +
             " Redirecting Dispatchers.Main again would introduce a conflict in its global state.\n" +
-            "\tPlease avoid concurrent changes to Dispatchers.Main by running tests" +
+            "\tPlease avoid concurrent changes to Dispatchers.Main by executing tests" +
             " in isolation (e.g. in a separate UI test compartment)."
     }
     Dispatchers.setMain(dispatcher)

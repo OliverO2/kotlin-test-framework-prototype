@@ -2,7 +2,8 @@ package testFramework.internal.integration
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.promise
-import testFramework.isNodeJs
+import testFramework.TestPlatformJs
+import testFramework.TestPlatformJsHosted
 
 internal actual fun kotlinJsTestFrameworkAvailable(): Boolean =
     js("typeof describe === 'function' && typeof it === 'function'") as Boolean
@@ -78,7 +79,7 @@ private class JasmineLikeAdapter : FrameworkAdapter {
 
 // Jasmine/Mocha/Jest test API
 
-@Suppress("UNUSED_PARAMETER")
+@Suppress("unused")
 private fun describe(description: String, suiteFn: () -> Unit) {
     // Here we disable the default 2s timeout.
     // The strange invocation is necessary to avoid using a JS arrow function which would bind `this` to a
@@ -86,8 +87,14 @@ private fun describe(description: String, suiteFn: () -> Unit) {
     js("describe(description, function () { this.timeout(0); suiteFn(); })")
 }
 
+@Suppress("unused")
 private external fun xdescribe(name: String, testFn: () -> Unit)
+
+@Suppress("unused")
 private external fun it(name: String, testFn: () -> JsPromiseLike?)
+
+@Suppress("unused")
 private external fun xit(name: String, testFn: () -> JsPromiseLike?)
 
-internal actual fun processArguments(): Array<String>? = if (isNodeJs) js("process.argv") as Array<String> else null
+internal actual fun processArguments(): Array<String>? =
+    if (TestPlatformJs.runtime == TestPlatformJsHosted.Runtime.NODE) js("process.argv") as Array<String> else null

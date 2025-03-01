@@ -123,8 +123,13 @@ private class Configuration(compilerConfiguration: CompilerConfiguration, overri
     val testFrameworkDiscoveryResultSymbol = irClassSymbol(TestFrameworkDiscoveryResult::class)
 
     val initializeTestFrameworkFunctionSymbol = irFunctionSymbol(internalPackageName, "initializeTestFramework")
-    val runTestsFunctionSymbol = irFunctionSymbol(internalPackageName, "runTests")
-    val runTestsBlockingFunctionSymbol by lazy { irFunctionSymbol(internalPackageName, "runTestsBlocking") }
+    val configureAndExecuteTestsFunctionSymbol = irFunctionSymbol(internalPackageName, "configureAndExecuteTests")
+    val configureAndExecuteTestsBlockingFunctionSymbol by lazy {
+        irFunctionSymbol(internalPackageName, "configureAndExecuteTestsBlocking")
+    }
+
+    val testFrameworkDiscoveryResultPropertyName =
+        Name.identifier("testFrameworkDiscoveryResult") // getter: getTestFrameworkDiscoveryResult
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
@@ -426,7 +431,7 @@ private class ModuleTransformer(
      * ```
      * suspend fun main(arguments: Array<String>) {
      *     initializeTestFramework(customSessionOrNull, arguments)
-     *     runTests(arrayOf(s1, ..., sn))
+     *     configureAndExecuteTests(arrayOf(s1, ..., sn))
      * }
      * ```
      */
@@ -446,7 +451,7 @@ private class ModuleTransformer(
                 customSessionClass?.let { irConstructorCall(it.symbol) },
                 irGet(irArgumentsValueParameter)
             )
-            +irSimpleFunctionCall(configuration.runTestsFunctionSymbol, irArrayOfRootSuites())
+            +irSimpleFunctionCall(configuration.configureAndExecuteTestsFunctionSymbol, irArrayOfRootSuites())
         }
     }
 
@@ -457,7 +462,7 @@ private class ModuleTransformer(
      * @EagerInitialization
      * private val testFrameworkEntryPoint: Unit = run {
      *     initializeTestFramework(customSessionOrNull)
-     *     runTestsBlocking(arrayOf(s1, ..., sn))
+     *     configureAndExecuteTestsBlocking(arrayOf(s1, ..., sn))
      * }
      * ```
      */
@@ -476,7 +481,10 @@ private class ModuleTransformer(
                     configuration.initializeTestFrameworkFunctionSymbol,
                     customSessionClass?.let { irConstructorCall(it.symbol) }
                 )
-                +irSimpleFunctionCall(configuration.runTestsBlockingFunctionSymbol, irArrayOfRootSuites())
+                +irSimpleFunctionCall(
+                    configuration.configureAndExecuteTestsBlockingFunctionSymbol,
+                    irArrayOfRootSuites()
+                )
             }
         }
     }
@@ -492,7 +500,7 @@ private class ModuleTransformer(
      * ```
      */
     private fun irTestFrameworkDiscoveryResultProperty(entryPointsFile: IrFile): IrProperty {
-        val propertyName = Name.identifier("testFrameworkDiscoveryResult")
+        val propertyName = configuration.testFrameworkDiscoveryResultPropertyName
 
         return pluginContext.irFactory.buildProperty {
             name = propertyName

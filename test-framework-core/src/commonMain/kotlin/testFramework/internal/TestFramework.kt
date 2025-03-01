@@ -4,15 +4,18 @@ import kotlinx.coroutines.test.TestScope
 import testFramework.AbstractTestSession
 import testFramework.AbstractTestSuite
 import testFramework.TestElement
+import testFramework.TestFrameworkInvokedByGeneratedCode
 import testFramework.TestSession
 import testFramework.TestSuite
 import kotlin.time.Duration
 
 /**
- * Initialize the test framework with a [TestSession].
+ * Initializes the test framework with a [TestSession].
  *
- * The framework invokes this function before creating any top-level test suites.
+ * The framework invokes this function before creating any top-level test suites (which become children of the
+ * [TestSession]).
  */
+@TestFrameworkInvokedByGeneratedCode
 internal fun initializeTestFramework(testSession: AbstractTestSession?, arguments: Array<String>? = null) {
     if (!arguments.isNullOrEmpty()) {
         argumentsBasedElementSelection = ArgumentsBasedElementSelection(arguments)
@@ -21,14 +24,23 @@ internal fun initializeTestFramework(testSession: AbstractTestSession?, argument
 }
 
 /**
- * Discover and execute tests.
+ * Configures and executes tests.
  *
  * The framework invokes this function with a list of top-level [TestSuite]s.
  */
-internal expect suspend fun runTests(suites: Array<AbstractTestSuite>)
+@TestFrameworkInvokedByGeneratedCode
+internal expect suspend fun configureAndExecuteTests(suites: Array<AbstractTestSuite>)
 
+/**
+ * An argument-based element selection, if existing, or null.
+ *
+ * Initialized in [initializeTestFramework], used in [configureAndExecuteTests].
+ */
 internal var argumentsBasedElementSelection: TestElement.Selection? = null
 
+/**
+ * A [TestElement.Selection] based on lists of [includePatterns] and [excludePatterns].
+ */
 internal open class ListsBasedElementSelection protected constructor(
     private val includePatterns: List<Regex>,
     private val excludePatterns: List<Regex>
@@ -71,10 +83,13 @@ internal open class ListsBasedElementSelection protected constructor(
             }
         } ?: listOf()
 
-        private val REGEX_META_CHARACTERS = "\\[].^${'$'}?+{}|()".toSet()
+        private val REGEX_META_CHARACTERS = "\\[].^$?+{}|()".toSet()
     }
 }
 
+/**
+ * A [TestElement.Selection] created from command line arguments which define [includePatterns] and [excludePatterns].
+ */
 internal class ArgumentsBasedElementSelection(arguments: Array<String>) :
     ListsBasedElementSelection(
         includePatterns = arguments.optionValue("include"),
@@ -88,6 +103,9 @@ internal class ArgumentsBasedElementSelection(arguments: Array<String>) :
     }
 }
 
+/**
+ * A [TestElement.Selection] created from environment variables which define [includePatterns] and [excludePatterns].
+ */
 internal class EnvironmentBasedElementSelection(includePatterns: String?, excludePatterns: String?) :
     ListsBasedElementSelection(includePatterns, excludePatterns)
 
@@ -130,16 +148,31 @@ internal fun Throwable.logErrorWithStacktrace(headline: String, includeStacktrac
     }
 }
 
+/**
+ * Performs the test configuration [action], catching any error and logging it.
+ */
 internal inline fun <R> configureTestsCatching(action: () -> R): Result<R> =
     runCatchingLogging("Could not configure tests.", action)
 
+/**
+ * Executes tests in [action], catching any error and logging it.
+ */
 internal inline fun <R> executeTestsCatching(action: () -> R): Result<R> =
     runCatchingLogging("Test framework failure during execution.", action)
 
+/**
+ * Runs [action], catching any error and logging it with a [headline].
+ */
 private inline fun <R> runCatchingLogging(headline: String, action: () -> R): Result<R> = runCatching {
     action()
 }.onFailure { throwable ->
     throwable.logErrorWithStacktrace(headline)
 }
 
+/**
+ * Runs the test [action] on [this] TestScope via [kotlinx.coroutines.test.runTest], waiting for its completion.
+ *
+ * On (JS) platforms using a `Promise` to run a test asynchronously, an implementation of this method must `await`
+ * the Promise before returning.
+ */
 internal expect suspend fun TestScope.runTestAwaitingCompletion(timeout: Duration, action: suspend TestScope.() -> Unit)
