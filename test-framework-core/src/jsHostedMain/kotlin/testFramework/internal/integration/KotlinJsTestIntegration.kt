@@ -179,4 +179,7 @@ internal interface KotlinJsTestFramework {
     fun test(name: String, ignored: Boolean, testFn: () -> JsPromiseLike?)
 }
 
+/**
+ * Returns the process' command line arguments if the execution environment can provide them, otherwise `null`.
+ */
 internal expect fun processArguments(): Array<String>?

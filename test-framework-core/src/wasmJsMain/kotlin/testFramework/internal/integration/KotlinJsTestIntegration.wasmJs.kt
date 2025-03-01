@@ -46,6 +46,14 @@ internal actual val kotlinJsTestFramework: KotlinJsTestFramework = object : Kotl
 internal actual fun CoroutineScope.testFunctionPromise(testFunction: suspend () -> Unit): JsPromiseLike? =
     promise { testFunction() }
 
+internal actual fun processArguments(): Array<String>? {
+    if (TestPlatformWasmJs.runtime != TestPlatformJsHosted.Runtime.NODE) return null
+    val rawArguments = nodeProcessArguments()
+    return Array(rawArguments.length) { rawArguments[it].toString() }
+}
+
+private fun nodeProcessArguments(): JsArray<JsString> = js("process.argv.slice(2)")
+
 @Suppress("unused")
 private fun jsThrow(jsException: JsAny): Nothing = js("{ throw jsException; }")
 
@@ -73,11 +81,3 @@ private external fun it(name: String, testFn: () -> JsAny?)
 
 @Suppress("unused")
 private external fun xit(name: String, testFn: () -> JsAny?)
-
-internal actual fun processArguments(): Array<String>? {
-    if (TestPlatformWasmJs.runtime != TestPlatformJsHosted.Runtime.NODE) return null
-    val rawArguments = nodeProcessArguments()
-    return Array(rawArguments.length) { rawArguments[it].toString() }
-}
-
-private fun nodeProcessArguments(): JsArray<JsString> = js("process.argv.slice(2)")

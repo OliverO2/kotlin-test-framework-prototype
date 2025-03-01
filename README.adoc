@@ -126,7 +126,7 @@ in an IDE run configuration with an environment variable setting:
 === TODO
 
 * [x] Add comments.
-* [ ] Regroup utility functions.
+* [x] Regroup utility functions.
 * [ ] Add tests.
 * [ ] Shorten stack traces from failed assertions.
 * [ ] Verify exception reporting standards (e.g. expect/actual) against kotlin-test baseline.

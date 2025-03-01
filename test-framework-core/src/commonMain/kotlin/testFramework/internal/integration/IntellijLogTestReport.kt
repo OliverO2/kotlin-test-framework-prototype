@@ -11,7 +11,7 @@ import kotlin.io.encoding.ExperimentalEncodingApi
 /**
  * A [TestReport] in IntelliJ IDEA's IjLog format on stdout.
  */
-internal object IntellijTestLog : TestReport() {
+internal object IntellijLogTestReport : TestReport() {
     private val outputMutex = Mutex()
 
     override suspend fun add(event: TestEvent) {

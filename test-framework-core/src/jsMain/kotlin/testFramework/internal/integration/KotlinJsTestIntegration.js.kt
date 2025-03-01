@@ -21,6 +21,9 @@ internal actual val kotlinJsTestFramework: KotlinJsTestFramework = object : Kotl
 internal actual fun CoroutineScope.testFunctionPromise(testFunction: suspend () -> Unit): JsPromiseLike? =
     promise { testFunction() }
 
+internal actual fun processArguments(): Array<String>? =
+    if (TestPlatformJs.runtime == TestPlatformJsHosted.Runtime.NODE) js("process.argv") as Array<String> else null
+
 /**
  * JS test framework adapter interface defined by the Kotlin/JS test infra.
  *
@@ -95,6 +98,3 @@ private external fun it(name: String, testFn: () -> JsPromiseLike?)
 
 @Suppress("unused")
 private external fun xit(name: String, testFn: () -> JsPromiseLike?)
-
-internal actual fun processArguments(): Array<String>? =
-    if (TestPlatformJs.runtime == TestPlatformJsHosted.Runtime.NODE) js("process.argv") as Array<String> else null

@@ -9,7 +9,7 @@ import platform.posix.getenv
 import testFramework.AbstractTestSuite
 import testFramework.TestFrameworkInvokedByGeneratedCode
 import testFramework.TestSession
-import testFramework.internal.integration.IntellijTestLog
+import testFramework.internal.integration.IntellijLogTestReport
 import kotlin.time.Duration
 
 @TestFrameworkInvokedByGeneratedCode
@@ -23,7 +23,7 @@ internal actual suspend fun configureAndExecuteTests(suites: Array<AbstractTestS
         )
     }.onSuccess {
         executeTestsCatching {
-            TestSession.global.execute(IntellijTestLog)
+            TestSession.global.execute(IntellijLogTestReport)
         }
     }
 }

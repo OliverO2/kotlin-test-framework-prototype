@@ -4,7 +4,7 @@ import testFramework.AbstractTestSuite
 import testFramework.TestElement
 import testFramework.TestFrameworkInvokedByGeneratedCode
 import testFramework.TestSession
-import testFramework.internal.integration.IntellijTestLog
+import testFramework.internal.integration.IntellijLogTestReport
 import testFramework.internal.integration.kotlinJsTestFrameworkAvailable
 import testFramework.internal.integration.processArguments
 import testFramework.internal.integration.registerWithKotlinJsTestFramework
@@ -24,7 +24,7 @@ internal actual suspend fun configureAndExecuteTests(suites: Array<AbstractTestS
             if (kotlinJsTestFrameworkAvailable()) {
                 TestSession.global.registerWithKotlinJsTestFramework()
             } else {
-                TestSession.global.execute(IntellijTestLog)
+                TestSession.global.execute(IntellijLogTestReport)
             }
         }
     }

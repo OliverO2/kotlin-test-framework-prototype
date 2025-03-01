@@ -1,5 +1,8 @@
 package testFramework
 
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+
 interface TestPlatformJsHosted : TestPlatform {
     enum class Runtime(val displayName: String) {
         NODE("Node"),
@@ -14,3 +17,8 @@ interface TestPlatformJsHosted : TestPlatform {
     override fun threadId() = 0UL
     override fun threadDisplayName() = "single"
 }
+
+actual fun dispatcherWithParallelism(parallelism: Int): CoroutineDispatcher =
+    Dispatchers.Default // single-threaded on JS
+
+actual suspend fun withSingleThreading(action: suspend () -> Unit) = action()
