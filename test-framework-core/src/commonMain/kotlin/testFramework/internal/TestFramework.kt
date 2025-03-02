@@ -12,8 +12,7 @@ import kotlin.time.Duration
 /**
  * Initializes the test framework with a [TestSession].
  *
- * The framework invokes this function before creating any top-level test suites (which become children of the
- * [TestSession]).
+ * The framework invokes this function before creating any top-level [TestSuite].
  */
 @TestFrameworkInvokedByGeneratedCode
 internal fun initializeTestFramework(testSession: AbstractTestSession?, arguments: Array<String>? = null) {

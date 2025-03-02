@@ -3,9 +3,9 @@ package testFramework
 /**
  * A compilation module's root test suite, holding the module-wide default configuration.
  *
- * A compilation module may declare at most one test session. It becomes the parent of all top-level suites.
+ * A compilation module may declare at most one test session. It is the root of the test element hierarchy.
  * The test framework's generated code invokes `initializeTestFramework` at module initialization time, making
- * sure that a valid [TestSession] exists before instantiating any top-level suite.
+ * sure that a valid [TestSession] exists before instantiating any top-level [TestSuite].
  *
  * A custom [TestSession] specifying a global configuration can be declared like this:
  * ```
@@ -52,7 +52,7 @@ open class TestSession protected constructor(
         internal val global: TestSession get() =
             singleton ?: throw IllegalStateException(
                 "The test framework was not initialized." +
-                    " A TestSession must exist before creating a top-level TestSuite." +
+                    " A TestSession must exist before creating any top-level TestSuite." +
                     "\n\tPlease ensure that the test framework's Gradle plugin is configured."
             )
     }

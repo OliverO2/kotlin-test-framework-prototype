@@ -43,7 +43,7 @@ interface AbstractTestSuite : AbstractTestElement {
 /**
  * A compilation module's root test suite, typically holding the module-wide default configuration.
  *
- * A compilation module may declare at most one test session. It is the parent of all top-level suites.
+ * A compilation module may declare at most one test session. It is the root of the test element hierarchy.
  */
 interface AbstractTestSession : AbstractTestSuite
 
