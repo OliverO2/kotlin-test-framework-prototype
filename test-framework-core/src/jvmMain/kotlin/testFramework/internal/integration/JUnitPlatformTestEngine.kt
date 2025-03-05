@@ -20,7 +20,7 @@ import testFramework.TestElement
 import testFramework.TestSession
 import testFramework.TestSuite
 import testFramework.internal.EnvironmentBasedElementSelection
-import testFramework.internal.TestEvent
+import testFramework.internal.TestElementEvent
 import testFramework.internal.TestFrameworkDiscoveryResult
 import testFramework.internal.TestReport
 import testFramework.internal.logDebug
@@ -99,11 +99,11 @@ internal class JUnitPlatformTestEngine : TestEngine {
         runBlocking {
             TestSession.global.execute(
                 report = object : TestReport() {
-                    // A TestReport relaying each TestEvent to the JUnit listener.
+                    // A TestReport relaying each TestElementEvent to the JUnit listener.
 
-                    override suspend fun add(event: TestEvent) {
+                    override suspend fun add(event: TestElementEvent) {
                         when (event) {
-                            is TestEvent.Starting -> {
+                            is TestElementEvent.Starting -> {
                                 if (event.element.isEnabled) {
                                     log { "${event.element.platformDescriptor}: ${event.element} starting" }
                                     jUnitListener.executionStarted(event.element.platformDescriptor)
@@ -117,7 +117,7 @@ internal class JUnitPlatformTestEngine : TestEngine {
                                 }
                             }
 
-                            is TestEvent.Finished -> {
+                            is TestElementEvent.Finished -> {
                                 if (event.element.isEnabled) {
                                     log {
                                         "${event.element.platformDescriptor}: ${event.element} finished," +
@@ -188,7 +188,7 @@ private fun TestElement.newPlatformDescriptor(parentUniqueId: UniqueId): TestEle
 private val TestElement.platformDescriptor: AbstractTestDescriptor get() =
     checkNotNull(testElementDescriptors[this]) { "$this is missing its TestDescriptor" }
 
-private val TestEvent.Finished.executionResult: TestExecutionResult get() =
+private val TestElementEvent.Finished.executionResult: TestExecutionResult get() =
     when (throwable) {
         null -> TestExecutionResult.successful()
         is AssertionError -> TestExecutionResult.failed(throwable)

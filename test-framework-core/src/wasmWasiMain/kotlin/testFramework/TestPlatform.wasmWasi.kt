@@ -6,6 +6,7 @@ import kotlinx.coroutines.Dispatchers
 actual val testPlatform: TestPlatform = TestPlatformWasmWasi
 
 object TestPlatformWasmWasi : TestPlatform {
+    override val type: TestPlatform.Type = TestPlatform.Type.WASM_WASI
     override val displayName = "Wasm/WASI"
     override val parallelism = 1
     override fun threadId() = 0UL

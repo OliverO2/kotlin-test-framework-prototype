@@ -11,6 +11,7 @@ image:documentation/images/Test%20Run.png[Test Run.png]
 * A *test hierarchy* represented by *nestable ``TestElement``s*.
 ** ``Test``s are test elements containing actual test logic with assertions, they cannot have child elements.
 ** ``TestSuite``s are test elements grouping child elements, they cannot contain test logic.
+** ``TestCompartments``s are test elements grouping top-level test suites, with each compartment running in isolation.
 ** A ``TestSession`` is the root of the test hierarchy for an individual test run.
 * *Tests and suites* can be *created dynamically* via plain Kotlin.
 * Tests are fully *coroutine-aware*, coroutine contexts mirror the suites/tests hierarchy.
@@ -127,7 +128,26 @@ in an IDE run configuration with an environment variable setting:
 
 * [x] Add comments.
 * [x] Regroup utility functions.
-* [ ] Add tests.
+* [x] Add tests.
+** [ ] Fix `gradlew cleanAllTests jsNodeTest -p samples/prototype-scenarios --quiet` hanging.
+*** The `INFO:`... line seems to signal the end of the regular test coroutine. Fixture failure/closing seems to occur afterward:
++
+----
+com.example.TestSuiteTests.fixtureWithSetupFailures.suite1.test1 begin
+com.example.TestSuiteTests.fixtureWithSetupFailures.suite1 fixture1 creating
+com.example.TestSuiteTests.fixtureWithSetupFailures.suite1 fixture2 creating
+com.example.TestSuiteTests.fixtureWithSetupFailures.suite1 fixture3 creating
+com.example.TestSuiteTests.fixtureWithSetupFailures.suite1.test1 end
+aroundAll com.example.TestSuiteTests.fixtureWithSetupFailures.suite1.inner failing intentionally
+com.example.TestSuiteTests.fixtureWithSetupFailures.suite1.test2 begin
+com.example.TestSuiteTests.fixtureWithSetupFailures.suite1.test2 end
+INFO: Tests selected via ArgumentsBasedElementSelection(includePatterns=[], excludePatterns=[])
+com.example.TestSuiteTests.fixtureWithSetupFailures.suite1 fixture3 failing intentionally on close
+com.example.TestSuiteTests.fixtureWithSetupFailures.suite1 fixture2 failing intentionally on close
+com.example.TestSuiteTests.fixtureWithSetupFailures.suite1 fixture1 closing
+----
+* [ ] Remove `TestElement.Configuration`, replace with `TestContext.enabled()`.
+** [ ] Rename `TestContext` to `TestConfiguration`?
 * [ ] Shorten stack traces from failed assertions.
 * [ ] Verify exception reporting standards (e.g. expect/actual) against kotlin-test baseline.
 * [ ] Use https://github.com/JetBrains/kotlin/blob/d9ddcd991bf9c6122041f0276af644be0432fa38/libraries/tools/kotlin-gradle-plugin/src/common/kotlin/org/jetbrains/kotlin/gradle/targets/native/internal/KotlinNativeStackTraceParser.kt[KotlinNativeStackTraceParser.kt] to reference source locations in Native stack traces.

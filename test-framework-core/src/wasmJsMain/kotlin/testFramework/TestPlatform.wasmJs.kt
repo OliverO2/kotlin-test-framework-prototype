@@ -3,6 +3,8 @@ package testFramework
 actual val testPlatform: TestPlatform = TestPlatformWasmJs
 
 object TestPlatformWasmJs : TestPlatformJsHosted {
+    override val type: TestPlatform.Type = TestPlatform.Type.WASM_JS
+
     override val runtime: TestPlatformJsHosted.Runtime =
         if (runtimeIsNodeJs()) TestPlatformJsHosted.Runtime.NODE else TestPlatformJsHosted.Runtime.BROWSER
 

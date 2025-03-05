@@ -3,6 +3,8 @@ package testFramework
 actual val testPlatform: TestPlatform = TestPlatformJs
 
 object TestPlatformJs : TestPlatformJsHosted {
+    override val type: TestPlatform.Type = TestPlatform.Type.JS
+
     override val runtime: TestPlatformJsHosted.Runtime =
         if (runtimeIsNodeJs()) TestPlatformJsHosted.Runtime.NODE else TestPlatformJsHosted.Runtime.BROWSER
 

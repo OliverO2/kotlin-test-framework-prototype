@@ -6,14 +6,12 @@ import kotlinx.coroutines.CoroutineDispatcher
  * The platform executing tests.
  */
 interface TestPlatform {
-    /**
-     * The platform's human-readable name. NOTE: Consider it unstable, do not depend on this name in code.
-     *
-     * If you need code to depend on a specific platform, use a platform object comparison like this:
-     * ```
-     * if (testPlatform === TestPlatformWasmWasi) ...
-     * ```
-     */
+    enum class Type { JVM, NATIVE, JS, WASM_JS, WASM_WASI }
+
+    /** The platform's type. */
+    val type: Type
+
+    /** The platform's human-readable name. NOTE: Consider it unstable, use [type] for conditional code. */
     val displayName: String
 
     /** The platform's default parallelism. */

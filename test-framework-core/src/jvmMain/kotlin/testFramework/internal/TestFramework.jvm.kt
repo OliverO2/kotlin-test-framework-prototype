@@ -21,7 +21,7 @@ internal actual suspend fun configureAndExecuteTests(suites: Array<AbstractTestS
         TestSession.global.configure(argumentsBasedElementSelection ?: TestElement.AllInSelection)
     }.onSuccess {
         executeTestsCatching {
-            TestSession.global.execute(IntellijLogTestReport)
+            TestSession.global.execute(IntellijLogTestReport())
         }
     }
 }

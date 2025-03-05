@@ -3,11 +3,24 @@ package testFramework.internal
 import kotlinx.coroutines.test.TestScope
 import testFramework.AbstractTestSession
 import testFramework.AbstractTestSuite
+import testFramework.TestCompartment
 import testFramework.TestElement
 import testFramework.TestFrameworkInvokedByGeneratedCode
 import testFramework.TestSession
 import testFramework.TestSuite
 import kotlin.time.Duration
+
+/**
+ * The test framework's global settings.
+ */
+internal object TestFramework {
+    /** Resets the framework's global state, enabling the execution of multiple test sessions in one process. */
+    internal fun resetState() {
+        TestCompartment.resetState()
+        TestSession.resetState()
+        argumentsBasedElementSelection = null
+    }
+}
 
 /**
  * Initializes the test framework with a [TestSession].

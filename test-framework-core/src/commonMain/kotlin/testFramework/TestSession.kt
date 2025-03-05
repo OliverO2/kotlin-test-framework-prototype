@@ -1,5 +1,7 @@
 package testFramework
 
+import kotlinx.coroutines.Dispatchers
+
 /**
  * A compilation module's root test suite, holding the module-wide default configuration.
  *
@@ -20,7 +22,7 @@ package testFramework
  */
 @TestDiscoverable
 open class TestSession protected constructor(
-    configuration: Configuration.() -> Unit = Configuration.Default,
+    configuration: Configuration.() -> Unit = DefaultConfiguration,
     defaultCompartment: (() -> TestCompartment) = { TestCompartment.Default }
 ) : TestSuite(
     parentSuite = null,
@@ -34,20 +36,19 @@ open class TestSession protected constructor(
     init {
         if (singleton != null) {
             throw IllegalArgumentException(
-                "The test session has been initialized with a TestSession before." +
-                    "There must be only one TestSession per compilation module." +
-                    "\nIf this occurs during compiler plugin testing, see the FIXME comment there for details."
+                "The module has been initialized with a TestSession before." +
+                    " There must be only one TestSession per compilation module."
             )
         }
         @Suppress("LeakingThis")
         singleton = this
     }
 
-    internal constructor() : this(configuration = Configuration.Default)
+    internal constructor() : this(configuration = DefaultConfiguration)
 
     internal companion object {
         // This property is internal for compiler plugin testing only. Consider it private otherwise.
-        internal var singleton: TestSession? = null
+        private var singleton: TestSession? = null
 
         internal val global: TestSession get() =
             singleton ?: throw IllegalStateException(
@@ -55,5 +56,22 @@ open class TestSession protected constructor(
                     " A TestSession must exist before creating any top-level TestSuite." +
                     "\n\tPlease ensure that the test framework's Gradle plugin is configured."
             )
+
+        /**
+         * The default session configuration.
+         *
+         * Executing elements sequentially on [Dispatchers.Default], using [kotlinx.coroutines.test.TestScope]
+         * inside tests.
+         */
+        private val DefaultConfiguration: Configuration.() -> Unit = {
+            context = TestContext.invocation(InvocationContext.Mode.SEQUENTIAL)
+                .coroutineContext(Dispatchers.Default)
+                .testScope(true)
+        }
+
+        /** Resets global state, enabling the execution of multiple test sessions in one process. */
+        internal fun resetState() {
+            singleton = null
+        }
     }
 }

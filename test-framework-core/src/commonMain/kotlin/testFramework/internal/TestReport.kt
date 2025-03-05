@@ -6,23 +6,27 @@ import testFramework.TestElement
 /**
  * A report containing a sequence of test events, each of which will be [add]ed during execution.
  *
- * During execution, a report is expected to contain [TestEvent.Starting] and [TestEvent.Finished] for every
+ * During execution, a report is expected to contain [TestElementEvent.Starting] and [TestElementEvent.Finished] for every
  * element in the element hierarchy. This includes events for disabled elements.
  */
 internal abstract class TestReport {
-    abstract suspend fun add(event: TestEvent)
+    abstract suspend fun add(event: TestElementEvent)
 }
 
 /**
  * An event occurring as part of a test element's execution.
  */
-internal sealed class TestEvent(val element: TestElement) {
+internal sealed class TestElementEvent(val element: TestElement) {
     val instant = Clock.System.now()
 
-    class Starting(element: TestElement) : TestEvent(element)
+    class Starting(element: TestElement) : TestElementEvent(element)
 
     class Finished(element: TestElement, val startingEvent: Starting, val throwable: Throwable? = null) :
-        TestEvent(element) {
+        TestElementEvent(element) {
+
+        val succeeded: Boolean get() = throwable == null
+        val failed: Boolean get() = throwable != null
+
         override fun toString(): String = "${super.toString()} – throwable=$throwable"
     }
 

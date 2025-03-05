@@ -1,8 +1,8 @@
 package testFramework.internal
 
-internal enum class LogLevel { DEBUG, INFO, ERROR }
+enum class LogLevel { DEBUG, INFO, ERROR }
 
-private val logLevel = LogLevel.INFO
+var logLevel = LogLevel.INFO
 
 internal fun logDebug(message: () -> String) {
     log(LogLevel.DEBUG) { "DEBUG: ${message()}" }

@@ -86,11 +86,13 @@ open class TestSuite internal constructor(
     /** Fixtures created while executing this suite, in reverse order of fixture creation. */
     private val fixtures = mutableListOf<Fixture<*>>()
 
-    // region – We need these constructor variants for proper overload resolution with default parameters,
+    // region – We need these constructor variants only for top-level test suites declared as classes.
+    //
+    // The constructor variants ensure proper overload resolution with default parameters,
     // because Kotlin determines argument positions before default values are filled in.
     // See https://youtrack.jetbrains.com/issue/KT-48521.
 
-    constructor(
+    protected constructor(
         content: TestSuite.() -> Unit,
         @TestElementName name: String = "",
         @TestDisplayName displayName: String = name
@@ -101,7 +103,7 @@ open class TestSuite internal constructor(
         content = content
     )
 
-    constructor(
+    protected constructor(
         configuration: Configuration.() -> Unit,
         content: TestSuite.() -> Unit,
         @TestElementName name: String = "",
@@ -115,7 +117,7 @@ open class TestSuite internal constructor(
             content = content
         )
 
-    constructor(
+    protected constructor(
         compartment: TestCompartment,
         content: TestSuite.() -> Unit,
         @TestElementName name: String = "",
@@ -127,9 +129,9 @@ open class TestSuite internal constructor(
         content = content
     )
 
-    constructor(
+    protected constructor(
         compartment: TestCompartment,
-        configuration: Configuration.() -> Unit = {},
+        configuration: Configuration.() -> Unit,
         content: TestSuite.() -> Unit,
         @TestElementName name: String = "",
         @TestDisplayName displayName: String = name
@@ -141,19 +143,7 @@ open class TestSuite internal constructor(
         content = content
     )
 
-    constructor(
-        name: String,
-        compartment: TestCompartment,
-        content: TestSuite.() -> Unit,
-        @TestDisplayName displayName: String = name
-    ) : this(
-        parentSuite = compartment,
-        elementName = name,
-        displayName = displayName,
-        content = content
-    )
-
-    constructor(
+    protected constructor(
         name: String,
         configuration: Configuration.() -> Unit,
         content: TestSuite.() -> Unit,
@@ -166,7 +156,19 @@ open class TestSuite internal constructor(
         content = content
     )
 
-    constructor(
+    protected constructor(
+        name: String,
+        compartment: TestCompartment,
+        content: TestSuite.() -> Unit,
+        @TestDisplayName displayName: String = name
+    ) : this(
+        parentSuite = compartment,
+        elementName = name,
+        displayName = displayName,
+        content = content
+    )
+
+    protected constructor(
         name: String,
         compartment: TestCompartment,
         configuration: Configuration.() -> Unit,
@@ -211,8 +213,12 @@ open class TestSuite internal constructor(
      * Declares a test suite with a number of child test elements (tests and/or suites). A suite may not contain test logic.
      */
     @TestDiscoverable
-    fun testSuite(@TestElementName name: String, content: TestSuite.() -> Unit) {
-        TestSuite(this, elementName = name, displayName = name, content = content)
+    fun testSuite(
+        @TestElementName name: String,
+        configuration: Configuration.() -> Unit = {},
+        content: TestSuite.() -> Unit
+    ) {
+        TestSuite(this, elementName = name, displayName = name, configuration = configuration, content = content)
     }
 
     /**
@@ -241,7 +247,12 @@ open class TestSuite internal constructor(
         executeReporting(report) {
             if (isEnabled) {
                 (effectiveConfiguration.context wrapping innerContext).executeWithin {
-                    val invocationMode = InvocationContext.mode()
+                    val invocationMode = if (parentSuite != null) {
+                        InvocationContext.mode()
+                    } else {
+                        // A TestSession (no parent) must always execute its compartments sequentially.
+                        InvocationContext.Mode.SEQUENTIAL
+                    }
                     coroutineScope {
                         for (childElement in childElements) {
                             when (invocationMode) {
@@ -288,7 +299,7 @@ open class TestSuite internal constructor(
      * repository().getScore(...)
      * ```
      */
-    fun <Value : Any> fixture(value: TestSuite.() -> Value): Fixture<Value> = Fixture(this, value)
+    fun <Value : Any> fixture(value: suspend TestSuite.() -> Value): Fixture<Value> = Fixture(this, value)
 
     /**
      * A fixture is a state holder for a lazily initialized [Value] with a lifetime of the test suite declaring it.
@@ -333,20 +344,22 @@ open class TestSuite internal constructor(
             innerAction()
         } catch (exception: Throwable) {
             actionException = exception
-            throw exception
         } finally {
             withContext(NonCancellable) {
-                fixtures.forEach {
+                for (fixture in fixtures) {
                     try {
-                        it.close()
+                        fixture.close()
                     } catch (closeException: Throwable) {
                         if (actionException == null) {
-                            throw closeException
+                            actionException = closeException
                         } else {
                             actionException.addSuppressed(closeException)
                         }
                     }
                 }
+            }
+            if (actionException != null) {
+                throw actionException
             }
         }
     }

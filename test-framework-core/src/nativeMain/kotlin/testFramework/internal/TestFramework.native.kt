@@ -23,7 +23,7 @@ internal actual suspend fun configureAndExecuteTests(suites: Array<AbstractTestS
         )
     }.onSuccess {
         executeTestsCatching {
-            TestSession.global.execute(IntellijLogTestReport)
+            TestSession.global.execute(IntellijLogTestReport())
         }
     }
 }

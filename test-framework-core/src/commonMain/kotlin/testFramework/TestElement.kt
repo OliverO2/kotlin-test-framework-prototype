@@ -1,14 +1,13 @@
 package testFramework
 
-import kotlinx.coroutines.Dispatchers
-import testFramework.internal.TestEvent
+import testFramework.internal.TestElementEvent
 import testFramework.internal.TestReport
 
 sealed class TestElement(
     override val parentSuite: TestSuite?,
     override val elementName: String,
     override val displayName: String = elementName,
-    configuration: Configuration.() -> Unit = {}
+    configuration: Configuration.() -> Unit
 ) : AbstractTestElement {
     override val elementPath: TestElementPath get() =
         when (parentSuite) {
@@ -36,7 +35,7 @@ sealed class TestElement(
      * Most configuration resides in an element's [TestContext]. What is not specifically configured there, is
      * inherited from the [TestContext]s of its parent elements.
      *
-     * An exception is the [isEnabled] state, which resides directly in the [TestContext], but is overridden by
+     * An exception is the [isEnabled] state, which resides directly in the [Configuration], but is overridden by
      * a disabled parent via [TestElement.configure].
      */
     class Configuration {
@@ -47,17 +46,6 @@ sealed class TestElement(
         internal fun inheritFrom(parent: Configuration?) {
             if (parent != null) {
                 if (!parent.isEnabled) isEnabled = false // Inherit a 'disabled' state
-            }
-        }
-
-        companion object {
-            /**
-             * The default configuration, executing tests sequentially on [Dispatchers.Default] in a [kotlinx.coroutines.test.TestScope].
-             */
-            val Default: Configuration.() -> Unit = {
-                context = TestContext.invocation(InvocationContext.Mode.SEQUENTIAL)
-                    .coroutineContext(Dispatchers.Default)
-                    .testScope(true)
             }
         }
     }
@@ -93,27 +81,27 @@ sealed class TestElement(
     }
 
     /**
-     * Executes the test element, adding [TestEvent]s to the [report].
+     * Executes the test element, adding [TestElementEvent]s to the [report].
      *
      * For proper reporting, this method is also invoked for disabled elements.
      */
     internal abstract suspend fun execute(report: TestReport)
 
     /**
-     * Executes [action], reporting its [TestEvent]s to the [report].
+     * Executes [action], reporting its [TestElementEvent]s to the [report].
      */
     internal suspend fun executeReporting(report: TestReport, action: suspend () -> Unit) {
-        val startingEvent = TestEvent.Starting(this)
+        val startingEvent = TestElementEvent.Starting(this)
 
         report.add(startingEvent)
 
         try {
             action()
-            report.add(TestEvent.Finished(this, startingEvent))
+            report.add(TestElementEvent.Finished(this, startingEvent))
         } catch (assertionError: AssertionError) {
-            report.add(TestEvent.Finished(this, startingEvent, assertionError))
+            report.add(TestElementEvent.Finished(this, startingEvent, assertionError))
         } catch (throwable: Throwable) {
-            report.add(TestEvent.Finished(this, startingEvent, throwable))
+            report.add(TestElementEvent.Finished(this, startingEvent, throwable))
             throw throwable
         }
     }

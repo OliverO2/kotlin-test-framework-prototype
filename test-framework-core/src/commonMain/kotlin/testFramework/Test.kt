@@ -15,7 +15,7 @@ import testFramework.internal.runTestAwaitingCompletion
 class Test internal constructor(
     parentSuite: TestSuite,
     elementName: String,
-    configuration: Configuration.() -> Unit = {},
+    configuration: Configuration.() -> Unit,
     private val action: TestAction
 ) : TestElement(parentSuite, elementName = elementName, configuration = configuration),
     AbstractTest {

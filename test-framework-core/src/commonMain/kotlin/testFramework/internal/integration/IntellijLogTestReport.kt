@@ -3,18 +3,18 @@ package testFramework.internal.integration
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import testFramework.Test
-import testFramework.internal.TestEvent
+import testFramework.internal.TestElementEvent
 import testFramework.internal.TestReport
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
 /**
- * A [TestReport] in IntelliJ IDEA's IjLog format on stdout.
+ * A [TestReport] in IntelliJ IDEA's IjLog format on stdout or via an [outputEntry] function.
  */
-internal object IntellijLogTestReport : TestReport() {
+internal class IntellijLogTestReport(val outputEntry: (String) -> Unit = ::println) : TestReport() {
     private val outputMutex = Mutex()
 
-    override suspend fun add(event: TestEvent) {
+    override suspend fun add(event: TestElementEvent) {
         val parentElement = event.element.parentSuite
 
         // Apparently, `className` must be unique, even across platform targets. Otherwise, IntelliJ's "run test"
@@ -40,8 +40,8 @@ internal object IntellijLogTestReport : TestReport() {
 
         suspend fun addAfterEvent(
             resultType: String,
-            startingEvent: TestEvent = event,
-            content: IjLog.Event.Test.Result.() -> Unit = {}
+            startingEvent: TestElementEvent,
+            content: IjLog.Event.Test.Result.() -> Unit
         ) {
             ijLog {
                 event(type = if (event.element is Test) "afterTest" else "afterSuite") {
@@ -63,11 +63,11 @@ internal object IntellijLogTestReport : TestReport() {
         }
 
         when (event) {
-            is TestEvent.Starting -> {
+            is TestElementEvent.Starting -> {
                 addBeforeEvent()
             }
 
-            is TestEvent.Finished -> {
+            is TestElementEvent.Finished -> {
                 val resultType = when {
                     !event.element.isEnabled -> "SKIPPED"
                     event.throwable == null -> "SUCCESS"
@@ -88,7 +88,7 @@ internal object IntellijLogTestReport : TestReport() {
         val entry = StringBuilder()
         IjLog(entry).content()
         outputMutex.withLock {
-            println("<ijLog>$entry</ijLog>")
+            outputEntry("<ijLog>$entry</ijLog>")
         }
     }
 
@@ -122,16 +122,8 @@ internal object IntellijLogTestReport : TestReport() {
                     )
                 }
 
-                fun result(
-                    resultType: String,
-                    startTime: Long? = null,
-                    endTime: Long? = null,
-                    content: Result.() -> Unit = {}
-                ) {
-                    entry.append(
-                        "<result resultType='$resultType' startTime='${startTime?.toString() ?: ""}'" +
-                            " endTime='${endTime?.toString() ?: ""}'>"
-                    )
+                fun result(resultType: String, startTime: Long, endTime: Long, content: Result.() -> Unit) {
+                    entry.append("<result resultType='$resultType' startTime='$startTime' endTime='$endTime'>")
                     Result().content()
                     entry.append("</result>")
                 }

@@ -93,7 +93,7 @@ An IDE plugin should support the following:
 
 Coroutines are an integral part of the Kotlin ecosystem, and the test framework should treat them as first-class citizens:
 
-* [x] The test framework should support suspending functions and asynchronous execution at all levels.
+* [x] The test framework should support suspending functions and asynchronous execution in tests.
 
 ==== Coroutine Hierarchy
 
@@ -128,7 +128,7 @@ This implies that the following is in effect:
 References considered:
 
 * https://github.com/Kotlin/kotlinx.coroutines/blob/master/kotlinx-coroutines-test/README.md[kotlinx-coroutines-test README · Kotlin/kotlinx.coroutines]
-* https://developer.android.com/kotlin/coroutines/test#testdispatchers[Testing Kotlin coroutines on Android  |  Android Developers]
+* https://developer.android.com/kotlin/coroutines/test#testdispatchers[Testing Kotlin coroutines on Android | Android Developers]
 
 === Concurrency configurations
 
@@ -160,7 +160,7 @@ Tests covering modern, coroutines-based, thread-safe code can run concurrently f
 
 ===== Rationale
 
-Tests with different concurrency requirements can live together in one test module. IDE users can selectively run any combination of tests, regardless of their concurrency requirements.
+Tests with different concurrency requirements can live together in one test module. IDE users can selectively run any combination of tests, while the framework takes care of proper execution, aligned with their concurrency requirements.
 
 === Fixtures
 

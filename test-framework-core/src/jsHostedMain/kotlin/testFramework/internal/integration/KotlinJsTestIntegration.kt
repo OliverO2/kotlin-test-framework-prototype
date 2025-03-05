@@ -10,7 +10,7 @@ import testFramework.TestCompartment
 import testFramework.TestElement
 import testFramework.TestSession
 import testFramework.TestSuite
-import testFramework.internal.TestEvent
+import testFramework.internal.TestElementEvent
 import testFramework.internal.TestReport
 import testFramework.testPlatform
 
@@ -112,10 +112,13 @@ private object TestSessionAdapter {
             try {
                 TestSession.global.execute(
                     report = object : TestReport() {
-                        // A TestReport relaying TestEvent.Finished to the respective test element's result channel.
+                        // A TestReport relaying TestElementEvent.Finished to the respective test element's result channel.
 
-                        override suspend fun add(event: TestEvent) {
-                            if (event.element.isEnabled && event.element is Test && event is TestEvent.Finished) {
+                        override suspend fun add(event: TestElementEvent) {
+                            if (event.element.isEnabled &&
+                                event.element is Test &&
+                                event is TestElementEvent.Finished
+                            ) {
                                 testResultChannel(event.element).send(event.throwable)
                             }
                         }

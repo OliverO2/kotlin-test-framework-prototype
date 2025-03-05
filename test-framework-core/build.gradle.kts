@@ -61,12 +61,31 @@ kotlin {
             }
         }
 
+        commonTest {
+            dependencies {
+                implementation(kotlin("test"))
+            }
+        }
+
         jvmMain {
             dependencies {
                 implementation(libs.org.junit.platform.engine)
                 implementation(libs.io.github.classgraph)
             }
         }
+
+        jvmTest {
+            dependencies {
+                implementation(libs.org.jetbrains.kotlinx.coroutines.swing)
+            }
+        }
+    }
+}
+
+tasks.withType<Test>().configureEach {
+    // https://docs.gradle.org/current/userguide/java_testing.html
+    useJUnitPlatform {
+        excludeEngines("kotlin-test-framework-prototype")
     }
 }
 

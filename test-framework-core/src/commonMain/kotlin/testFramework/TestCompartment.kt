@@ -12,11 +12,19 @@ open class TestCompartment(name: String, configuration: Configuration.() -> Unit
 
     companion object {
         /**
-         * A default compartment executing its tests with a [TestElement.Configuration.Default] configuration.
+         * The default compartment.
          */
-        val Default by lazy {
-            TestCompartment(name = "Default", configuration = {})
-        }
+        val Default get() = default ?: TestCompartment(name = "Default", configuration = {}).also { default = it }
+        private var default: TestCompartment? = null
+
+        /**
+         * A compartment executing its tests concurrently.
+         */
+        val Concurrent get() =
+            concurrent ?: TestCompartment(name = "Concurrent", configuration = {
+                context = TestContext.invocation(InvocationContext.Mode.CONCURRENT)
+            }).also { concurrent = it }
+        private var concurrent: TestCompartment? = null
 
         /**
          * A compartment executing its tests sequentially and sharing a single main dispatcher across tests.
@@ -31,13 +39,10 @@ open class TestCompartment(name: String, configuration: Configuration.() -> Unit
                     .mainDispatcher(dispatcher)
             })
 
-        /**
-         * A compartment executing its tests concurrently.
-         */
-        val Concurrent by lazy {
-            TestCompartment(name = "Concurrent", configuration = {
-                context = TestContext.invocation(InvocationContext.Mode.CONCURRENT)
-            })
+        /** Resets global state, enabling the execution of multiple test sessions in one process. */
+        internal fun resetState() {
+            default = null
+            concurrent = null
         }
     }
 }

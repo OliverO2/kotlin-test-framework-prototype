@@ -24,7 +24,7 @@ internal actual suspend fun configureAndExecuteTests(suites: Array<AbstractTestS
             if (kotlinJsTestFrameworkAvailable()) {
                 TestSession.global.registerWithKotlinJsTestFramework()
             } else {
-                TestSession.global.execute(IntellijLogTestReport)
+                TestSession.global.execute(IntellijLogTestReport())
             }
         }
     }
