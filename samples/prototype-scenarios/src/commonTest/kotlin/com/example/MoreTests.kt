@@ -10,13 +10,13 @@ val TestSuiteTests by testSuite {
     testSuite("fixtureWithSetupFailures") {
         testSuite("suite1") {
             val fixtures = listOf(
-                fixture { trace.also { it.add("$elementPath fixture1 creating") } } closeWith
+                fixture { trace.add("$elementPath fixture1 creating") } closeWith
                     { trace.add("$elementPath fixture1 closing") },
-                fixture { trace.also { it.add("$elementPath fixture2 creating") } } closeWith {
+                fixture { trace.add("$elementPath fixture2 creating") } closeWith {
                     trace.add("$elementPath fixture2 failing intentionally on close")
                     fail("$elementPath fixture2 failing intentionally on close")
                 },
-                fixture { trace.also { it.add("$elementPath fixture3 creating") } } closeWith {
+                fixture { trace.add("$elementPath fixture3 creating") } closeWith {
                     trace.add("$elementPath fixture3 failing intentionally on close")
                     fail("$elementPath fixture3 failing intentionally on close")
                 }

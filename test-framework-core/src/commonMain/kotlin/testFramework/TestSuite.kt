@@ -189,6 +189,18 @@ open class TestSuite internal constructor(
     }
 
     /**
+     * Executes [action] on all child elements, recursively, in depth-first order.
+     */
+    internal suspend fun forEachChildTreeElement(action: suspend (element: TestElement) -> Unit) {
+        for (childElement in childElements) {
+            if (childElement is TestSuite) {
+                childElement.forEachChildTreeElement(action)
+            }
+            action(childElement)
+        }
+    }
+
+    /**
      * Declares an [action] wrapping the actions of this test suite's child elements.
      *
      * The wrapping action will be invoked only if at least one child elements is enabled.

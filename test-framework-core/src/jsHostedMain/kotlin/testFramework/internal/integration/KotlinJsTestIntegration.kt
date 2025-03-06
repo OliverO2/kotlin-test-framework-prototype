@@ -3,8 +3,11 @@ package testFramework.internal.integration
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import testFramework.Test
 import testFramework.TestCompartment
 import testFramework.TestElement
@@ -12,6 +15,8 @@ import testFramework.TestSession
 import testFramework.TestSuite
 import testFramework.internal.TestElementEvent
 import testFramework.internal.TestReport
+import testFramework.internal.logError
+import testFramework.internal.logInfo
 import testFramework.testPlatform
 
 internal typealias JsPromiseLike = Any
@@ -43,29 +48,30 @@ internal fun TestElement.registerWithKotlinJsTestFramework() {
 
         is Test -> {
             kotlinJsTestFramework.test(elementName, ignored = !isEnabled) {
-                TestSessionAdapter.testResult(this)
+                TestSessionRelay.resultReceivingPromise(this)
             }
         }
     }
 }
 
 /**
- * An adapter translating between our test framework and a Kotlin/JS test framework.
+ * A relay transmitting results from a concurrently executing [TestSession] to a Kotlin/JS test framework.
  *
- * Our framework needs to execute the elements of its [TestSession] in a cohesive hierarchy, preserving the
- * coroutine context nesting, hierarchical fixtures, and executing test elements according to their configuration.
+ * The [TestSession] executes its elements in a cohesive hierarchy,
+ * - preserving the coroutine context nesting,
+ * - supporting hierarchical fixtures, and
+ * - executing test elements according to their configuration.
  *
  * While Kotlin/JS test frameworks support structuring tests in a hierarchy, they execute each test in isolation,
  * outside any parent test element's context.
  *
- * This adapter runs the [TestSession] and the Kotlin/JS test framework concurrently, side-by-side.
- * The `TestSession` produces tests results as they become available, and provides them via
- * `Promise`s to the Kotlin/JS test framework, which picks them up asynchronously at its own pace.
+ * This relay executes the [TestSession] concurrently with the Kotlin/JS test framework controlled externally.
+ * It relays `TestSession` results to result-receiving promises, which have been registered for each test in
+ * the Kotlin/JS test framework.
  */
-private object TestSessionAdapter {
-    private var sessionIsExecuting = false
-    private var sessionFailure: Throwable? = null
-    private val testResultChannels = mutableMapOf<Test, Channel<Throwable?>>()
+private object TestSessionRelay {
+    private var sessionJob: Job? = null
+    private val resultChannels = mutableMapOf<Test, Channel<Throwable?>>()
 
     init {
         check(testPlatform.parallelism == 1) {
@@ -75,59 +81,103 @@ private object TestSessionAdapter {
     }
 
     /**
-     * Returns the result channel for [test], creating it as necessary.
+     * Returns the result channel for [this] test, creating it as necessary.
      */
-    private fun testResultChannel(test: Test): Channel<Throwable?> =
-        testResultChannels[test] ?: Channel<Throwable?>(capacity = 1).also { testResultChannels[test] = it }
+    private fun Test.resultChannel(): Channel<Throwable?> = resultChannels[this]
+        ?: Channel<Throwable?>(capacity = 1).also { resultChannels[this] = it }
 
     /**
-     * Returns the result of [test]'s execution.
+     * Returns a result-receiving Promise for [test].
      */
-    fun testResult(test: Test): JsPromiseLike? {
-        if (!sessionIsExecuting) {
-            sessionIsExecuting = true
-            executeTestSessionConcurrently()
+    fun resultReceivingPromise(test: Test): JsPromiseLike? {
+        if (sessionJob == null) {
+            @OptIn(DelicateCoroutinesApi::class)
+            sessionJob = GlobalScope.launchedSession()
         }
 
-        // Return the `Promise` waiting for its test result to arrive from the concurrently executing `TestSession`.
-        // If the entire session has failed, relay its failure with each remaining test result.
         @OptIn(DelicateCoroutinesApi::class)
         return GlobalScope.testFunctionPromise {
-            testResultChannel(test).receive()?.let { testFailure ->
-                sessionFailure?.let { testFailure.addSuppressed(it) }
+            val testFailure = try {
+                test.resultChannel().receive() // regular test result
+            } catch (externalFailure: Throwable) {
+                externalFailure // suite or session failure
+            }
+            resultChannels.remove(test)
+            if (testFailure != null) {
                 throw testFailure
             }
-            sessionFailure?.let { throw it }
         }
     }
 
     /**
      * Executes the [TestSession] concurrently.
      *
-     * Provides results for each test in the test's own [testResultChannel] channel.
+     * Sends results for each test in the test's own [Test.resultChannel]. Takes care of sending failures outside
+     * tests to all potentially affected tests.
      */
-    private fun executeTestSessionConcurrently() {
-        @OptIn(DelicateCoroutinesApi::class)
-        GlobalScope.launch {
-            try {
-                TestSession.global.execute(
-                    report = object : TestReport() {
-                        // A TestReport relaying TestElementEvent.Finished to the respective test element's result channel.
+    private fun CoroutineScope.launchedSession(): Job = launch {
+        try {
+            println("Session start")
+            TestSession.global.execute(
+                report = object : TestReport() {
+                    // A TestReport relaying test results to the corresponding test elements' result channel(s).
 
-                        override suspend fun add(event: TestElementEvent) {
-                            if (event.element.isEnabled &&
-                                event.element is Test &&
-                                event is TestElementEvent.Finished
-                            ) {
-                                testResultChannel(event.element).send(event.throwable)
-                            }
+                    override suspend fun add(event: TestElementEvent) {
+                        if (event.element.isEnabled && event is TestElementEvent.Finished) {
+                            event.sendResult()
                         }
                     }
-                )
-            } catch (throwable: Throwable) {
-                sessionFailure = throwable
+                }
+            )
+        } catch (throwable: Throwable) {
+            withContext(NonCancellable) {
+                sendSessionFailure(throwable)
             }
         }
+    }
+
+    /**
+     * Sends the [TestElementEvent.Finished] event's result to the corresponding result channel(s).
+     *
+     * - Sends a single test result to the test's result channel.
+     * - Sends a suite failure as a close cause to the result channels of all tests under the suite. Reasons:
+     *   - A suite failure occurs outside a single test, but results are only relayed for tests.
+     *     Therefore, the suite failure must be relayed to affected tests.
+     *   - Since we do not know which tests have already completed and which will complete in the future,
+     *     we must relay the failure to all tests under the suite.
+     */
+    private suspend fun TestElementEvent.Finished.sendResult() {
+        when (element) {
+            is Test -> {
+                val channel = element.resultChannel()
+                channel.send(throwable)
+                channel.close()
+            }
+
+            is TestSuite -> {
+                if (throwable != null) {
+                    element.forEachChildTreeElement { childElement ->
+                        if (childElement is Test) {
+                            childElement.resultChannel().close(throwable)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Sends the session failure [throwable] to all test result channels.
+     */
+    private suspend fun sendSessionFailure(throwable: Throwable) {
+        TestSession.global.forEachChildTreeElement { childElement ->
+            if (childElement is Test) {
+                if (childElement.resultChannel().close(throwable)) {
+                    logInfo { "$childElement: Aborting result reporting: $throwable." }
+                }
+            }
+        }
+        logError { "Aborting result reporting: $throwable." }
     }
 }
 

@@ -129,23 +129,7 @@ in an IDE run configuration with an environment variable setting:
 * [x] Add comments.
 * [x] Regroup utility functions.
 * [x] Add tests.
-** [ ] Fix `gradlew cleanAllTests jsNodeTest -p samples/prototype-scenarios --quiet` hanging.
-*** The `INFO:`... line seems to signal the end of the regular test coroutine. Fixture failure/closing seems to occur afterward:
-+
-----
-com.example.TestSuiteTests.fixtureWithSetupFailures.suite1.test1 begin
-com.example.TestSuiteTests.fixtureWithSetupFailures.suite1 fixture1 creating
-com.example.TestSuiteTests.fixtureWithSetupFailures.suite1 fixture2 creating
-com.example.TestSuiteTests.fixtureWithSetupFailures.suite1 fixture3 creating
-com.example.TestSuiteTests.fixtureWithSetupFailures.suite1.test1 end
-aroundAll com.example.TestSuiteTests.fixtureWithSetupFailures.suite1.inner failing intentionally
-com.example.TestSuiteTests.fixtureWithSetupFailures.suite1.test2 begin
-com.example.TestSuiteTests.fixtureWithSetupFailures.suite1.test2 end
-INFO: Tests selected via ArgumentsBasedElementSelection(includePatterns=[], excludePatterns=[])
-com.example.TestSuiteTests.fixtureWithSetupFailures.suite1 fixture3 failing intentionally on close
-com.example.TestSuiteTests.fixtureWithSetupFailures.suite1 fixture2 failing intentionally on close
-com.example.TestSuiteTests.fixtureWithSetupFailures.suite1 fixture1 closing
-----
+** [x] Fix `gradlew cleanAllTests jsNodeTest -p samples/prototype-scenarios --quiet` hanging.
 * [ ] Remove `TestElement.Configuration`, replace with `TestContext.enabled()`.
 ** [ ] Rename `TestContext` to `TestConfiguration`?
 * [ ] Shorten stack traces from failed assertions.

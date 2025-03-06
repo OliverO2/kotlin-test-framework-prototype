@@ -13,6 +13,7 @@ import testFramework.internal.TestElementEvent
 import testFramework.internal.TestFramework
 import testFramework.internal.TestReport
 import testFramework.internal.initializeTestFramework
+import testFramework.internal.logInfo
 import kotlin.test.assertContentEquals
 import kotlin.test.assertTrue
 import kotlin.test.fail
@@ -41,9 +42,7 @@ internal fun withTestFramework(testSession: AbstractTestSession? = null, action:
             initializeTestFramework(testSession)
             action()
             if (testPlatform.type == TestPlatform.Type.WASM_WASI) {
-                println(
-                    "INFO: `withTestFramework` completed its primary coroutine on ${testPlatform.displayName}"
-                )
+                logInfo { "Primary coroutine on ${testPlatform.displayName} completed." }
             }
         } finally {
             // Reset global state for another round of test framework initialization.
@@ -53,9 +52,7 @@ internal fun withTestFramework(testSession: AbstractTestSession? = null, action:
 
     return TestScope().runTest(timeout = 2.minutes) {
         if (testPlatform.type == TestPlatform.Type.WASM_WASI) {
-            println(
-                "WORKAROUND: `withTestFramework` skips waiting for its primary coroutine on ${testPlatform.displayName}"
-            )
+            logInfo { "WORKAROUND: Skip waiting for primary coroutine on ${testPlatform.displayName}." }
         } else {
             // WORKAROUND: `job.join()` will hang on Wasm/WASI if a `Test` is running on the test dispatcher.
             job.join()
