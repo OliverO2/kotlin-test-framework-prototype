@@ -40,6 +40,11 @@ sealed class TestElement(
      */
     class Configuration {
         var isEnabled: Boolean = true // children inherit a disabled state
+            set(isEnabled) {
+                // Restrict changes to disabling, never enable what has been disabled before (e.g. by inheriting a
+                // "disabled" setting from a parent). TODO: Ignoring an "enabled" setting is hard to reason about.
+                if (!isEnabled) field = false
+            }
 
         var context: TestContext = TestContext
 

@@ -461,7 +461,15 @@ class TestSuiteTests {
                 fail("test '$elementPath' should be disabled")
             }
 
-            testSuite("innerSuite") {
+            testSuite("innerSuite1") {
+                test("test1") {
+                    fail("test '$elementPath' should be disabled")
+                }
+            }
+
+            testSuite("innerSuite2") {
+                isEnabled = true // This must not change the disabled state inherited from `middleSuite`.
+
                 test("test1") {
                     fail("test '$elementPath' should be disabled")
                 }
