@@ -15,23 +15,21 @@ import testFramework.internal.runTestAwaitingCompletion
 class Test internal constructor(
     parentSuite: TestSuite,
     elementName: String,
-    configuration: Configuration.() -> Unit,
+    configuration: TestConfig,
     private val action: TestAction
 ) : TestElement(parentSuite, elementName = elementName, configuration = configuration),
     AbstractTest {
 
-    override fun configure(selection: Selection) {
-        super.configure(selection)
+    override fun parameterize(selection: Selection) {
+        super.parameterize(selection)
 
-        if (isEnabled && !selection.includes(this)) {
-            effectiveConfiguration.isEnabled = false
-        }
+        if (isEnabled && !selection.includes(this)) isEnabled = false
     }
 
     override suspend fun execute(report: TestReport) {
         executeReporting(report) {
             if (isEnabled) {
-                effectiveConfiguration.context.executeWithin {
+                configuration.executeWithin {
                     val testScopeContext = TestScopeContext.current()
 
                     if (testScopeContext != null) {

@@ -22,7 +22,7 @@ import kotlin.time.Duration.Companion.minutes
 /** Configures a test suite with [content] and asserts its successful execution. */
 internal fun assertSuccessfulSuite(
     testSession: AbstractTestSession? = null,
-    configuration: TestElement.Configuration.() -> Unit = {},
+    configuration: TestConfig = TestConfig,
     content: TestSuite.() -> Unit
 ): TestResult = withTestFramework(testSession) {
     val suite by testSuite("suite", configuration = configuration) {
@@ -70,7 +70,7 @@ internal suspend fun withTestReport(
 ) {
     require(suites.isNotEmpty()) { "At least one suite must be provided" }
 
-    TestSession.global.configure(selection)
+    TestSession.global.parameterize(selection)
 
     val report = InMemoryTestReport()
     TestSession.global.execute(report)

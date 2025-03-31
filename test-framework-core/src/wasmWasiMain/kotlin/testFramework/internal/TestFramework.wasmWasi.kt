@@ -20,7 +20,7 @@ internal actual suspend fun configureAndExecuteTests(suites: Array<AbstractTestS
         //     https://github.com/Kotlin/kotlinx.coroutines/issues/4239
         withContext(Dispatchers.Default) { }
 
-        TestSession.global.configure(argumentsBasedElementSelection ?: TestElement.AllInSelection)
+        TestSession.global.parameterize(argumentsBasedElementSelection ?: TestElement.AllInSelection)
     }.onSuccess {
         executeTestsCatching {
             TestSession.global.execute(IntellijLogTestReport())

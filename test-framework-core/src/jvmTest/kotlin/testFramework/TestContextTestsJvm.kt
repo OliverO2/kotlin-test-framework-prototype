@@ -12,7 +12,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotEquals
 
-class TestContextTestsJvm {
+class TestConfigTestsJvm {
     @Test
     fun mainDispatcherRunBlocking() = runBlocking {
         testMainDispatcher()
@@ -33,14 +33,14 @@ class TestContextTestsJvm {
         assertNotEquals(originalMainThreadId, alternativeMainThreadId)
 
         // Default: on original main dispatcher
-        TestContext.executeWithin {
+        TestConfig.executeWithin {
             withContext(Dispatchers.Main) {
                 assertEquals(originalMainThreadId, testPlatform.threadId())
             }
         }
 
         // Context setting: on alternative main dispatcher
-        TestContext.mainDispatcher(alternativeMainDispatcher).executeWithin {
+        TestConfig.mainDispatcher(alternativeMainDispatcher).executeWithin {
             withContext(Dispatchers.Main) {
                 assertEquals(alternativeMainThreadId, testPlatform.threadId())
             }
@@ -56,9 +56,9 @@ class TestContextTestsJvm {
     @OptIn(DelicateCoroutinesApi::class, ExperimentalCoroutinesApi::class)
     fun mainDispatcherSetMoreThanOnce() = runTest {
         val alternativeMainDispatcher = newSingleThreadContext("UI thread")
-        TestContext.mainDispatcher(alternativeMainDispatcher).executeWithin {
+        TestConfig.mainDispatcher(alternativeMainDispatcher).executeWithin {
             assertFailsWith<IllegalArgumentException> {
-                TestContext.mainDispatcher(Dispatchers.Unconfined).executeWithin {
+                TestConfig.mainDispatcher(Dispatchers.Unconfined).executeWithin {
                     // Must fail: setting a main dispatcher again
                 }
             }.assertMessageStartsWith("Another invocation of withMainDispatcher() is still active.")

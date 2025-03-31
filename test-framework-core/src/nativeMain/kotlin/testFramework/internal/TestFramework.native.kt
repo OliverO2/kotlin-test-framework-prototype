@@ -18,7 +18,7 @@ internal actual suspend fun configureAndExecuteTests(suites: Array<AbstractTestS
 
     configureTestsCatching {
         @OptIn(ExperimentalForeignApi::class)
-        TestSession.global.configure(
+        TestSession.global.parameterize(
             EnvironmentBasedElementSelection(getenv("TEST_INCLUDE")?.toKString(), getenv("TEST_EXCLUDE")?.toKString())
         )
     }.onSuccess {

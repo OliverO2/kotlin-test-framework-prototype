@@ -14,7 +14,7 @@ internal actual suspend fun configureAndExecuteTests(suites: Array<AbstractTestS
     // `suites` is unused because test suites register themselves with `TestSession`.
 
     configureTestsCatching {
-        TestSession.global.configure(
+        TestSession.global.parameterize(
             argumentsBasedElementSelection
                 ?: processArguments()?.let { ArgumentsBasedElementSelection(it) }
                 ?: TestElement.AllInSelection

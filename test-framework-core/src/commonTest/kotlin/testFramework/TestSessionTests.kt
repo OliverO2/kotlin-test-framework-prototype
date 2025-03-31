@@ -24,9 +24,7 @@ class TestSessionTests {
 
     @Test
     fun customConfiguration() = assertSuccessfulSuite(
-        testSession = object : TestSession(configuration = {
-            context = TestContext.invocation(InvocationContext.Mode.CONCURRENT)
-        }) {}
+        testSession = object : TestSession(configuration = TestConfig.invocation(InvocationContext.Mode.CONCURRENT)) {}
     ) {
         test("invocation") {
             assertEquals(InvocationContext.Mode.CONCURRENT, InvocationContext.mode())
@@ -37,9 +35,7 @@ class TestSessionTests {
     fun onlySingleInstance() = withTestFramework {
         // `withTestFramework` has set up a `TestSession`, creating another one should fail.
         assertFailsWith<IllegalArgumentException> {
-            object : TestSession(configuration = {
-                context = TestContext.invocation(InvocationContext.Mode.CONCURRENT)
-            }) {}
+            object : TestSession(configuration = TestConfig.invocation(InvocationContext.Mode.CONCURRENT)) {}
         }.assertMessageStartsWith("The module has been initialized with a TestSession before.")
     }
 }

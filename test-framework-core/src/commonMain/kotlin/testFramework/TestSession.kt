@@ -13,16 +13,14 @@ import kotlinx.coroutines.Dispatchers
  * ```
  * class MyTestSession :
  *     TestSession(
- *         configuration = {
- *             context = TestContext.coroutineContext(UnconfinedTestDispatcher())
- *         },
+ *         configuration = TestConfig.coroutineContext(UnconfinedTestDispatcher()),
  *         defaultCompartment = { TestCompartment.Concurrent }
  *     )
  * ```
  */
 @TestDiscoverable
 open class TestSession protected constructor(
-    configuration: Configuration.() -> Unit = DefaultConfiguration,
+    configuration: TestConfig = DefaultConfiguration,
     defaultCompartment: (() -> TestCompartment) = { TestCompartment.Default }
 ) : TestSuite(
     parentSuite = null,
@@ -63,11 +61,10 @@ open class TestSession protected constructor(
          * Executing elements sequentially on [Dispatchers.Default], using [kotlinx.coroutines.test.TestScope]
          * inside tests.
          */
-        private val DefaultConfiguration: Configuration.() -> Unit = {
-            context = TestContext.invocation(InvocationContext.Mode.SEQUENTIAL)
+        private val DefaultConfiguration: TestConfig =
+            TestConfig.invocation(InvocationContext.Mode.SEQUENTIAL)
                 .coroutineContext(Dispatchers.Default)
                 .testScope(true)
-        }
 
         /** Resets global state, enabling the execution of multiple test sessions in one process. */
         internal fun resetState() {

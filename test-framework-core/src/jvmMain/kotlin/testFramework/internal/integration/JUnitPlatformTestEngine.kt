@@ -74,7 +74,7 @@ internal class JUnitPlatformTestEngine : TestEngine {
 
         topLevelTestSuites = frameworkDiscoveryResult.topLevelTestSuites.toSet()
 
-        TestSession.global.configure(
+        TestSession.global.parameterize(
             EnvironmentBasedElementSelection(System.getenv("TEST_INCLUDE"), System.getenv("TEST_EXCLUDE"))
         )
 

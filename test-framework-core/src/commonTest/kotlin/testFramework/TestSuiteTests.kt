@@ -44,7 +44,7 @@ class TestSuiteTests {
     }
 
     @Test
-    fun aroundAll() = assertSuccessfulSuite(configuration = { context = TestContext.testScope(isEnabled = false) }) {
+    fun aroundAll() = assertSuccessfulSuite(configuration = TestConfig.testScope(isEnabled = false)) {
         val outerCoroutineName = CoroutineName("from aroundAll")
         val innerDispatcher = Dispatchers.Unconfined
 
@@ -88,7 +88,7 @@ class TestSuiteTests {
                 aroundAllTrace.add("$elementPath aroundAll end")
             }
 
-            test("test1", configuration = { isEnabled = false }) {
+            test("test1", configuration = TestConfig.disable()) {
                 aroundAllTrace.add(elementPath)
             }
         }
@@ -100,7 +100,7 @@ class TestSuiteTests {
                 aroundAllTrace.add("$elementPath aroundAll end")
             }
 
-            test("test1", configuration = { isEnabled = false }) {
+            test("test1", configuration = TestConfig.disable()) {
                 aroundAllTrace.add(elementPath)
             }
 
@@ -116,12 +116,12 @@ class TestSuiteTests {
                 aroundAllTrace.add("$elementPath aroundAll end")
             }
 
-            test("test1", configuration = { isEnabled = false }) {
+            test("test1", configuration = TestConfig.disable()) {
                 aroundAllTrace.add(elementPath)
             }
 
             testSuite("innerSuite") {
-                test("test1", configuration = { isEnabled = false }) {
+                test("test1", configuration = TestConfig.disable()) {
                     aroundAllTrace.add(elementPath)
                 }
                 test("test2") {
@@ -236,7 +236,7 @@ class TestSuiteTests {
                 fixture { fixtureTrace.also { it.add("$elementPath fixture creating") } } closeWith
                     { fixtureTrace.add("$elementPath fixture closing") }
 
-            test("test1", configuration = { isEnabled = false }) {
+            test("test1", configuration = TestConfig.disable()) {
                 suite1Fixture().add(elementPath)
             }
         }
@@ -246,7 +246,7 @@ class TestSuiteTests {
                 fixture { fixtureTrace.also { it.add("$elementPath fixture creating") } } closeWith
                     { fixtureTrace.add("$elementPath fixture closing") }
 
-            test("test1", configuration = { isEnabled = false }) {
+            test("test1", configuration = TestConfig.disable()) {
                 suite2Fixture().add(elementPath)
             }
 
@@ -260,12 +260,12 @@ class TestSuiteTests {
                 fixture { fixtureTrace.also { it.add("$elementPath fixture creating") } } closeWith
                     { fixtureTrace.add("$elementPath fixture closing") }
 
-            test("test1", configuration = { isEnabled = false }) {
+            test("test1", configuration = TestConfig.disable()) {
                 suite3Fixture().add(elementPath)
             }
 
             testSuite("innerSuite") {
-                test("test1", configuration = { isEnabled = false }) {
+                test("test1", configuration = TestConfig.disable()) {
                     suite3Fixture().add(elementPath)
                 }
                 test("test2") {
@@ -446,8 +446,8 @@ class TestSuiteTests {
     }
 
     @Test
-    fun isEnabled() = assertSuccessfulSuite {
-        test("test1", configuration = { isEnabled = false }) {
+    fun disabled() = assertSuccessfulSuite {
+        test("test1", configuration = TestConfig.disable()) {
             fail("test '$elementPath' should be disabled")
         }
 
@@ -455,21 +455,13 @@ class TestSuiteTests {
         }
 
         testSuite("middleSuite") {
-            isEnabled = false
+            configuration = TestConfig.disable()
 
             test("test1") {
                 fail("test '$elementPath' should be disabled")
             }
 
             testSuite("innerSuite1") {
-                test("test1") {
-                    fail("test '$elementPath' should be disabled")
-                }
-            }
-
-            testSuite("innerSuite2") {
-                isEnabled = true // This must not change the disabled state inherited from `middleSuite`.
-
                 test("test1") {
                     fail("test '$elementPath' should be disabled")
                 }
@@ -486,7 +478,7 @@ class TestSuiteTests {
 
         class Suite2 :
             TestSuite(
-                configuration = {},
+                configuration = TestConfig,
                 {
                     test("(2)test1") {}
                 }
@@ -503,7 +495,7 @@ class TestSuiteTests {
         class Suite4 :
             TestSuite(
                 compartment = TestCompartment.Default,
-                configuration = {},
+                configuration = TestConfig,
                 {
                     test("(4)test1") {}
                 }
@@ -512,7 +504,7 @@ class TestSuiteTests {
         class Suite5 :
             TestSuite(
                 name = "Suite5",
-                configuration = {},
+                configuration = TestConfig,
                 {
                     test("test1") {}
                 }
@@ -531,7 +523,7 @@ class TestSuiteTests {
             TestSuite(
                 name = "Suite7",
                 compartment = TestCompartment.Default,
-                configuration = {},
+                configuration = TestConfig,
                 {
                     test("test1") {}
                 }

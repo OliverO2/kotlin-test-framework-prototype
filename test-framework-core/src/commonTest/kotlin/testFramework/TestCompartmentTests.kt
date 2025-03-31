@@ -39,7 +39,8 @@ class TestCompartmentTests {
         }
 
         val coroutineName2 = CoroutineName("#2")
-        val compartment2 = TestCompartment("Compartment 2") { context = TestContext.coroutineContext(coroutineName2) }
+        val compartment2 =
+            TestCompartment("Compartment 2", configuration = TestConfig.coroutineContext(coroutineName2))
         val suite2 by testSuite("suite2", compartment = compartment2) {
             val compartment = parentSuite as? TestCompartment
             test("test1") {

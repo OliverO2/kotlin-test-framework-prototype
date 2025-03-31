@@ -8,40 +8,40 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
-class TestContextTests {
+class TestConfigTests {
     @Test
     fun invocation() = runTest {
-        TestContext.executeWithin {
+        TestConfig.executeWithin {
             assertEquals(InvocationContext.Mode.SEQUENTIAL, InvocationContext.mode())
         }
 
-        TestContext.invocation(InvocationContext.Mode.CONCURRENT).executeWithin {
+        TestConfig.invocation(InvocationContext.Mode.CONCURRENT).executeWithin {
             assertEquals(InvocationContext.Mode.CONCURRENT, InvocationContext.mode())
         }
     }
 
     @Test
     fun coroutineContext() = runTest {
-        TestContext.executeWithin {
+        TestConfig.executeWithin {
             assertNull(currentCoroutineContext()[CoroutineName.Key])
         }
 
         val coroutineNameElement = CoroutineName("TEST-CC")
-        TestContext.coroutineContext(coroutineNameElement).executeWithin {
+        TestConfig.coroutineContext(coroutineNameElement).executeWithin {
             assertEquals(coroutineNameElement, currentCoroutineContext()[CoroutineName.Key])
         }
     }
 
     @Test
     fun testScope() = runTest {
-        TestContext.executeWithin {
+        TestConfig.executeWithin {
             assertNull(TestScopeContext.current())
         }
 
-        val testContextWithTestScope = TestContext.testScope(isEnabled = true)
-        testContextWithTestScope.executeWithin {
+        val testConfigWithTestScope = TestConfig.testScope(isEnabled = true)
+        testConfigWithTestScope.executeWithin {
             assertNotNull(TestScopeContext.current())
-            testContextWithTestScope.testScope(isEnabled = false).executeWithin {
+            testConfigWithTestScope.testScope(isEnabled = false).executeWithin {
                 assertNull(TestScopeContext.current())
             }
         }
@@ -50,10 +50,10 @@ class TestContextTests {
     @Test
     fun nested() = runTest {
         val coroutineNameElement = CoroutineName("TEST-CC")
-        TestContext.coroutineContext(coroutineNameElement).executeWithin {
+        TestConfig.coroutineContext(coroutineNameElement).executeWithin {
             assertEquals(coroutineNameElement, currentCoroutineContext()[CoroutineName.Key])
             assertEquals(InvocationContext.Mode.SEQUENTIAL, InvocationContext.mode())
-            TestContext.invocation(InvocationContext.Mode.CONCURRENT).executeWithin {
+            TestConfig.invocation(InvocationContext.Mode.CONCURRENT).executeWithin {
                 assertEquals(coroutineNameElement, currentCoroutineContext()[CoroutineName.Key])
                 assertEquals(InvocationContext.Mode.CONCURRENT, InvocationContext.mode())
             }
@@ -65,7 +65,7 @@ class TestContextTests {
         val coroutineNameElement = CoroutineName("TEST-CC")
         assertNull(currentCoroutineContext()[CoroutineName.Key])
         assertEquals(InvocationContext.Mode.SEQUENTIAL, InvocationContext.mode())
-        TestContext
+        TestConfig
             .coroutineContext(coroutineNameElement)
             .invocation(InvocationContext.Mode.CONCURRENT).executeWithin {
                 assertEquals(coroutineNameElement, currentCoroutineContext()[CoroutineName.Key])

@@ -18,9 +18,10 @@ import testFramework.AbstractTestElement
 import testFramework.InvocationContext
 import testFramework.TestAction
 import testFramework.TestCompartment
-import testFramework.TestContext
+import testFramework.TestConfig
 import testFramework.TestSuite
 import testFramework.coroutineContext
+import testFramework.disable
 import testFramework.testSuite
 import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration
@@ -88,7 +89,7 @@ val TestSuite1 by testSuite {
 }
 
 val TestSuite2 by testSuite {
-    test("test1", configuration = { isEnabled = false }) {
+    test("test1", configuration = TestConfig.disable()) {
         log("in TestSuite2.test1")
     }
 
@@ -98,7 +99,7 @@ val TestSuite2 by testSuite {
         log("in TestSuite2.test2 – after delay")
     }
 
-    test("test3 (disabled)", configuration = { isEnabled = false }) {
+    test("test3 (disabled)", configuration = TestConfig.disable()) {
         log("in TestSuite2.test1")
     }
 
@@ -110,7 +111,7 @@ val TestSuite2 by testSuite {
 val TestSuite3 by testSuite(name = "TestSuite3XX") {
     val fixtureC = fixture { MyFirstFixture(this) }
 
-    isEnabled = false
+    configuration = TestConfig.disable()
 
     test("test1") {
         log("in TestSuite3.test1, C=${fixtureC()}")
@@ -161,9 +162,7 @@ val TestSuite4 by testSuite {
         }
     }
 
-    test("unconfined dispatcher", configuration = {
-        context = TestContext.coroutineContext(UnconfinedTestDispatcher())
-    }) {
+    test("unconfined dispatcher", configuration = TestConfig.coroutineContext(UnconfinedTestDispatcher())) {
         with(testScope) {
             val dispatcher = currentCoroutineContext()[CoroutineDispatcher]
             log("$this starting, currentTime=$currentTime, dispatcher=$dispatcher")

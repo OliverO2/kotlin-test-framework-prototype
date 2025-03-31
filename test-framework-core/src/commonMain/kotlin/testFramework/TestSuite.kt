@@ -26,7 +26,7 @@ fun testSuite(
     @TestElementName name: String = "",
     @TestDisplayName displayName: String = name,
     compartment: TestCompartment,
-    configuration: TestElement.Configuration.() -> Unit = {},
+    configuration: TestConfig = TestConfig,
     content: TestSuite.() -> Unit
 ): Lazy<TestSuite> = lazy {
     TestSuite(
@@ -52,7 +52,7 @@ fun testSuite(
 fun testSuite(
     @TestElementName name: String = "",
     @TestDisplayName displayName: String = name,
-    configuration: TestElement.Configuration.() -> Unit = {},
+    configuration: TestConfig = TestConfig,
     content: TestSuite.() -> Unit
 ): Lazy<TestSuite> = lazy {
     TestSuite(
@@ -72,16 +72,14 @@ open class TestSuite internal constructor(
     parentSuite: TestSuite?,
     elementName: String,
     displayName: String = elementName,
-    configuration: Configuration.() -> Unit = {},
+    configuration: TestConfig = TestConfig,
     private val content: TestSuite.() -> Unit = {}
 ) : TestElement(parentSuite, elementName = elementName, displayName = displayName, configuration),
     AbstractTestSuite {
 
     override val childElements: MutableList<TestElement> = mutableListOf()
 
-    override var isEnabled by effectiveConfiguration::isEnabled
-
-    private var innerContext: TestContext = TestContext.fixtureLifecycleAction()
+    private var privateConfiguration: TestConfig = TestConfig.fixtureLifecycleAction()
 
     /** Fixtures created while executing this suite, in reverse order of fixture creation. */
     private val fixtures = mutableListOf<Fixture<*>>()
@@ -104,7 +102,7 @@ open class TestSuite internal constructor(
     )
 
     protected constructor(
-        configuration: Configuration.() -> Unit,
+        configuration: TestConfig,
         content: TestSuite.() -> Unit,
         @TestElementName name: String = "",
         @TestDisplayName displayName: String = name
@@ -131,7 +129,7 @@ open class TestSuite internal constructor(
 
     protected constructor(
         compartment: TestCompartment,
-        configuration: Configuration.() -> Unit,
+        configuration: TestConfig,
         content: TestSuite.() -> Unit,
         @TestElementName name: String = "",
         @TestDisplayName displayName: String = name
@@ -145,7 +143,7 @@ open class TestSuite internal constructor(
 
     protected constructor(
         name: String,
-        configuration: Configuration.() -> Unit,
+        configuration: TestConfig,
         content: TestSuite.() -> Unit,
         @TestDisplayName displayName: String = name
     ) : this(
@@ -171,7 +169,7 @@ open class TestSuite internal constructor(
     protected constructor(
         name: String,
         compartment: TestCompartment,
-        configuration: Configuration.() -> Unit,
+        configuration: TestConfig,
         content: TestSuite.() -> Unit,
         @TestDisplayName displayName: String = name
     ) : this(
@@ -215,7 +213,7 @@ open class TestSuite internal constructor(
      * ```
      */
     fun aroundAll(action: TestSuiteExecutionWrappingAction) {
-        innerContext = innerContext wrapping { innerAction ->
+        privateConfiguration = privateConfiguration combinedWith { innerAction ->
             val innerActionConverted: TestSuiteExecutionAction = { innerAction() }
             action(innerActionConverted)
         }
@@ -227,7 +225,7 @@ open class TestSuite internal constructor(
     @TestDiscoverable
     fun testSuite(
         @TestElementName name: String,
-        configuration: Configuration.() -> Unit = {},
+        configuration: TestConfig = TestConfig,
         content: TestSuite.() -> Unit
     ) {
         TestSuite(this, elementName = name, displayName = name, configuration = configuration, content = content)
@@ -237,17 +235,17 @@ open class TestSuite internal constructor(
      * Declares a test with an [action] containing test logic.
      */
     @TestDiscoverable
-    fun test(@TestElementName name: String, configuration: Configuration.() -> Unit = {}, action: TestAction) {
+    fun test(@TestElementName name: String, configuration: TestConfig = TestConfig, action: TestAction) {
         Test(this, name, configuration = configuration, action)
     }
 
-    override fun configure(selection: Selection) {
-        super.configure(selection)
-
+    override fun parameterize(selection: Selection) {
         content()
 
+        super.parameterize(selection)
+
         childElements.forEach {
-            it.configure(selection)
+            it.parameterize(selection)
         }
 
         if (isEnabled && childElements.none { it.isEnabled }) {
@@ -258,12 +256,12 @@ open class TestSuite internal constructor(
     override suspend fun execute(report: TestReport) {
         executeReporting(report) {
             if (isEnabled) {
-                (effectiveConfiguration.context wrapping innerContext).executeWithin {
-                    val invocationMode = if (parentSuite != null) {
-                        InvocationContext.mode()
-                    } else {
+                (configuration combinedWith privateConfiguration).executeWithin {
+                    val invocationMode = if (parentSuite == null) {
                         // A TestSession (no parent) must always execute its compartments sequentially.
                         InvocationContext.Mode.SEQUENTIAL
+                    } else {
+                        InvocationContext.mode()
                     }
                     coroutineScope {
                         for (childElement in childElements) {
@@ -316,7 +314,7 @@ open class TestSuite internal constructor(
     /**
      * A fixture is a state holder for a lazily initialized [Value] with a lifetime of the test suite declaring it.
      *
-     * If [Value] is an [AutoCloseable], the fixture will call [close()] at the end of its lifetime, otherwise
+     * If [Value] is an [AutoCloseable], the fixture will call [close] at the end of its lifetime, otherwise
      * [closeWith] can declare a specific action to be called on close.
      */
     class Fixture<Value : Any> internal constructor(
@@ -349,7 +347,7 @@ open class TestSuite internal constructor(
         }
     }
 
-    private fun TestContext.fixtureLifecycleAction(): TestContext = wrapping { innerAction ->
+    private fun TestConfig.fixtureLifecycleAction(): TestConfig = combinedWith { innerAction ->
         var actionException: Throwable? = null
 
         try {
