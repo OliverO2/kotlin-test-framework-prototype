@@ -105,7 +105,7 @@ Selecting tests via Gradle invocations is possible for targets checkmarked below
 * [x] `++./gradlew -p samples/prototype-scenarios --quiet cleanAllTests jvmTest -DTEST_INCLUDE=com.example.TestSuite1.test1++`
 +
 --
-NOTE: The JVM test task does not tolerate a `--tests` option without a wildcard in the fully qualified "class" name. Specifying it leads to "No tests found for given includes: [com.example.TestSuite1.test1](--tests filter)".
+NOTE: The JVM test task does not tolerate a `--tests` option without a wildcard in the fully qualified "class" name. Omitting the wildcard leads to "No tests found for given includes: [com.example.TestSuite1.test1](--tests filter)".
 --
 * [x] `++./gradlew -p samples/prototype-scenarios --quiet cleanAllTests jsNodeTest --tests com.example.TestSuite1.test1++`
 +
@@ -126,19 +126,6 @@ in an IDE run configuration with an environment variable setting:
 
 === TODO
 
-* [x] Add comments.
-* [x] Regroup utility functions.
-* [x] Add tests.
-** [x] Fix `gradlew cleanAllTests jsNodeTest -p samples/prototype-scenarios --quiet` hanging.
-* [x] Join `TestElement.Configuration` and `TestContext` into `TestConfig`.
-* [ ] Shorten stack traces from failed assertions.
-* [ ] Verify exception reporting standards (e.g. expect/actual) against kotlin-test baseline.
-* [ ] Use https://github.com/JetBrains/kotlin/blob/d9ddcd991bf9c6122041f0276af644be0432fa38/libraries/tools/kotlin-gradle-plugin/src/common/kotlin/org/jetbrains/kotlin/gradle/targets/native/internal/KotlinNativeStackTraceParser.kt[KotlinNativeStackTraceParser.kt] to reference source locations in Native stack traces.
-* [ ] Add checks that a `TestCompartment` does not register with a `TestSession` before the framework is initialized.
-* [ ] Investigate initialization order effects on `TestCompartment` registering with a `TestSession` in these cases:
-** custom `TestSession`, default compartments,
-** custom `TestSession` (1), custom `TestCompartment` (2) in
-*** same source, ordered (1), (2) and (2), (1),
-*** different sources, ordered (1), (2) and (2), (1).
-* [ ] Add a "fail fast" configuration option, stopping a test (suite/compartment/session) execution after a configurable number of test failures.
 * [ ] Provide integration for Kotest assertions
+* [ ] Add a "fail fast" configuration option, stopping a test (suite/compartment/session) execution after a configurable number of test failures.
+** Make it universal by providing a global (suite/test/both) wrapper?

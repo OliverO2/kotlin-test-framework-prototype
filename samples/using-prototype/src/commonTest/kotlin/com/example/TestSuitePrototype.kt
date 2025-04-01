@@ -2,13 +2,14 @@ package com.example
 
 import testFramework.AbstractTestElement
 import testFramework.testSuite
+import kotlin.test.assertEquals
 
 val TestSuitePrototype by testSuite {
     log("configuring $elementName (displayName=$displayName)")
 
     test("test1") {
         log("in $elementName")
-        fail("something wrong in $elementPath")
+        assertEquals("This test should fail!", "This test should fail?")
     }
 
     testSuite("inner suite") {
@@ -21,5 +22,3 @@ val TestSuitePrototype by testSuite {
 private fun AbstractTestElement.log(message: String) {
     println("$elementPath: $message\n")
 }
-
-private fun fail(message: String): Unit = throw AssertionError(message)
