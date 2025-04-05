@@ -2,6 +2,9 @@
 
 [versions]
 
+# https://github.com/kotest/kotest/releases
+io-kotest = "5.9.1"
+
 # https://github.com/JetBrains/kotlin/releases
 org-jetbrains-kotlin = "2.1.0"
 
@@ -15,6 +18,8 @@ dev-zacsweers-kctfork = "dev.zacsweers.kctfork:core:0.7.0"
 
 # https://github.com/classgraph/classgraph/releases
 io-github-classgraph = "io.github.classgraph:classgraph:4.8.179"
+
+io-kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "io-kotest" }
 
 # https://github.com/Kotlin/kotlinx-atomicfu/releases
 org-jetbrains-kotlinx-atomicfu = "org.jetbrains.kotlinx:atomicfu:0.26.1"

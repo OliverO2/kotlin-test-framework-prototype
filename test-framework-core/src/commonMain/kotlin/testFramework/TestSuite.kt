@@ -199,9 +199,9 @@ open class TestSuite internal constructor(
     }
 
     /**
-     * Declares an [action] wrapping the actions of this test suite's child elements.
+     * Declares an [executionWrappingAction] wrapping the actions of this test suite.
      *
-     * The wrapping action will be invoked only if at least one child elements is enabled.
+     * The wrapping action will be invoked only if at least one child element is enabled.
      *
      * Usage:
      * ```
@@ -212,10 +212,9 @@ open class TestSuite internal constructor(
      *     }
      * ```
      */
-    fun aroundAll(action: TestSuiteExecutionWrappingAction) {
-        privateConfiguration = privateConfiguration combinedWith { innerAction ->
-            val innerActionConverted: TestSuiteExecutionAction = { innerAction() }
-            action(innerActionConverted)
+    fun aroundAll(executionWrappingAction: TestSuiteExecutionWrappingAction) {
+        privateConfiguration = privateConfiguration.aroundAll { innerAction ->
+            executionWrappingAction { innerAction() }
         }
     }
 
@@ -256,21 +255,21 @@ open class TestSuite internal constructor(
     override suspend fun execute(report: TestReport) {
         executeReporting(report) {
             if (isEnabled) {
-                (configuration combinedWith privateConfiguration).executeWithin {
-                    val invocationMode = if (parentSuite == null) {
+                configuration.chainedWith(privateConfiguration).executeWrapped(this) {
+                    val invocation = if (parentSuite == null) {
                         // A TestSession (no parent) must always execute its compartments sequentially.
-                        InvocationContext.Mode.SEQUENTIAL
+                        TestInvocation.SEQUENTIAL
                     } else {
-                        InvocationContext.mode()
+                        TestInvocation.current()
                     }
                     coroutineScope {
                         for (childElement in childElements) {
-                            when (invocationMode) {
-                                InvocationContext.Mode.SEQUENTIAL -> {
+                            when (invocation) {
+                                TestInvocation.SEQUENTIAL -> {
                                     childElement.execute(report)
                                 }
 
-                                InvocationContext.Mode.CONCURRENT -> {
+                                TestInvocation.CONCURRENT -> {
                                     launch {
                                         childElement.execute(report)
                                     }
@@ -356,7 +355,7 @@ open class TestSuite internal constructor(
             actionException = exception
         } finally {
             withContext(NonCancellable) {
-                for (fixture in fixtures) {
+                for (fixture in this@TestSuite.fixtures) {
                     try {
                         fixture.close()
                     } catch (closeException: Throwable) {

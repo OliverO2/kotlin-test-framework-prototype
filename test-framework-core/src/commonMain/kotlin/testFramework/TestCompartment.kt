@@ -26,7 +26,7 @@ open class TestCompartment(name: String, configuration: TestConfig) :
             concurrent
                 ?: TestCompartment(
                     name = "Concurrent",
-                    configuration = TestConfig.invocation(InvocationContext.Mode.CONCURRENT)
+                    configuration = TestConfig.invocation(TestInvocation.CONCURRENT)
                 ).also { concurrent = it }
 
         private var concurrent: TestCompartment? = null
@@ -38,7 +38,7 @@ open class TestCompartment(name: String, configuration: TestConfig) :
         fun UI(dispatcher: CoroutineDispatcher, configuration: TestConfig = TestConfig) = TestCompartment(
             name = "UI",
             configuration = configuration
-                .invocation(InvocationContext.Mode.SEQUENTIAL)
+                .invocation(TestInvocation.SEQUENTIAL)
                 .coroutineContext(dispatcher)
                 .mainDispatcher(dispatcher)
         )

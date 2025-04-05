@@ -24,6 +24,9 @@ interface TestPlatform {
     fun threadDisplayName(): String
 }
 
+/**
+ * The [TestPlatform] currently used to execute tests.
+ */
 expect val testPlatform: TestPlatform
 
 /**

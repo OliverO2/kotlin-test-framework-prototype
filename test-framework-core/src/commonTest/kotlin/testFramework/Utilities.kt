@@ -38,8 +38,8 @@ internal fun assertSuccessfulSuite(
 @OptIn(DelicateCoroutinesApi::class)
 internal fun withTestFramework(testSession: AbstractTestSession? = null, action: suspend () -> Unit): TestResult {
     val job = GlobalScope.launch(Dispatchers.Default) {
+        initializeTestFramework(testSession)
         try {
-            initializeTestFramework(testSession)
             action()
             if (testPlatform.type == TestPlatform.Type.WASM_WASI) {
                 logInfo { "Primary coroutine on ${testPlatform.displayName} completed." }

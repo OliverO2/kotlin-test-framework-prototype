@@ -29,13 +29,13 @@ class Test internal constructor(
     override suspend fun execute(report: TestReport) {
         executeReporting(report) {
             if (isEnabled) {
-                configuration.executeWithin {
+                configuration.executeWrapped(this) {
                     val testScopeContext = TestScopeContext.current()
 
                     if (testScopeContext != null) {
                         executeInTestScope(testScopeContext)
                     } else {
-                        TestCoroutineScope(this, CoroutineScope(currentCoroutineContext()), null).action()
+                        TestCoroutineScope(this@Test, CoroutineScope(currentCoroutineContext()), null).action()
                     }
                 }
             }

@@ -187,6 +187,42 @@ class TestSuiteTests {
     }
 
     @Test
+    fun aroundAllConfig() = withTestFramework {
+        val aroundAllTrace = ConcurrentList<String>()
+
+        val suite1 by testSuite(
+            "suite1",
+            configuration = TestConfig.aroundAll { tests ->
+                aroundAllTrace.add("$elementPath aroundAll begin")
+                tests()
+                aroundAllTrace.add("$elementPath aroundAll end")
+            }
+        ) {
+            test("test1") {
+                aroundAllTrace.add(elementPath)
+            }
+
+            testSuite("innerSuite") {
+                test("test1") {
+                    aroundAllTrace.add(elementPath)
+                }
+            }
+        }
+
+        withTestReport(suite1) {
+            assertContentEquals(
+                listOf(
+                    "suite1 aroundAll begin",
+                    "suite1.test1",
+                    "suite1.innerSuite.test1",
+                    "suite1 aroundAll end"
+                ),
+                aroundAllTrace.elements()
+            )
+        }
+    }
+
+    @Test
     fun fixture() = withTestFramework {
         val fixtureTrace = ConcurrentList<String>()
 

@@ -44,8 +44,18 @@ open class TestSession protected constructor(
 
     internal constructor() : this(configuration = DefaultConfiguration)
 
-    internal companion object {
-        // This property is internal for compiler plugin testing only. Consider it private otherwise.
+    companion object {
+        /**
+         * The default session configuration.
+         *
+         * Executing elements sequentially on [Dispatchers.Default], using [kotlinx.coroutines.test.TestScope]
+         * inside tests.
+         */
+        val DefaultConfiguration: TestConfig =
+            TestConfig.invocation(TestInvocation.SEQUENTIAL)
+                .coroutineContext(Dispatchers.Default)
+                .testScope(true)
+
         private var singleton: TestSession? = null
 
         internal val global: TestSession get() =
@@ -54,17 +64,6 @@ open class TestSession protected constructor(
                     " A TestSession must exist before creating any top-level TestSuite." +
                     "\n\tPlease ensure that the test framework's Gradle plugin is configured."
             )
-
-        /**
-         * The default session configuration.
-         *
-         * Executing elements sequentially on [Dispatchers.Default], using [kotlinx.coroutines.test.TestScope]
-         * inside tests.
-         */
-        private val DefaultConfiguration: TestConfig =
-            TestConfig.invocation(InvocationContext.Mode.SEQUENTIAL)
-                .coroutineContext(Dispatchers.Default)
-                .testScope(true)
 
         /** Resets global state, enabling the execution of multiple test sessions in one process. */
         internal fun resetState() {

@@ -18,21 +18,26 @@ import kotlin.time.Duration.Companion.seconds
  *
  * A test element may be configured via any number of chained [TestConfig]s.
  *
- * Each [TestConfig] configures its element in two phases:
+ * Each [TestConfig] configures its [TestElement] in two phases:
  * 1. The parameterization phase, which is executed when creating the test tree.
  * 2. The execution phase, where the elements of the test tree are executed.
  *
- * When [TestConfig]s are combined into a chain, a later [TestConfig] takes precedence over an earlier one.
+ * When [TestConfig]s are combined into a chain,
+ * - a later conflicting [TestConfig] takes precedence over an earlier one,
+ * - non-conflicting coroutine context elements accumulate,
+ * - a series of [aroundAll] wrappers nest from the outside to the inside in order of appearance.
  *
- * Use an existing configuration or the empty [TestConfig] object as the starting point, then invoke the [TestConfig]'s
- * methods to return modified configurations. Configurations can be chained, with the last configuration gaining
- * precedence over previous configurations of the same kind.
+ * Each [TestConfig] operates at the [TestElement] level where it is configured. However, child elements inherit
+ * some configuration effects as described in the respective [TestConfig] function.
+ *
+ * Use an existing configuration or the empty [TestConfig] object as the starting point, then invoke the [TestConfig]
+ * functions to return modified configurations.
  *
  * Example:
  * ```
  * configuration = TestConfig
  *     .coroutineContext(UnconfinedTestDispatcher())
- *     .invocation(InvocationContext.Mode.CONCURRENT)
+ *     .invocation(TestInvocation.CONCURRENT)
  * ```
  */
 open class TestConfig internal constructor(
@@ -63,25 +68,26 @@ open class TestConfig internal constructor(
         }
     )
 
-    /** Returns a [TestConfig] which combines `this` configuration with [innerExecutionWrappingAction]. */
-    internal infix fun combinedWith(innerExecutionWrappingAction: ExecutionWrappingAction): TestConfig =
-        combinedWith(null, innerExecutionWrappingAction)
-
-    /** Returns a [TestConfig] which combines `this` configuration with [otherConfiguration]. */
-    internal infix fun combinedWith(otherConfiguration: TestConfig): TestConfig =
+    /** Returns a [TestConfig] which chains `this` configuration with [otherConfiguration]. */
+    fun chainedWith(otherConfiguration: TestConfig): TestConfig =
         combinedWith(otherConfiguration.parameterizingAction, otherConfiguration.executionWrappingAction)
 
+    /** Parameterizes [testElement] according to `this` configuration. */
     internal open fun parameterize(testElement: TestElement) {
         if (parameterizingAction != null) testElement.parameterizingAction()
     }
 
-    internal suspend fun executeWithin(innerAction: suspend () -> Unit) {
+    /** Wraps the execution according to `this` configuration, then executes [innerAction] on [testElement]. */
+    internal suspend fun <SpecificTestElement : TestElement> executeWrapped(
+        testElement: SpecificTestElement,
+        innerAction: suspend SpecificTestElement.() -> Unit
+    ) {
         if (executionWrappingAction != null) {
-            executionWrappingAction {
-                innerAction()
+            testElement.executionWrappingAction {
+                testElement.innerAction()
             }
         } else {
-            innerAction()
+            testElement.innerAction()
         }
     }
 
@@ -90,35 +96,78 @@ open class TestConfig internal constructor(
 }
 
 private typealias ParameterizingAction = TestElement.() -> Unit
-private typealias ExecutionWrappingAction = suspend (innerAction: suspend () -> Unit) -> Unit
+typealias ExecutionWrappingAction = suspend TestElement.(innerAction: suspend TestElement.() -> Unit) -> Unit
 
-/** Returns a test configuration combining [this] with a configuration disabling the test element. */
-fun TestConfig.disable() = combinedWith({ isEnabled = false }, {})
+/**
+ * Returns a test configuration chaining [this] with a configuration disabling the [TestElement].
+ *
+ * Child elements inherit this setting.
+ */
+fun TestConfig.disable() = combinedWith({ isEnabled = false })
 
-/** Returns a test configuration combining [this] with a coroutine [context]. */
+/**
+ * Returns a test configuration chaining [this] with a coroutine [context].
+ *
+ * Child elements inherit the [context].
+ */
 fun TestConfig.coroutineContext(context: CoroutineContext): TestConfig = combinedWith { innerAction ->
     withContext(context) {
         innerAction()
     }
 }
 
-/** Returns a test configuration combining [this] with an invocation [mode]. */
-fun TestConfig.invocation(mode: InvocationContext.Mode): TestConfig = coroutineContext(InvocationContext(mode))
+/**
+ * Returns a test configuration chaining [this] with an [executionWrappingAction].
+ *
+ * [executionWrappingAction] wraps a (suspending) inner action around all following configurations and, finally,
+ * around the execution action of the [TestElement] where the configuration has been applied.
+ *
+ * Example:
+ * ```
+ * configuration = TestConfig.aroundAll { innerAction ->
+ *     withTimeout(2.seconds) {
+ *         innerAction()
+ *     }
+ * }
+ * ```
+ *
+ * The [executionWrappingAction] is performed at the level of its [TestElement] only, although child elements inherit
+ * possible changes to the coroutine context.
+ */
+fun TestConfig.aroundAll(executionWrappingAction: ExecutionWrappingAction): TestConfig =
+    combinedWith(innerExecutionWrappingAction = executionWrappingAction)
 
-class InvocationContext internal constructor(val mode: Mode) : AbstractCoroutineContextElement(Key) {
-    enum class Mode { SEQUENTIAL, CONCURRENT }
+/**
+ * Returns a test configuration chaining [this] with an invocation [value].
+ *
+ * Child elements inherit this setting.
+ */
+fun TestConfig.invocation(value: TestInvocation): TestConfig = coroutineContext(InvocationContext(value))
+
+/**
+ * The mode in which to invoke test elements.
+ */
+enum class TestInvocation {
+    /** Execute test elements sequentially. */
+    SEQUENTIAL,
+
+    /** Execute test elements concurrently. */
+    CONCURRENT;
 
     companion object {
-        private val Key = object : CoroutineContext.Key<InvocationContext> {}
-
-        suspend fun mode(): Mode = currentCoroutineContext()[Key]?.mode ?: Mode.SEQUENTIAL
+        suspend fun current(): TestInvocation = currentCoroutineContext()[InvocationContext.Key]?.value ?: SEQUENTIAL
     }
 }
 
+private class InvocationContext(val value: TestInvocation) : AbstractCoroutineContextElement(Key) {
+    companion object Key : CoroutineContext.Key<InvocationContext>
+}
+
 /**
- * Returns a test configuration combining [this] with a main dispatcher (see [Dispatchers.setMain]).
+ * Returns a test configuration chaining [this] with a main dispatcher (see [Dispatchers.setMain]).
  *
  * This configuration may not be overridden at lower levels of the [TestElement] hierarchy.
+ * Child elements inherit this setting.
  */
 fun TestConfig.mainDispatcher(dispatcher: CoroutineDispatcher): TestConfig = combinedWith { innerAction ->
     withMainDispatcher(dispatcher) {
@@ -127,10 +176,12 @@ fun TestConfig.mainDispatcher(dispatcher: CoroutineDispatcher): TestConfig = com
 }
 
 /**
- * Returns a test configuration combining [this] with a [kotlinx.coroutines.test.TestScope] setting.
+ * Returns a test configuration chaining [this] with a [kotlinx.coroutines.test.TestScope] setting.
  *
  * If [isEnabled] is true, tests will run in a [kotlinx.coroutines.test.TestScope] with the given [timeout].
  * Setting [isEnabled] to false will disable a previously enabled `TestScope` setting.
+ *
+ * Child elements inherit this setting.
  */
 fun TestConfig.testScope(isEnabled: Boolean, timeout: Duration = TestScopeContext.DEFAULT_TIMEOUT): TestConfig =
     coroutineContext(TestScopeContext(isEnabled, timeout))

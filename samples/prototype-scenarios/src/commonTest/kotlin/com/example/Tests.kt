@@ -15,10 +15,10 @@ import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import testFramework.AbstractTestElement
-import testFramework.InvocationContext
 import testFramework.TestAction
 import testFramework.TestCompartment
 import testFramework.TestConfig
+import testFramework.TestInvocation
 import testFramework.TestSuite
 import testFramework.coroutineContext
 import testFramework.disable
@@ -44,7 +44,7 @@ val TestSuite1 by testSuite {
     test("test1") {
         log(
             "in TestSuite1.test1 [${currentCoroutineContext()[CoroutineName]}], A=${fixtureA()}," +
-                " invocation=${InvocationContext.mode()}"
+                " invocation=${TestInvocation.current()}"
         )
         fail("something wrong in TestSuite1.test1")
     }
@@ -63,7 +63,7 @@ val TestSuite1 by testSuite {
         test("nested1") {
             log(
                 "in TestSuite1.child-suite2.nested1 – before delay, A=${fixtureA()}, B=${fixtureB()}," +
-                    " invocation=${InvocationContext.mode()}"
+                    " invocation=${TestInvocation.current()}"
             )
             delay(0.3.seconds)
             log(

@@ -28,7 +28,7 @@ internal object TestFramework {
  * The framework invokes this function before creating any top-level [TestSuite].
  */
 @TestFrameworkInvokedByGeneratedCode
-internal fun initializeTestFramework(testSession: AbstractTestSession?, arguments: Array<String>? = null) {
+internal fun initializeTestFramework(testSession: AbstractTestSession? = null, arguments: Array<String>? = null) {
     if (!arguments.isNullOrEmpty()) {
         argumentsBasedElementSelection = ArgumentsBasedElementSelection(arguments)
     }
