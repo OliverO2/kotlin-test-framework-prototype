@@ -126,6 +126,6 @@ in an IDE run configuration with an environment variable setting:
 
 === TODO
 
-* [ ] Provide integration for Kotest assertions
+* [x] Provide integration for Kotest assertions.
 * [ ] Add a "fail fast" configuration option, stopping a test (suite/compartment/session) execution after a configurable number of test failures.
 ** Make it universal by providing a global (suite/test/both) wrapper?
