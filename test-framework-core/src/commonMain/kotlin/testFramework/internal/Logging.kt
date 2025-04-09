@@ -1,5 +1,8 @@
 package testFramework.internal
 
+import kotlinx.datetime.Clock
+import testFramework.testPlatform
+
 enum class LogLevel { DEBUG, INFO, ERROR }
 
 var logLevel = LogLevel.INFO
@@ -17,8 +20,15 @@ internal fun logError(message: () -> String) {
 }
 
 internal fun log(messageLevel: LogLevel, message: () -> String) {
-    if (messageLevel >= logLevel) println(message())
+    if (messageLevel >= logLevel) {
+        printlnFixed("${Clock.System.now()} [${testPlatform.threadId()}] ${message()}")
+    }
 }
+
+/**
+ * WORKAROUND https://youtrack.jetbrains.com/issue/KT-48292 – KJS / IR: `println` doesn't move to a new line in tests
+ */
+expect fun printlnFixed(message: Any?)
 
 internal fun Throwable.logErrorWithStacktrace(headline: String, includeStacktrace: Boolean = true) {
     logError {
