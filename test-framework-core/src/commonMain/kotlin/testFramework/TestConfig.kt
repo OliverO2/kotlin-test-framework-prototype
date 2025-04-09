@@ -166,12 +166,14 @@ private class InvocationContext(val value: TestInvocation) : AbstractCoroutineCo
 /**
  * Returns a test configuration chaining [this] with a main dispatcher (see [Dispatchers.setMain]).
  *
+ * If [dispatcher] is `null`, a single-threaded dispatcher is used.
+ *
  * This configuration may not be overridden at lower levels of the [TestElement] hierarchy.
  * Child elements inherit this setting.
  */
-fun TestConfig.mainDispatcher(dispatcher: CoroutineDispatcher): TestConfig = combinedWith { innerAction ->
+fun TestConfig.mainDispatcher(dispatcher: CoroutineDispatcher? = null): TestConfig = combinedWith { elementAction ->
     withMainDispatcher(dispatcher) {
-        innerAction()
+        elementAction()
     }
 }
 
@@ -203,11 +205,13 @@ internal class TestScopeContext(internal val isEnabled: Boolean, val timeout: Du
 /**
  * Runs [action] with [dispatcher] set up as the main dispatcher, which will be reset afterward.
  *
+ * If [dispatcher] is `null`, a single-threaded dispatcher is used.
+ *
  * See [Dispatchers.setMain] for details. This function, if used exclusively, ensures that only one main dispatcher
  * is active at any point in time.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-suspend fun withMainDispatcher(dispatcher: CoroutineDispatcher, action: suspend () -> Unit) {
+suspend fun withMainDispatcher(dispatcher: CoroutineDispatcher? = null, action: suspend () -> Unit) {
     val previouslyChanged = mainDispatcherChanged.getAndSet(true)
     require(!previouslyChanged) {
         "Another invocation of withMainDispatcher() is still active." +
@@ -215,12 +219,25 @@ suspend fun withMainDispatcher(dispatcher: CoroutineDispatcher, action: suspend 
             "\tPlease avoid concurrent changes to Dispatchers.Main by executing tests" +
             " in isolation (e.g. in a separate UI test compartment)."
     }
-    Dispatchers.setMain(dispatcher)
-    try {
-        action()
-    } finally {
-        Dispatchers.resetMain()
-        check(mainDispatcherChanged.getAndSet(false) == true)
+
+    suspend fun withDispatcherOrSingleThreaded(action: suspend (mainDispatcher: CoroutineDispatcher) -> Unit) {
+        if (dispatcher != null) {
+            action(dispatcher)
+        } else {
+            withSingleThreadedDispatcher {
+                action(it)
+            }
+        }
+    }
+
+    withDispatcherOrSingleThreaded { mainDispatcher ->
+        Dispatchers.setMain(mainDispatcher)
+        try {
+            action()
+        } finally {
+            Dispatchers.resetMain()
+            check(mainDispatcherChanged.getAndSet(false) == true)
+        }
     }
 }
 

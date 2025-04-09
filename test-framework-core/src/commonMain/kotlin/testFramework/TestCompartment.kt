@@ -1,6 +1,7 @@
 package testFramework
 
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 /**
  * A compartment isolating a number of tests from those belonging to other compartments.
@@ -32,16 +33,21 @@ open class TestCompartment(name: String, configuration: TestConfig) :
         private var concurrent: TestCompartment? = null
 
         /**
-         * A compartment executing its tests sequentially and sharing a single main dispatcher across tests.
+         * A compartment executing its tests sequentially and establishing a Main dispatcher.
+         *
+         * If [mainDispatcher] is `null`, a single-threaded dispatcher is used.
+         * [configuration] is chained to the compartment's default configuration, and thus can override it.
          */
         @Suppress("FunctionName")
-        fun UI(dispatcher: CoroutineDispatcher, configuration: TestConfig = TestConfig) = TestCompartment(
-            name = "UI",
-            configuration = configuration
-                .invocation(TestInvocation.SEQUENTIAL)
-                .coroutineContext(dispatcher)
-                .mainDispatcher(dispatcher)
-        )
+        @OptIn(ExperimentalCoroutinesApi::class)
+        fun UI(mainDispatcher: CoroutineDispatcher? = null, configuration: TestConfig = TestConfig): TestCompartment =
+            TestCompartment(
+                name = "UI",
+                configuration = TestConfig
+                    .invocation(TestInvocation.SEQUENTIAL)
+                    .mainDispatcher(mainDispatcher)
+                    .chainedWith(configuration)
+            )
 
         /** Resets global state, enabling the execution of multiple test sessions in one process. */
         internal fun resetState() {

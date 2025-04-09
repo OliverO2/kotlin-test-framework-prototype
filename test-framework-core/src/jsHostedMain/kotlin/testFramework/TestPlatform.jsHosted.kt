@@ -21,4 +21,5 @@ interface TestPlatformJsHosted : TestPlatform {
 actual fun dispatcherWithParallelism(parallelism: Int): CoroutineDispatcher =
     Dispatchers.Default // single-threaded on JS
 
-actual suspend fun withSingleThreading(action: suspend () -> Unit) = action()
+actual suspend fun withSingleThreadedDispatcher(action: suspend (CoroutineDispatcher) -> Unit) =
+    action(Dispatchers.Default)

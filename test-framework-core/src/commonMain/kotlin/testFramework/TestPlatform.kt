@@ -37,8 +37,11 @@ expect val testPlatform: TestPlatform
 expect fun dispatcherWithParallelism(parallelism: Int): CoroutineDispatcher
 
 /**
- * Returns a [CoroutineDispatcher] which executes all of its coroutines on a single thread.
+ * Executes [action], providing it with a single-threaded [CoroutineDispatcher].
+ *
+ * The dispatcher provided is guaranteed not to leak resources after use. It is not guaranteed to be usable when
+ * this function completes.
  *
  * Use this utility function for testing special cases.
  */
-expect suspend fun withSingleThreading(action: suspend () -> Unit)
+expect suspend fun withSingleThreadedDispatcher(action: suspend (dispatcher: CoroutineDispatcher) -> Unit)

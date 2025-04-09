@@ -16,4 +16,5 @@ object TestPlatformWasmWasi : TestPlatform {
 actual fun dispatcherWithParallelism(parallelism: Int): CoroutineDispatcher =
     Dispatchers.Default // single-threaded on Wasm/WASI until shared-everything threads are available
 
-actual suspend fun withSingleThreading(action: suspend () -> Unit) = action()
+actual suspend fun withSingleThreadedDispatcher(action: suspend (CoroutineDispatcher) -> Unit) =
+    action(Dispatchers.Default)
