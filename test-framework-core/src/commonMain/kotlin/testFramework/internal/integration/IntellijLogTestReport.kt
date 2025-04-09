@@ -2,6 +2,7 @@ package testFramework.internal.integration
 
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import testFramework.FailFastException
 import testFramework.Test
 import testFramework.internal.TestElementEvent
 import testFramework.internal.TestReport
@@ -77,7 +78,7 @@ internal class IntellijLogTestReport(val outputEntry: (String) -> Unit = ::print
                     event.throwable?.let { throwable ->
                         throwable.message?.let { errorMsg(it) }
                         stackTrace(throwable.stackTraceToString())
-                        failureType(if (throwable is AssertionError) "assertionFailed" else "error")
+                        failureType(if (throwable is FailFastException) "failFastAbort" else "assertionFailed")
                     }
                 }
             }

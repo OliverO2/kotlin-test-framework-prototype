@@ -14,6 +14,7 @@ import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
 import org.junit.platform.engine.support.descriptor.ClassSource
 import org.junit.platform.engine.support.descriptor.EngineDescriptor
 import testFramework.AbstractTestSuite
+import testFramework.FailFastException
 import testFramework.Test
 import testFramework.TestCompartment
 import testFramework.TestElement
@@ -191,8 +192,8 @@ private val TestElement.platformDescriptor: AbstractTestDescriptor get() =
 private val TestElementEvent.Finished.executionResult: TestExecutionResult get() =
     when (throwable) {
         null -> TestExecutionResult.successful()
-        is AssertionError -> TestExecutionResult.failed(throwable)
-        else -> TestExecutionResult.aborted(throwable)
+        is FailFastException -> TestExecutionResult.aborted(throwable)
+        else -> TestExecutionResult.failed(throwable)
     }
 
 private fun <Result> withClassGraphScan(action: ScanResult.() -> Result): Result = ClassGraph()

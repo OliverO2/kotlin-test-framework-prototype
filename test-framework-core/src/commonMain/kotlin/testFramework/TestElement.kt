@@ -74,11 +74,11 @@ sealed class TestElement(
         try {
             action()
             report.add(TestElementEvent.Finished(this, startingEvent))
-        } catch (assertionError: AssertionError) {
-            report.add(TestElementEvent.Finished(this, startingEvent, assertionError))
+        } catch (failFastException: FailFastException) {
+            report.add(TestElementEvent.Finished(this, startingEvent, failFastException))
+            throw failFastException
         } catch (throwable: Throwable) {
             report.add(TestElementEvent.Finished(this, startingEvent, throwable))
-            throw throwable
         }
     }
 
