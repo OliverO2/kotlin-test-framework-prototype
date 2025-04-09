@@ -202,19 +202,20 @@ open class TestSuite internal constructor(
      * Declares an [executionWrappingAction] wrapping the actions of this test suite.
      *
      * The wrapping action will be invoked only if at least one child element is enabled.
+     * See also [ExecutionWrappingAction] for requirements.
      *
      * Usage:
      * ```
-     *     aroundAll { testActions ->
+     *     aroundAll { testSuiteAction ->
      *         withContext(CoroutineName("parent coroutine configured by aroundAll")) {
-     *             testActions()
+     *             testSuiteAction()
      *         }
      *     }
      * ```
      */
     fun aroundAll(executionWrappingAction: TestSuiteExecutionWrappingAction) {
-        privateConfiguration = privateConfiguration.aroundAll { innerAction ->
-            executionWrappingAction { innerAction() }
+        privateConfiguration = privateConfiguration.aroundAll { elementAction ->
+            executionWrappingAction { elementAction() }
         }
     }
 
@@ -346,11 +347,11 @@ open class TestSuite internal constructor(
         }
     }
 
-    private fun TestConfig.fixtureLifecycleAction(): TestConfig = combinedWith { innerAction ->
+    private fun TestConfig.fixtureLifecycleAction(): TestConfig = combinedWith { elementAction ->
         var actionException: Throwable? = null
 
         try {
-            innerAction()
+            elementAction()
         } catch (exception: Throwable) {
             actionException = exception
         } finally {

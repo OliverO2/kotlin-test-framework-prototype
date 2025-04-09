@@ -79,53 +79,53 @@ class TestSuiteTests {
 
     @Test
     fun aroundAllWithDisabledElements() = withTestFramework {
-        val aroundAllTrace = ConcurrentList<String>()
+        val trace = ConcurrentList<String>()
 
         val suite1 by testSuite("suite1") {
             aroundAll { tests ->
-                aroundAllTrace.add("$elementPath aroundAll begin")
+                trace.add("$elementPath aroundAll begin")
                 tests()
-                aroundAllTrace.add("$elementPath aroundAll end")
+                trace.add("$elementPath aroundAll end")
             }
 
             test("test1", configuration = TestConfig.disable()) {
-                aroundAllTrace.add(elementPath)
+                trace.add(elementPath)
             }
         }
 
         val suite2 by testSuite("suite2") {
             aroundAll { tests ->
-                aroundAllTrace.add("$elementPath aroundAll begin")
+                trace.add("$elementPath aroundAll begin")
                 tests()
-                aroundAllTrace.add("$elementPath aroundAll end")
+                trace.add("$elementPath aroundAll end")
             }
 
             test("test1", configuration = TestConfig.disable()) {
-                aroundAllTrace.add(elementPath)
+                trace.add(elementPath)
             }
 
             test("test2") {
-                aroundAllTrace.add(elementPath)
+                trace.add(elementPath)
             }
         }
 
         val suite3 by testSuite("suite3") {
             aroundAll { tests ->
-                aroundAllTrace.add("$elementPath aroundAll begin")
+                trace.add("$elementPath aroundAll begin")
                 tests()
-                aroundAllTrace.add("$elementPath aroundAll end")
+                trace.add("$elementPath aroundAll end")
             }
 
             test("test1", configuration = TestConfig.disable()) {
-                aroundAllTrace.add(elementPath)
+                trace.add(elementPath)
             }
 
             testSuite("innerSuite") {
                 test("test1", configuration = TestConfig.disable()) {
-                    aroundAllTrace.add(elementPath)
+                    trace.add(elementPath)
                 }
                 test("test2") {
-                    aroundAllTrace.add(elementPath)
+                    trace.add(elementPath)
                 }
             }
         }
@@ -140,28 +140,28 @@ class TestSuiteTests {
                     "suite3.innerSuite.test2",
                     "suite3 aroundAll end"
                 ),
-                aroundAllTrace.elements()
+                trace.elements()
             )
         }
     }
 
     @Test
     fun aroundAllWithFailedTest() = withTestFramework {
-        val aroundAllTrace = ConcurrentList<String>()
+        val trace = ConcurrentList<String>()
 
         val suite1 by testSuite("suite1") {
             aroundAll { tests ->
-                aroundAllTrace.add("$elementPath aroundAll begin")
+                trace.add("$elementPath aroundAll begin")
                 tests()
-                aroundAllTrace.add("$elementPath aroundAll end")
+                trace.add("$elementPath aroundAll end")
             }
 
             test("test1") {
-                aroundAllTrace.add(elementPath)
+                trace.add(elementPath)
             }
 
             test("test2") {
-                aroundAllTrace.add(elementPath)
+                trace.add(elementPath)
                 fail("intentionally")
             }
         }
@@ -181,30 +181,30 @@ class TestSuiteTests {
                     "suite1.test2",
                     "suite1 aroundAll end"
                 ),
-                aroundAllTrace.elements()
+                trace.elements()
             )
         }
     }
 
     @Test
     fun aroundAllConfig() = withTestFramework {
-        val aroundAllTrace = ConcurrentList<String>()
+        val trace = ConcurrentList<String>()
 
         val suite1 by testSuite(
             "suite1",
             configuration = TestConfig.aroundAll { tests ->
-                aroundAllTrace.add("$elementPath aroundAll begin")
+                trace.add("$elementPath aroundAll begin")
                 tests()
-                aroundAllTrace.add("$elementPath aroundAll end")
+                trace.add("$elementPath aroundAll end")
             }
         ) {
             test("test1") {
-                aroundAllTrace.add(elementPath)
+                trace.add(elementPath)
             }
 
             testSuite("innerSuite") {
                 test("test1") {
-                    aroundAllTrace.add(elementPath)
+                    trace.add(elementPath)
                 }
             }
         }
@@ -217,19 +217,84 @@ class TestSuiteTests {
                     "suite1.innerSuite.test1",
                     "suite1 aroundAll end"
                 ),
-                aroundAllTrace.elements()
+                trace.elements()
+            )
+        }
+    }
+
+    @Test
+    fun aroundEach() = withTestFramework {
+        val trace = ConcurrentList<String>()
+
+        val suite1 by testSuite(
+            "suite1",
+            configuration = TestConfig.aroundEach { elementAction ->
+                trace.add("$elementPath aroundEach1.1 begin")
+                elementAction()
+                trace.add("$elementPath aroundEach1.1 end")
+            }.aroundEach { elementAction ->
+                trace.add("$elementPath aroundEach1.2 begin")
+                elementAction()
+                trace.add("$elementPath aroundEach1.2 end")
+            }
+        ) {
+            test("test1") {
+                trace.add(elementPath)
+            }
+
+            testSuite(
+                "innerSuite",
+                configuration = TestConfig.aroundEach { elementAction ->
+                    trace.add("$elementPath aroundEach2 begin")
+                    elementAction()
+                    trace.add("$elementPath aroundEach2 end")
+                }
+            ) {
+                test("test1") {
+                    trace.add(elementPath)
+                }
+            }
+        }
+
+        withTestReport(suite1) {
+            assertContentEquals(
+                listOf(
+                    "suite1 aroundEach1.1 begin",
+                    "suite1 aroundEach1.2 begin",
+                    "suite1.test1 aroundEach1.1 begin",
+                    "suite1.test1 aroundEach1.2 begin",
+                    "suite1.test1",
+                    "suite1.test1 aroundEach1.2 end",
+                    "suite1.test1 aroundEach1.1 end",
+                    "suite1.innerSuite aroundEach1.1 begin",
+                    "suite1.innerSuite aroundEach1.2 begin",
+                    "suite1.innerSuite aroundEach2 begin",
+                    "suite1.innerSuite.test1 aroundEach1.1 begin",
+                    "suite1.innerSuite.test1 aroundEach1.2 begin",
+                    "suite1.innerSuite.test1 aroundEach2 begin",
+                    "suite1.innerSuite.test1",
+                    "suite1.innerSuite.test1 aroundEach2 end",
+                    "suite1.innerSuite.test1 aroundEach1.2 end",
+                    "suite1.innerSuite.test1 aroundEach1.1 end",
+                    "suite1.innerSuite aroundEach2 end",
+                    "suite1.innerSuite aroundEach1.2 end",
+                    "suite1.innerSuite aroundEach1.1 end",
+                    "suite1 aroundEach1.2 end",
+                    "suite1 aroundEach1.1 end"
+                ),
+                trace.elements()
             )
         }
     }
 
     @Test
     fun fixture() = withTestFramework {
-        val fixtureTrace = ConcurrentList<String>()
+        val trace = ConcurrentList<String>()
 
         val suite1 by testSuite("suite1") {
             val outerFixture =
-                fixture { fixtureTrace.also { it.add("$elementPath fixture creating") } } closeWith
-                    { fixtureTrace.add("$elementPath fixture closing") }
+                fixture { trace.also { it.add("$elementPath fixture creating") } } closeWith
+                    { trace.add("$elementPath fixture closing") }
 
             aroundAll { tests ->
                 outerFixture().add("$elementPath aroundAll begin")
@@ -258,19 +323,19 @@ class TestSuiteTests {
                     "suite1 aroundAll end",
                     "suite1 fixture closing"
                 ),
-                fixtureTrace.elements()
+                trace.elements()
             )
         }
     }
 
     @Test
     fun fixtureWithDisabledElements() = withTestFramework {
-        val fixtureTrace = ConcurrentList<String>()
+        val trace = ConcurrentList<String>()
 
         val suite1 by testSuite("suite1") {
             val suite1Fixture =
-                fixture { fixtureTrace.also { it.add("$elementPath fixture creating") } } closeWith
-                    { fixtureTrace.add("$elementPath fixture closing") }
+                fixture { trace.also { it.add("$elementPath fixture creating") } } closeWith
+                    { trace.add("$elementPath fixture closing") }
 
             test("test1", configuration = TestConfig.disable()) {
                 suite1Fixture().add(elementPath)
@@ -279,8 +344,8 @@ class TestSuiteTests {
 
         val suite2 by testSuite("suite2") {
             val suite2Fixture =
-                fixture { fixtureTrace.also { it.add("$elementPath fixture creating") } } closeWith
-                    { fixtureTrace.add("$elementPath fixture closing") }
+                fixture { trace.also { it.add("$elementPath fixture creating") } } closeWith
+                    { trace.add("$elementPath fixture closing") }
 
             test("test1", configuration = TestConfig.disable()) {
                 suite2Fixture().add(elementPath)
@@ -293,8 +358,8 @@ class TestSuiteTests {
 
         val suite3 by testSuite("suite3") {
             val suite3Fixture =
-                fixture { fixtureTrace.also { it.add("$elementPath fixture creating") } } closeWith
-                    { fixtureTrace.add("$elementPath fixture closing") }
+                fixture { trace.also { it.add("$elementPath fixture creating") } } closeWith
+                    { trace.add("$elementPath fixture closing") }
 
             test("test1", configuration = TestConfig.disable()) {
                 suite3Fixture().add(elementPath)
@@ -320,19 +385,19 @@ class TestSuiteTests {
                     "suite3.innerSuite.test2",
                     "suite3 fixture closing"
                 ),
-                fixtureTrace.elements()
+                trace.elements()
             )
         }
     }
 
     @Test
     fun fixtureWithFailedTest() = withTestFramework {
-        val fixtureTrace = ConcurrentList<String>()
+        val trace = ConcurrentList<String>()
 
         val suite1 by testSuite("suite1") {
             val fixture1 =
-                fixture { fixtureTrace.also { it.add("$elementPath fixture creating") } } closeWith
-                    { fixtureTrace.add("$elementPath fixture closing") }
+                fixture { trace.also { it.add("$elementPath fixture creating") } } closeWith
+                    { trace.add("$elementPath fixture closing") }
 
             test("test1") {
                 fixture1().add(elementPath)
@@ -357,7 +422,7 @@ class TestSuiteTests {
                     "suite1.test2",
                     "suite1 fixture closing"
                 ),
-                fixtureTrace.elements()
+                trace.elements()
             )
         }
     }

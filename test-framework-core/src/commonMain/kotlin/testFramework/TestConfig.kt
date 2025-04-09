@@ -25,13 +25,14 @@ import kotlin.time.Duration.Companion.seconds
  * When [TestConfig]s are combined into a chain,
  * - a later conflicting [TestConfig] takes precedence over an earlier one,
  * - non-conflicting coroutine context elements accumulate,
- * - a series of [aroundAll] wrappers nest from the outside to the inside in order of appearance.
+ * - a series of [aroundAll], [aroundEach] wrappers, or [traversal]s nest from the outside to the inside in order
+ *   of appearance.
  *
  * Each [TestConfig] operates at the [TestElement] level where it is configured. However, child elements inherit
  * some configuration effects as described in the respective [TestConfig] function.
  *
  * Use an existing configuration or the empty [TestConfig] object as the starting point, then invoke the [TestConfig]
- * functions to return modified configurations.
+ * functions to return chained configurations.
  *
  * Example:
  * ```
@@ -58,9 +59,9 @@ open class TestConfig internal constructor(
             parameterizingAction ?: nextParameterizingAction
         },
         executionWrappingAction = if (executionWrappingAction != null && innerExecutionWrappingAction != null) {
-            { innerAction ->
+            { elementAction ->
                 executionWrappingAction {
-                    innerExecutionWrappingAction(innerAction)
+                    innerExecutionWrappingAction(elementAction)
                 }
             }
         } else {
@@ -77,17 +78,18 @@ open class TestConfig internal constructor(
         if (parameterizingAction != null) testElement.parameterizingAction()
     }
 
-    /** Wraps the execution according to `this` configuration, then executes [innerAction] on [testElement]. */
+    /** Wraps the execution according to `this` configuration, then executes [elementAction] on [testElement]. */
     internal suspend fun <SpecificTestElement : TestElement> executeWrapped(
         testElement: SpecificTestElement,
-        innerAction: suspend SpecificTestElement.() -> Unit
+        elementAction: suspend SpecificTestElement.() -> Unit
     ) {
-        if (executionWrappingAction != null) {
-            testElement.executionWrappingAction {
-                testElement.innerAction()
+        val executionTraversalContext = ExecutionTraversalContext.current()
+        if (executionTraversalContext != null) {
+            executionTraversalContext.executeInside(testElement) {
+                executionWrappingAction.wrapIfNotNull(testElement, elementAction)
             }
         } else {
-            testElement.innerAction()
+            executionWrappingAction.wrapIfNotNull(testElement, elementAction)
         }
     }
 
@@ -96,12 +98,32 @@ open class TestConfig internal constructor(
 }
 
 private typealias ParameterizingAction = TestElement.() -> Unit
-typealias ExecutionWrappingAction = suspend TestElement.(innerAction: suspend TestElement.() -> Unit) -> Unit
+
+/**
+ * An action wrapping the execution for a [TestElement].
+ *
+ * `elementAction` can be the element's primary action, or a cumulative action, which includes wrapping actions,
+ * plus the elements primary action.
+ *
+ * Requirements:
+ * - An [ExecutionWrappingAction] must invoke `elementAction` exactly once.
+ *
+ * Requirements for [TestElement]s of type [Test]:
+ * - If `elementAction` throws, it is considered a test failure. If [ExecutionWrappingAction] catches the exception,
+ *   it should re-throw, or the test failure will be muted.
+ * - [ExecutionWrappingAction] may throw an exception on its own initiative, which will be considered a test failure.
+ *
+ * Requirements for [TestElement]s of types other than [Test]:
+ * - If `elementAction` throws, it is considered a failure of the test framework.
+ * - [ExecutionWrappingAction] should not throw to indicate a failing test or to block further tests from
+ *   executing.
+ */
+typealias ExecutionWrappingAction = suspend TestElement.(elementAction: suspend TestElement.() -> Unit) -> Unit
 
 /**
  * Returns a test configuration chaining [this] with a configuration disabling the [TestElement].
  *
- * Child elements inherit this setting.
+ * Child elements inherit this setting's effect.
  */
 fun TestConfig.disable() = combinedWith({ isEnabled = false })
 
@@ -110,32 +132,154 @@ fun TestConfig.disable() = combinedWith({ isEnabled = false })
  *
  * Child elements inherit the [context].
  */
-fun TestConfig.coroutineContext(context: CoroutineContext): TestConfig = combinedWith { innerAction ->
+fun TestConfig.coroutineContext(context: CoroutineContext): TestConfig = combinedWith { elementAction ->
     withContext(context) {
-        innerAction()
+        elementAction()
     }
 }
 
 /**
- * Returns a test configuration chaining [this] with an [executionWrappingAction].
+ * Returns a test configuration chaining [this] with an [executionWrappingAction] for a single test element.
  *
- * [executionWrappingAction] wraps a (suspending) inner action around all following configurations and, finally,
- * around the execution action of the [TestElement] where the configuration has been applied.
+ * [executionWrappingAction] wraps around the [TestElement]'s cumulative action (a cumulative action includes
+ * all wrapping actions following this one, and the elements primary action).
+ * See [ExecutionWrappingAction] for requirements.
+ *
+ * The [executionWrappingAction] is performed at the level of its [TestElement] only.
  *
  * Example:
  * ```
- * configuration = TestConfig.aroundAll { innerAction ->
+ * configuration = TestConfig.aroundAll { elementAction ->
  *     withTimeout(2.seconds) {
- *         innerAction()
+ *         elementAction()
  *     }
  * }
  * ```
- *
- * The [executionWrappingAction] is performed at the level of its [TestElement] only, although child elements inherit
- * possible changes to the coroutine context.
  */
 fun TestConfig.aroundAll(executionWrappingAction: ExecutionWrappingAction): TestConfig =
     combinedWith(innerExecutionWrappingAction = executionWrappingAction)
+
+/**
+ * Returns a test configuration chaining [this] with an [executionWrappingAction] for elements of a [TestElement] tree.
+ *
+ * [executionWrappingAction] operates on the [TestElement] it is configured for and each of its child elements.
+ * [executionWrappingAction] wraps around each [TestElement]'s cumulative action (a cumulative action includes
+ * all wrapping actions following this one, and the elements primary action).
+ * See [ExecutionWrappingAction] for requirements.
+ *
+ * Multiple [aroundEach] invocations nest outside-in in the order of appearance.
+ *
+ * Example:
+ * ```
+ * configuration = TestConfig.aroundEach { elementAction ->
+ *     println("$elementPath aroundEach entering")
+ *     elementAction()
+ *     println("$elementPath aroundEach exiting")
+ * }
+ * ```
+ */
+fun TestConfig.aroundEach(executionWrappingAction: ExecutionWrappingAction): TestConfig =
+    traversal(AroundEachTraversal(executionWrappingAction))
+
+private class AroundEachTraversal(val executionWrappingAction: ExecutionWrappingAction) : TestExecutionTraversal {
+    override suspend fun aroundEach(testElement: TestElement, elementAction: suspend TestElement.() -> Unit) {
+        testElement.executionWrappingAction {
+            testElement.elementAction()
+        }
+    }
+}
+
+/**
+ * Returns a test configuration chaining [this] with an [TestExecutionTraversal] for a test element tree.
+ *
+ * The traversal covers the [TestElement] it is configured for and all of its child elements.
+ * Multiple traversals nest outside-in in the order of appearance.
+ */
+fun TestConfig.traversal(executionTraversal: TestExecutionTraversal): TestConfig = combinedWith { elementAction ->
+    val testElement = this
+    withContext(ExecutionTraversalContext(executionTraversal)) {
+        // The context element enables the traversal for this element's children only. To cover this element as well,
+        // we explicitly invoke its traversal action.
+        executionTraversal.aroundEach(testElement, elementAction)
+    }
+}
+
+/**
+ * A traversal following the execution across all [TestElement]s of a (partial) test element tree.
+ *
+ * Example:
+ * ```
+ * class FailFastStrategy(val maxFailureCount: Int) : TestExecutionTraversal {
+ *     private val testFailureCount = atomic(0)
+ *
+ *     override suspend fun aroundEach(testElement: TestElement, elementAction: suspend TestElement.() -> Unit) {
+ *         if (testFailureCount.value >= maxFailureCount && testElement is Test) {
+ *             throw Exception("Failing fast: ${testFailureCount.value} failed tests.")
+ *         }
+ *         try {
+ *             testElement.elementAction()
+ *         } catch (throwable: Throwable) {
+ *             if (testElement is Test) {
+ *                 testFailureCount.incrementAndGet()
+ *             }
+ *             throw throwable
+ *         }
+ *     }
+ * }
+ * ```
+ */
+interface TestExecutionTraversal {
+    /**
+     * A method wrapping each [TestElement]'s cumulative [elementAction].
+     *
+     * The cumulative [elementAction] includes all wrapping actions following this one, and the elements primary action.
+     */
+    suspend fun aroundEach(testElement: TestElement, elementAction: suspend TestElement.() -> Unit)
+}
+
+private class ExecutionTraversalContext private constructor(
+    /** [TestExecutionTraversal]s in an inside-out order of wrapping (innermost action first). */
+    private val executionTraversals: List<TestExecutionTraversal>
+) : AbstractCoroutineContextElement(Key) {
+
+    /** Wraps the execution for this context's traversals, then executes [elementAction] on [testElement]. */
+    suspend inline fun executeInside(testElement: TestElement, noinline elementAction: suspend TestElement.() -> Unit) {
+        executionTraversals.fold(elementAction) { action, traversal ->
+            { traversal.aroundEach(testElement, action) }
+        }.invoke(testElement)
+    }
+
+    companion object {
+        private val Key = object : CoroutineContext.Key<ExecutionTraversalContext> {}
+
+        /** Returns a new [ExecutionTraversalContext], adding [executionTraversal] to the current ones. */
+        suspend operator fun invoke(executionTraversal: TestExecutionTraversal): ExecutionTraversalContext {
+            val current = current()
+            return ExecutionTraversalContext(
+                if (current != null) {
+                    listOf(executionTraversal) + current.executionTraversals
+                } else {
+                    listOf(executionTraversal)
+                }
+            )
+        }
+
+        suspend fun current(): ExecutionTraversalContext? = currentCoroutineContext()[Key]
+    }
+}
+
+private suspend inline fun <SpecificTestElement : TestElement> ExecutionWrappingAction?.wrapIfNotNull(
+    testElement: SpecificTestElement,
+    crossinline elementAction: suspend SpecificTestElement.() -> Unit
+) {
+    if (this != null) {
+        this(testElement) {
+            testElement.elementAction()
+        }
+    } else {
+        testElement.elementAction()
+    }
+}
 
 /**
  * Returns a test configuration chaining [this] with an invocation [value].
@@ -164,6 +308,20 @@ private class InvocationContext(val value: TestInvocation) : AbstractCoroutineCo
 }
 
 /**
+ * Returns a test configuration chaining [this] with execution on a single-threaded dispatcher.
+ *
+ * Child elements inherit the single-threaded dispatcher.
+ */
+@OptIn(ExperimentalCoroutinesApi::class)
+fun TestConfig.singleThreaded(): TestConfig = combinedWith { elementAction ->
+    withSingleThreadedDispatcher { dispatcher ->
+        withContext(dispatcher) {
+            elementAction()
+        }
+    }
+}
+
+/**
  * Returns a test configuration chaining [this] with a main dispatcher (see [Dispatchers.setMain]).
  *
  * If [dispatcher] is `null`, a single-threaded dispatcher is used.
@@ -185,7 +343,7 @@ fun TestConfig.mainDispatcher(dispatcher: CoroutineDispatcher? = null): TestConf
  *
  * Child elements inherit this setting.
  */
-fun TestConfig.testScope(isEnabled: Boolean, timeout: Duration = TestScopeContext.DEFAULT_TIMEOUT): TestConfig =
+fun TestConfig.testScope(isEnabled: Boolean, timeout: Duration = 60.seconds): TestConfig =
     coroutineContext(TestScopeContext(isEnabled, timeout))
 
 /**
@@ -195,8 +353,6 @@ internal class TestScopeContext(internal val isEnabled: Boolean, val timeout: Du
     AbstractCoroutineContextElement(Key) {
     companion object {
         private val Key = object : CoroutineContext.Key<TestScopeContext> {}
-
-        val DEFAULT_TIMEOUT = 60.seconds
 
         suspend fun current(): TestScopeContext? = currentCoroutineContext()[Key]?.run { if (isEnabled) this else null }
     }

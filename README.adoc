@@ -24,7 +24,7 @@ image:documentation/images/Test%20Run.png[Test Run.png]
 * The entire framework is platform independent with almost zero redundancy.
 * The architecture favors simplicity and aims to avoid implicit constructs and indirection.
 
-link:samples/prototype-scenarios/src/commonTest/kotlin/com/example/Tests.kt[This example] shows how it looks like.
+link:samples/prototype-scenarios/src/commonTest/kotlin/com/example/SimpleTestSuite.kt[This example] shows how it looks like.
 
 === Background
 
@@ -126,6 +126,6 @@ in an IDE run configuration with an environment variable setting:
 
 === TODO
 
-* [x] Provide integration for Kotest assertions.
+* [x] Add `TestConfig.aroundEach` for universal test element (suite/test) interception.
+** [ ] Use it for internal tests (look for "trace" and other collecting functions).
 * [ ] Add a "fail fast" configuration option, stopping a test (suite/compartment/session) execution after a configurable number of test failures.
-** Make it universal by providing a global (suite/test/both) wrapper?
