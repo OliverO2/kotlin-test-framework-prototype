@@ -118,7 +118,6 @@ private object TestSessionRelay {
      */
     private fun CoroutineScope.launchedSession(): Job = launch {
         try {
-            println("Session start")
             TestSession.global.execute(
                 report = object : TestReport() {
                     // A TestReport relaying test results to the corresponding test elements' result channel(s).

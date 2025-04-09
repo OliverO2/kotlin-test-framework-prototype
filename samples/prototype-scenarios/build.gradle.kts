@@ -25,6 +25,11 @@ kotlin {
     jvmToolchain(jdkVersion)
 
     @OptIn(ExperimentalKotlinGradlePluginApi::class)
+    compilerOptions {
+        // freeCompilerArgs.addAll("-P", "plugin:com.example.testFramework:debug=true")
+    }
+
+    @OptIn(ExperimentalKotlinGradlePluginApi::class)
     jvm {
         compilerOptions {
             freeCompilerArgs.addAll("-Xjdk-release=$jdkVersion")
@@ -54,16 +59,12 @@ kotlin {
         binaries.executable()
     }
 
-    @OptIn(ExperimentalKotlinGradlePluginApi::class)
-    compilerOptions {
-        // freeCompilerArgs.addAll("-P", "plugin:com.example.testFramework:debug=true")
-    }
-
     sourceSets {
         commonTest {
             dependencies {
                 // implementation(libs.test.framework.prototype.core) // Use this outside of this project
                 implementation(projects.testFrameworkCore)
+                implementation(kotlin("test")) // for assertions only
                 implementation(libs.org.jetbrains.kotlinx.atomicfu)
             }
         }

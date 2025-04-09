@@ -102,26 +102,26 @@ NOTE: Environment variables and system properties must be relayed to the test ta
 
 Selecting tests via Gradle invocations is possible for targets checkmarked below.
 
-* [x] `++./gradlew -p samples/prototype-scenarios --quiet cleanAllTests jvmTest -DTEST_INCLUDE=com.example.TestSuite1.test1++`
+* [x] `++./gradlew -p samples/prototype-scenarios --quiet cleanAllTests jvmTest -DTEST_INCLUDE=com.example.Simple.string*length++`
 +
 --
-NOTE: The JVM test task does not tolerate a `--tests` option without a wildcard in the fully qualified "class" name. Omitting the wildcard leads to "No tests found for given includes: [com.example.TestSuite1.test1](--tests filter)".
+NOTE: The JVM test task does not tolerate a `--tests` option without a wildcard in the fully qualified "class" name. Omitting the wildcard leads to "No tests found for given includes: [com.example.Simple](--tests filter)".
 --
-* [x] `++./gradlew -p samples/prototype-scenarios --quiet cleanAllTests jsNodeTest --tests com.example.TestSuite1.test1++`
+* [x] `++./gradlew -p samples/prototype-scenarios --quiet cleanAllTests jsNodeTest --tests com.example.Simple.string*length++`
 +
 --
 NOTE: The `jsNodeTest` supports post-run selection only: It runs all tests, then displays the selected ones in the IDE's test results hierarchy window.
 --
-* [x] `++./gradlew -p samples/prototype-scenarios --quiet cleanAllTests jsBrowserTest --tests com.example.TestSuite1.test1++`
-* [x] `++./gradlew -p samples/prototype-scenarios --quiet cleanAllTests wasmJsNodeTest --tests com.example.TestSuite1.test1++`
-* [ ] `++./gradlew -p samples/prototype-scenarios --quiet cleanAllTests wasmJsBrowserTest --tests com.example.TestSuite1.test1++`
-* [ ] `++./gradlew -p samples/prototype-scenarios --quiet cleanAllTests wasmWasiNodeTest --tests com.example.TestSuite1.test1++`
+* [x] `++./gradlew -p samples/prototype-scenarios --quiet cleanAllTests jsBrowserTest --tests com.example.Simple.string*length++`
+* [x] `++./gradlew -p samples/prototype-scenarios --quiet cleanAllTests wasmJsNodeTest --tests com.example.Simple.string*length++`
+* [ ] `++./gradlew -p samples/prototype-scenarios --quiet cleanAllTests wasmJsBrowserTest --tests com.example.Simple.string*length++`
+* [ ] `++./gradlew -p samples/prototype-scenarios --quiet cleanAllTests wasmWasiNodeTest --tests com.example.Simple.string*length++`
 * [x] `++./gradlew -p samples/prototype-scenarios --quiet cleanAllTests linuxX64Test++`
 +
 --
 in an IDE run configuration with an environment variable setting:
 
-* `++TEST_INCLUDE=com.example.TestSuite1.test1++`
+* `++TEST_INCLUDE=com.example.Simple.string*length++`
 --
 
 === TODO
