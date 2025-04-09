@@ -17,6 +17,7 @@ import testFramework.internal.TestElementEvent
 import testFramework.internal.TestReport
 import testFramework.internal.logError
 import testFramework.internal.logInfo
+import testFramework.spacesEscaped
 import testFramework.testPlatform
 
 internal typealias JsPromiseLike = Any
@@ -39,7 +40,7 @@ internal fun TestElement.registerWithKotlinJsTestFramework() {
         }
 
         is TestSuite -> {
-            kotlinJsTestFramework.suite(elementName, ignored = !isEnabled) {
+            kotlinJsTestFramework.suite(elementName.spacesEscaped(), ignored = !isEnabled) {
                 childElements.forEach {
                     it.registerWithKotlinJsTestFramework()
                 }
@@ -47,7 +48,7 @@ internal fun TestElement.registerWithKotlinJsTestFramework() {
         }
 
         is Test -> {
-            kotlinJsTestFramework.test(elementName, ignored = !isEnabled) {
+            kotlinJsTestFramework.test(elementName.spacesEscaped(), ignored = !isEnabled) {
                 TestSessionRelay.resultReceivingPromise(this)
             }
         }

@@ -94,7 +94,7 @@ sealed class TestElement(
     }
 }
 
-private fun String.spacesEscaped(): String = replace(' ', NON_BREAKING_SPACE)
+internal fun String.spacesEscaped(): String = replace(' ', NON_BREAKING_SPACE)
 
 private const val NON_BREAKING_SPACE = '\u00a0'
 private const val MIDDLE_DOT = '\u00b7'
