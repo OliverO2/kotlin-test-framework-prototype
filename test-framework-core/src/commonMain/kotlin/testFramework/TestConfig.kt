@@ -190,6 +190,38 @@ private class AroundEachTraversal(val executionWrappingAction: ExecutionWrapping
 }
 
 /**
+ * Returns a test configuration chaining [this] with a "fail fast" strategy to limit the number of test failures.
+ *
+ * If more than [maxFailureCount] tests fail, any subsequent test will abandon further testing:
+ * - On platforms supporting it, the test session stops, optionally marking all remaining tests as skipped.
+ * - On platforms not supporting a premature shutdown, all remaining tests will fail with a "Failing fast" exception,
+ *   without being executed.
+ *
+ * The strategy covers the test element tree rooted at the configuration's element.
+ */
+fun TestConfig.failFast(maxFailureCount: Int) = traversal(FailFastStrategy(maxFailureCount))
+
+private class FailFastStrategy(val maxFailureCount: Int) : TestExecutionTraversal {
+    private val testFailureCount = atomic(0)
+
+    override suspend fun aroundEach(testElement: TestElement, elementAction: suspend TestElement.() -> Unit) {
+        if (testFailureCount.value > maxFailureCount && testElement is Test) {
+            throw FailFastException(testFailureCount.value)
+        }
+        try {
+            testElement.elementAction()
+        } catch (throwable: Throwable) {
+            if (testElement is Test) {
+                testFailureCount.incrementAndGet()
+            }
+            throw throwable
+        }
+    }
+}
+
+internal class FailFastException(val failureCount: Int) : Error("Failing fast after $failureCount failed tests")
+
+/**
  * Returns a test configuration chaining [this] with an [TestExecutionTraversal] for a test element tree.
  *
  * The traversal covers the [TestElement] it is configured for and all of its child elements.
@@ -207,26 +239,7 @@ fun TestConfig.traversal(executionTraversal: TestExecutionTraversal): TestConfig
 /**
  * A traversal following the execution across all [TestElement]s of a (partial) test element tree.
  *
- * Example:
- * ```
- * class FailFastStrategy(val maxFailureCount: Int) : TestExecutionTraversal {
- *     private val testFailureCount = atomic(0)
- *
- *     override suspend fun aroundEach(testElement: TestElement, elementAction: suspend TestElement.() -> Unit) {
- *         if (testFailureCount.value >= maxFailureCount && testElement is Test) {
- *             throw Exception("Failing fast: ${testFailureCount.value} failed tests.")
- *         }
- *         try {
- *             testElement.elementAction()
- *         } catch (throwable: Throwable) {
- *             if (testElement is Test) {
- *                 testFailureCount.incrementAndGet()
- *             }
- *             throw throwable
- *         }
- *     }
- * }
- * ```
+ * For an example, see the implementation of [TestConfig.failFast].
  */
 interface TestExecutionTraversal {
     /**

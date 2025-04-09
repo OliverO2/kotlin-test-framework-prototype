@@ -66,15 +66,24 @@ internal fun withTestFramework(testSession: AbstractTestSession? = null, action:
 internal suspend fun withTestReport(
     vararg suites: TestSuite,
     selection: TestElement.Selection = TestElement.AllInSelection,
-    action: suspend InMemoryTestReport.() -> Unit
+    expectFrameworkFailure: Boolean = false,
+    action: suspend InMemoryTestReport.(frameworkFailure: Throwable?) -> Unit
 ) {
     require(suites.isNotEmpty()) { "At least one suite must be provided" }
 
     TestSession.global.parameterize(selection)
 
     val report = InMemoryTestReport()
-    TestSession.global.execute(report)
-    report.action()
+    var frameworkFailure: Throwable? = null
+    try {
+        TestSession.global.execute(report)
+    } catch (throwable: Throwable) {
+        frameworkFailure = throwable
+        if (!expectFrameworkFailure) {
+            throw frameworkFailure
+        }
+    }
+    report.action(frameworkFailure)
 }
 
 /**

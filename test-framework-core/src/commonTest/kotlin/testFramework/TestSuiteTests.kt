@@ -288,6 +288,30 @@ class TestSuiteTests {
     }
 
     @Test
+    fun failFast() = withTestFramework {
+        val suite1 by testSuite("suite1", configuration = TestConfig.failFast(3)) {
+            for (testId in 1..15) {
+                test("test$testId") {
+                    if (testId.mod(2) == 0) {
+                        fail("expect failure")
+                    }
+                }
+            }
+        }
+
+        // Note that since this test does not interact with the Kotlin/JS test infrastructure, it tests
+        // premature completion in a JVM-like fashion (stopping to run tests after "fail fast" detection)
+        // on all platforms.
+        withTestReport(suite1, expectFrameworkFailure = true) { frameworkFailure ->
+            assertEquals(4, (frameworkFailure as? FailFastException)?.failureCount)
+            with(finishedEvents()) {
+                val failedTests = filter { it.failed && it.element is testFramework.Test }
+                assertEquals(5, failedTests.size) // 4 test failures plus one FailFastException
+            }
+        }
+    }
+
+    @Test
     fun fixture() = withTestFramework {
         val trace = ConcurrentList<String>()
 
