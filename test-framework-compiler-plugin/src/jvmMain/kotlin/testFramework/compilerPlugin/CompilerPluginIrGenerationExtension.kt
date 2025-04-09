@@ -260,7 +260,6 @@ private class ModuleTransformer(
 
                 platform.isJs() || platform.isWasm() -> {
                     addEntryPoint(irSuspendMainFunction())
-                    irWasmStartUnitTestsFunctionOrNull()?.let { addEntryPoint(it) }
                 }
 
                 platform.isNative() -> {
@@ -585,29 +584,6 @@ private class ModuleTransformer(
             typeArguments = listOf(irElementType)
         ).apply {
             putValueArgument(0, irVararg(irElementType, irSuitesVararg))
-        }
-    }
-
-    /**
-     * Returns a `startUnitTests` function declaration like this, or `null` if there is no `@WasmExport` symbol:
-     *
-     * ```
-     * @WasmExport
-     * fun startUnitTests() {}
-     * ```
-     *
-     * `startUnitTests()` is invoked by Kotlin/Wasm and must be present. It has no effect with this framework.
-     */
-    private fun irWasmStartUnitTestsFunctionOrNull(): IrSimpleFunction? {
-        val wasmExportSymbol = irClassSymbolOrNull("kotlin.wasm.WasmExport") ?: return null
-
-        return pluginContext.irFactory.buildFun {
-            name = Name.identifier("startUnitTests")
-            visibility = DescriptorVisibilities.INTERNAL
-            returnType = pluginContext.irBuiltIns.unitType
-        }.apply {
-            annotations += irConstructorCall(wasmExportSymbol)
-            body = DeclarationIrBuilder(pluginContext, symbol).irBlockBody {}
         }
     }
 
