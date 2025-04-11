@@ -16,11 +16,7 @@ import kotlin.time.Duration.Companion.seconds
 /**
  * A test element's configuration, modifying the execution of tests and suites.
  *
- * A test element may be configured via any number of chained [TestConfig]s.
- *
- * Each [TestConfig] configures its [TestElement] in two phases:
- * 1. The parameterization phase, which is executed when creating the test tree.
- * 2. The execution phase, where the elements of the test tree are executed.
+ * A test element can be configured via any number of chained [TestConfig]s.
  *
  * When [TestConfig]s are combined into a chain,
  * - a later conflicting [TestConfig] takes precedence over an earlier one,
@@ -43,35 +39,62 @@ import kotlin.time.Duration.Companion.seconds
  */
 open class TestConfig internal constructor(
     private val parameterizingAction: ParameterizingAction?,
-    private val executionWrappingAction: ExecutionWrappingAction?
+    private val executionWrappingAction: ExecutionWrappingAction?,
+    private val reportSetupAction: ReportSetupAction?
 ) {
-    /** Returns a [TestConfig] which combines `this` configuration with the parameters provided. */
-    internal fun combinedWith(
-        nextParameterizingAction: ParameterizingAction? = null,
-        innerExecutionWrappingAction: ExecutionWrappingAction? = null
-    ): TestConfig = TestConfig(
-        parameterizingAction = if (parameterizingAction != null && nextParameterizingAction != null) {
+    /** Returns a [TestConfig] which combines `this` configuration with a parameterizing action. */
+    internal fun parameterizing(nextParameterizingAction: ParameterizingAction): TestConfig = TestConfig(
+        parameterizingAction = if (parameterizingAction != null) {
             {
                 parameterizingAction()
                 nextParameterizingAction()
             }
         } else {
-            parameterizingAction ?: nextParameterizingAction
+            nextParameterizingAction
         },
-        executionWrappingAction = if (executionWrappingAction != null && innerExecutionWrappingAction != null) {
+        executionWrappingAction = executionWrappingAction,
+        reportSetupAction = reportSetupAction
+    )
+
+    /** Returns a [TestConfig] which combines `this` configuration with an execution-wrapping action. */
+    internal fun executionWrapping(innerExecutionWrappingAction: ExecutionWrappingAction): TestConfig = TestConfig(
+        parameterizingAction = parameterizingAction,
+        executionWrappingAction = if (executionWrappingAction != null) {
             { elementAction ->
                 executionWrappingAction {
                     innerExecutionWrappingAction(elementAction)
                 }
             }
         } else {
-            executionWrappingAction ?: innerExecutionWrappingAction
+            innerExecutionWrappingAction
+        },
+        reportSetupAction = reportSetupAction
+    )
+
+    /** Returns a [TestConfig] which combines `this` configuration with a report setup action. */
+    internal fun reportSetup(nextReportSetupAction: ReportSetupAction): TestConfig = TestConfig(
+        parameterizingAction = parameterizingAction,
+        executionWrappingAction = executionWrappingAction,
+        reportSetupAction = if (reportSetupAction != null) {
+            { elementAction ->
+                reportSetupAction(elementAction)
+                nextReportSetupAction(elementAction)
+            }
+        } else {
+            nextReportSetupAction
         }
     )
 
     /** Returns a [TestConfig] which chains `this` configuration with [otherConfiguration]. */
-    fun chainedWith(otherConfiguration: TestConfig): TestConfig =
-        combinedWith(otherConfiguration.parameterizingAction, otherConfiguration.executionWrappingAction)
+    fun chainedWith(otherConfiguration: TestConfig): TestConfig {
+        var result = this
+
+        otherConfiguration.parameterizingAction?.let { result = result.parameterizing(it) }
+        otherConfiguration.executionWrappingAction?.let { result = result.executionWrapping(it) }
+        otherConfiguration.reportSetupAction?.let { result = result.reportSetup(it) }
+
+        return result
+    }
 
     /** Parameterizes [testElement] according to `this` configuration. */
     internal open fun parameterize(testElement: TestElement) {
@@ -93,11 +116,25 @@ open class TestConfig internal constructor(
         }
     }
 
+    internal suspend fun withReportSetup(
+        testElement: TestElement,
+        reportingAction: suspend (additionalReports: Iterable<TestReport>?) -> Unit
+    ) {
+        if (reportSetupAction != null) {
+            reportSetupAction(testElement) {
+                reportingAction(ReportContext.additionalReports())
+            }
+        } else {
+            reportingAction(ReportContext.additionalReports())
+        }
+    }
+
     /** The initial (empty) test configuration. */
-    companion object : TestConfig(null, null)
+    companion object : TestConfig(null, null, null)
 }
 
 private typealias ParameterizingAction = TestElement.() -> Unit
+private typealias ReportSetupAction = suspend TestElement.(elementAction: suspend TestElement.() -> Unit) -> Unit
 
 /**
  * An action wrapping the execution for a [TestElement].
@@ -125,14 +162,14 @@ typealias ExecutionWrappingAction = suspend TestElement.(elementAction: suspend 
  *
  * Child elements inherit this setting's effect.
  */
-fun TestConfig.disable() = combinedWith({ isEnabled = false })
+fun TestConfig.disable() = parameterizing { isEnabled = false }
 
 /**
  * Returns a test configuration chaining [this] with a coroutine [context].
  *
  * Child elements inherit the [context].
  */
-fun TestConfig.coroutineContext(context: CoroutineContext): TestConfig = combinedWith { elementAction ->
+fun TestConfig.coroutineContext(context: CoroutineContext): TestConfig = executionWrapping { elementAction ->
     withContext(context) {
         elementAction()
     }
@@ -157,7 +194,7 @@ fun TestConfig.coroutineContext(context: CoroutineContext): TestConfig = combine
  * ```
  */
 fun TestConfig.aroundAll(executionWrappingAction: ExecutionWrappingAction): TestConfig =
-    combinedWith(innerExecutionWrappingAction = executionWrappingAction)
+    executionWrapping(executionWrappingAction)
 
 /**
  * Returns a test configuration chaining [this] with an [executionWrappingAction] for elements of a [TestElement] tree.
@@ -227,7 +264,7 @@ internal class FailFastException(val failureCount: Int) : Error("Failing fast af
  * The traversal covers the [TestElement] it is configured for and all of its child elements.
  * Multiple traversals nest outside-in in the order of appearance.
  */
-fun TestConfig.traversal(executionTraversal: TestExecutionTraversal): TestConfig = combinedWith { elementAction ->
+fun TestConfig.traversal(executionTraversal: TestExecutionTraversal): TestConfig = executionWrapping { elementAction ->
     val testElement = this
     withContext(ExecutionTraversalContext(executionTraversal)) {
         // The context element enables the traversal for this element's children only. To cover this element as well,
@@ -326,7 +363,7 @@ private class InvocationContext(val value: TestInvocation) : AbstractCoroutineCo
  * Child elements inherit the single-threaded dispatcher.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-fun TestConfig.singleThreaded(): TestConfig = combinedWith { elementAction ->
+fun TestConfig.singleThreaded(): TestConfig = executionWrapping { elementAction ->
     withSingleThreadedDispatcher { dispatcher ->
         withContext(dispatcher) {
             elementAction()
@@ -342,11 +379,12 @@ fun TestConfig.singleThreaded(): TestConfig = combinedWith { elementAction ->
  * This configuration may not be overridden at lower levels of the [TestElement] hierarchy.
  * Child elements inherit this setting.
  */
-fun TestConfig.mainDispatcher(dispatcher: CoroutineDispatcher? = null): TestConfig = combinedWith { elementAction ->
-    withMainDispatcher(dispatcher) {
-        elementAction()
+fun TestConfig.mainDispatcher(dispatcher: CoroutineDispatcher? = null): TestConfig =
+    executionWrapping { elementAction ->
+        withMainDispatcher(dispatcher) {
+            elementAction()
+        }
     }
-}
 
 /**
  * Returns a test configuration chaining [this] with a [kotlinx.coroutines.test.TestScope] setting.
@@ -411,3 +449,39 @@ suspend fun withMainDispatcher(dispatcher: CoroutineDispatcher? = null, action: 
 }
 
 private val mainDispatcherChanged = atomic(false)
+
+/**
+ * Returns a test configuration chaining [this] with a [TestReport] for a test element tree.
+ *
+ * The report covers the [TestElement] it is configured for and all of its child elements.
+ */
+fun TestConfig.report(report: TestReport): TestConfig = reportSetup { elementAction ->
+    val testElement = this
+    withContext(ReportContext(report)) {
+        elementAction(testElement)
+    }
+}
+
+private class ReportContext private constructor(
+    /** [TestReport]s in definition order. */
+    val additionalReports: List<TestReport>
+) : AbstractCoroutineContextElement(Key) {
+
+    companion object {
+        private val Key = object : CoroutineContext.Key<ReportContext> {}
+
+        /** Returns a new [ReportContext], adding [additionalReport] to the current ones. */
+        suspend operator fun invoke(additionalReport: TestReport): ReportContext {
+            val additionalReports = additionalReports()
+            return ReportContext(
+                if (additionalReports != null) {
+                    additionalReports + listOf(additionalReport)
+                } else {
+                    listOf(additionalReport)
+                }
+            )
+        }
+
+        suspend fun additionalReports(): Iterable<TestReport>? = currentCoroutineContext()[Key]?.additionalReports
+    }
+}

@@ -4,7 +4,6 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import testFramework.internal.TestReport
 
 typealias TestSuiteExecutionAction = suspend TestSuite.() -> Unit
 typealias TestSuiteExecutionWrappingAction = suspend (suiteAction: TestSuiteExecutionAction) -> Unit
@@ -347,7 +346,7 @@ open class TestSuite internal constructor(
         }
     }
 
-    private fun TestConfig.fixtureLifecycleAction(): TestConfig = combinedWith { elementAction ->
+    private fun TestConfig.fixtureLifecycleAction(): TestConfig = executionWrapping { elementAction ->
         var actionException: Throwable? = null
 
         try {

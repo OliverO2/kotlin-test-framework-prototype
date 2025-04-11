@@ -11,10 +11,10 @@ import kotlinx.coroutines.withContext
 import testFramework.Test
 import testFramework.TestCompartment
 import testFramework.TestElement
+import testFramework.TestElementEvent
+import testFramework.TestReport
 import testFramework.TestSession
 import testFramework.TestSuite
-import testFramework.internal.TestElementEvent
-import testFramework.internal.TestReport
 import testFramework.internal.logError
 import testFramework.internal.logInfo
 import testFramework.spacesEscaped

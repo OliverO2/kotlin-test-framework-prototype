@@ -1,8 +1,5 @@
 package testFramework
 
-import testFramework.internal.TestElementEvent
-import testFramework.internal.TestReport
-
 sealed class TestElement(
     override val parentSuite: TestSuite?,
     override val elementName: String,
@@ -67,18 +64,25 @@ sealed class TestElement(
      * Executes [action], reporting its [TestElementEvent]s to the [report].
      */
     internal suspend fun executeReporting(report: TestReport, action: suspend () -> Unit) {
-        val startingEvent = TestElementEvent.Starting(this)
+        configuration.withReportSetup(this) { additionalReports ->
+            suspend fun TestElementEvent.Finished.addToReports() {
+                // address reports in reverse order for finish events
+                additionalReports?.reversed()?.forEach { it.add(this) }
+                report.add(this)
+            }
 
-        report.add(startingEvent)
+            val startingEvent = TestElementEvent.Starting(this)
 
-        try {
-            action()
-            report.add(TestElementEvent.Finished(this, startingEvent))
-        } catch (failFastException: FailFastException) {
-            report.add(TestElementEvent.Finished(this, startingEvent, failFastException))
-            throw failFastException
-        } catch (throwable: Throwable) {
-            report.add(TestElementEvent.Finished(this, startingEvent, throwable))
+            report.add(startingEvent)
+            additionalReports?.forEach { it.add(startingEvent) }
+
+            try {
+                action()
+                TestElementEvent.Finished(this, startingEvent).addToReports()
+            } catch (throwable: Throwable) {
+                TestElementEvent.Finished(this, startingEvent, throwable).addToReports()
+                if (throwable is FailFastException) throw throwable
+            }
         }
     }
 

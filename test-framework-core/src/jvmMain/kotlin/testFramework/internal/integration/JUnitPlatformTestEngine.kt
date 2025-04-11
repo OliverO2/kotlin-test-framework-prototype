@@ -18,12 +18,12 @@ import testFramework.FailFastException
 import testFramework.Test
 import testFramework.TestCompartment
 import testFramework.TestElement
+import testFramework.TestElementEvent
+import testFramework.TestReport
 import testFramework.TestSession
 import testFramework.TestSuite
 import testFramework.internal.EnvironmentBasedElementSelection
-import testFramework.internal.TestElementEvent
 import testFramework.internal.TestFrameworkDiscoveryResult
-import testFramework.internal.TestReport
 import testFramework.internal.logDebug
 import java.util.concurrent.ConcurrentHashMap
 

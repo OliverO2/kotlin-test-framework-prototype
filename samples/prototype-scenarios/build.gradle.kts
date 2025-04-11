@@ -65,6 +65,7 @@ kotlin {
                 // implementation(libs.test.framework.prototype.core) // Use this outside of this project
                 implementation(projects.testFrameworkCore)
                 implementation(kotlin("test")) // for assertions only
+                implementation(libs.org.jetbrains.kotlinx.datetime)
                 implementation(libs.org.jetbrains.kotlinx.atomicfu)
             }
         }

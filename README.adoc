@@ -126,6 +126,4 @@ in an IDE run configuration with an environment variable setting:
 
 === TODO
 
-* [x] Add `TestConfig.aroundEach` for universal test element (suite/test) interception.
-** [ ] Use it for internal tests (look for "trace" and other collecting functions).
-* [ ] Add a "fail fast" configuration option, stopping a test (suite/compartment/session) execution after a configurable number of test failures.
+* [ ] IDE plugin: Provide a https://plugins.jetbrains.com/docs/intellij/structure-view-factory.html[structure view] for tests.

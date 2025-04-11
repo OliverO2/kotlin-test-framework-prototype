@@ -9,9 +9,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestResult
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
-import testFramework.internal.TestElementEvent
 import testFramework.internal.TestFramework
-import testFramework.internal.TestReport
 import testFramework.internal.initializeTestFramework
 import testFramework.internal.logInfo
 import kotlin.test.assertContentEquals

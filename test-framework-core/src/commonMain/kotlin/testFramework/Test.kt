@@ -6,7 +6,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestScope
-import testFramework.internal.TestReport
 import testFramework.internal.runTestAwaitingCompletion
 
 /**

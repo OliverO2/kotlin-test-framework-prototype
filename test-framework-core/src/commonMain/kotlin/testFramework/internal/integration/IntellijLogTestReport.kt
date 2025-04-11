@@ -4,8 +4,8 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import testFramework.FailFastException
 import testFramework.Test
-import testFramework.internal.TestElementEvent
-import testFramework.internal.TestReport
+import testFramework.TestElementEvent
+import testFramework.TestReport
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 

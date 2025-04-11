@@ -595,6 +595,76 @@ class TestSuiteTests {
     }
 
     @Test
+    fun additionalReports() = withTestFramework {
+        val eventLog = mutableListOf<String>()
+
+        class AdditionalReport(val name: String) : TestReport() {
+            override suspend fun add(event: TestElementEvent) {
+                eventLog.add("$name: $event${if (!event.element.isEnabled) " [*]" else ""}")
+            }
+        }
+
+        class IntentionalFailure : Error("intentional failure") {
+            override fun toString(): String = "IntentionalFailure()"
+        }
+
+        val additionalReportA = AdditionalReport("A")
+        val additionalReportB = AdditionalReport("B")
+
+        val suite1 by testSuite("suite1", configuration = TestConfig.report(additionalReportA)) {
+            test("test1", configuration = TestConfig.disable()) {
+            }
+
+            test("test2") {
+            }
+
+            testSuite("middleSuite", configuration = TestConfig.report(additionalReportB)) {
+                test("test1") {
+                    throw IntentionalFailure()
+                }
+
+                testSuite("innerSuite1") {
+                    configuration = configuration.disable()
+
+                    test("test1") {
+                    }
+                }
+            }
+        }
+
+        withTestReport(suite1) {
+            // [*] means: disabled test element, will be reported without actual execution
+            assertContentEquals(
+                listOf(
+                    "A: TestSuite(suite1): Starting",
+                    "A: Test(suite1.test1): Starting [*]",
+                    "A: Test(suite1.test1): Finished – throwable=null [*]",
+                    "A: Test(suite1.test2): Starting",
+                    "A: Test(suite1.test2): Finished – throwable=null",
+                    "A: TestSuite(suite1.middleSuite): Starting",
+                    "B: TestSuite(suite1.middleSuite): Starting",
+                    "A: Test(suite1.middleSuite.test1): Starting",
+                    "B: Test(suite1.middleSuite.test1): Starting",
+                    "B: Test(suite1.middleSuite.test1): Finished – throwable=IntentionalFailure()",
+                    "A: Test(suite1.middleSuite.test1): Finished – throwable=IntentionalFailure()",
+                    "A: TestSuite(suite1.middleSuite.innerSuite1): Starting [*]",
+                    "B: TestSuite(suite1.middleSuite.innerSuite1): Starting [*]",
+                    "A: Test(suite1.middleSuite.innerSuite1.test1): Starting [*]",
+                    "B: Test(suite1.middleSuite.innerSuite1.test1): Starting [*]",
+                    "B: Test(suite1.middleSuite.innerSuite1.test1): Finished – throwable=null [*]",
+                    "A: Test(suite1.middleSuite.innerSuite1.test1): Finished – throwable=null [*]",
+                    "B: TestSuite(suite1.middleSuite.innerSuite1): Finished – throwable=null [*]",
+                    "A: TestSuite(suite1.middleSuite.innerSuite1): Finished – throwable=null [*]",
+                    "B: TestSuite(suite1.middleSuite): Finished – throwable=null",
+                    "A: TestSuite(suite1.middleSuite): Finished – throwable=null",
+                    "A: TestSuite(suite1): Finished – throwable=null"
+                ),
+                eventLog
+            )
+        }
+    }
+
+    @Test
     fun topLevelClassDeclarations() = withTestFramework {
         class Suite1 :
             TestSuite({
