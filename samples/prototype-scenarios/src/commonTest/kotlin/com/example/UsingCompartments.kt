@@ -22,7 +22,7 @@ val concurrentSuite by testSuite(
         .testScope(isEnabled = false)
         .statisticsReport()
 ) {
-    test(iterations = 10) {
+    test("delay iterations", iterations = 10) {
         delay(10.milliseconds)
     }
 }

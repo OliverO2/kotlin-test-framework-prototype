@@ -13,7 +13,7 @@ val UsingCustomTestVariants by testSuite {
         assertEquals(8, "Test me!".length)
     }
 
-    test(iterations = 10) {
+    test("true iterations", iterations = 10) {
         assertTrue(true)
     }
 }

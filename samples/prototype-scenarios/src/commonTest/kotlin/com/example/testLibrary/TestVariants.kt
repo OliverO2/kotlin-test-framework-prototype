@@ -9,7 +9,7 @@ import testFramework.testScope
 import kotlin.time.Duration
 
 /**
- * Declares a test with a [timeout] as defined in  kotlinx.coroutines [withTimeout].
+ * Declares a test with a [timeout] as defined in kotlinx.coroutines [withTimeout].
  */
 fun TestSuite.test(name: String, timeout: Duration, action: TestAction) =
     test(name, configuration = TestConfig.testScope(isEnabled = false)) {
@@ -25,7 +25,7 @@ fun TestSuite.test(name: String, timeout: Duration, action: TestAction) =
 /**
  * Declares a test series with a number of [iterations].
  */
-fun TestSuite.test(name: String = "", iterations: Int, action: TestAction) {
+fun TestSuite.test(name: String, iterations: Int, action: TestAction) {
     for (iteration in 1..iterations) {
         test("$name#$iteration") {
             action()
