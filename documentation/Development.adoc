@@ -1,0 +1,28 @@
+:icons: font
+
+== TestBalloon Development
+
+=== Overview
+
+TestBalloon comprises these components (appearing as Gradle subprojects):
+
+. *framework-core*: The Kotlin Multiplatform library containing all core framework functions.
+. *compiler-plugin*: A Kotlin compiler plugin generating code to discover all top-level test suites and run them as directed by Kotlin's standard Gradle test tasks. Think of it as providing the `main()` function for tests.
+. *gradle-plugin*: A Gradle plugin enabling the TestBalloon Kotlin compiler plugin, configurable in Gradle build scripts via the `testBalloon` extension. The Gradle plugin also sets up JUnit Platform, which is required to run tests on the JVM.
+. *framework-abstractions*: Basic abstractions defining what a hierarchical test structure looks like, so that the core library, the compiler plugin, and an IDE plugin share a common concept of that test structure.
+
+In addition to the above, there are *integrations-**, providing TestBalloon interoperability with other test-related libraries.
+
+=== Tasks
+
+==== Testing the Compiler Plugin
+
+1. Run the compiler plugin in-process with Gradle.
++
+--
+To run the Gradle tasks `clean compileTestKotlinJvm` for the xref:../examples/framework-core[examples/framework-core] project:
+
+* `gradlew -Dorg.gradle.debug=true -Pkotlin.compiler.execution.strategy=in-process :examples:core:clean :examples:core:compileTestKotlinJvm`
+--
+
+2. Attach the JVM debugger to port 5005. In IntelliJ IDEA, use the command _Run – Attach to Process_.

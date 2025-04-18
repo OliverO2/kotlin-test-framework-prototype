@@ -1,0 +1,48 @@
+:icons: font
+
+=== Limitations
+
+==== Test reporting
+
+* The IDE does not report more than one level of suite nesting for tests using the Kotlin/JS infra (JS/Browser, JS/Node, Wasm/JS/Browser). While all suites appear, they are not properly nested, because the names of intermediate levels are cut out on their way from the test framework to the IDE.
+* Gradle XML test reports are incomplete: Wasm/JS/Node, Wasm/WASI and Native are missing.
+
+==== IntelliJ IDEA integration
+
+An IntelliJ IDEA plugin supports running individual tests or suites from source code via gutter icons.
+
+In IntelliJ IDEA, it is currently not possible to
+
+* run tests from the test run window,
+* rerun failed tests from the test run window,
+* run failed tests from the inspections window.
+
+==== Gradle Test Filtering
+
+Depending on the target, selection supports command line arguments, environment variables, or system properties. Selection patterns support the wildcard `*`.
+
+NOTE: Environment variables and system properties must be relayed to the test task (see xref:../examples/framework-core/build.gradle.kts[examples/framework-core/build.gradle.kts]).
+
+Selecting tests via Gradle invocations is possible for targets checkmarked below.
+
+* [x] `++./gradlew -p ../examples/framework-core --quiet cleanAllTests jvmTest -DTEST_INCLUDE=com.example.Simple.string*length++`
++
+--
+NOTE: The JVM test task does not tolerate a `--tests` option without a wildcard in the fully qualified "class" name. Omitting the wildcard leads to "No tests found for given includes: [com.example.Simple](--tests filter)".
+--
+* [x] `++./gradlew -p ../examples/framework-core --quiet cleanAllTests jsNodeTest --tests com.example.Simple.string*length++`
++
+--
+NOTE: The `jsNodeTest` supports post-run selection only: It runs all tests, then displays the selected ones in the IDE's test results hierarchy window.
+--
+* [x] `++./gradlew -p ../examples/framework-core --quiet cleanAllTests jsBrowserTest --tests com.example.Simple.string*length++`
+* [x] `++./gradlew -p ../examples/framework-core --quiet cleanAllTests wasmJsNodeTest --tests com.example.Simple.string*length++`
+* [ ] `++./gradlew -p ../examples/framework-core --quiet cleanAllTests wasmJsBrowserTest --tests com.example.Simple.string*length++`
+* [ ] `++./gradlew -p ../examples/framework-core --quiet cleanAllTests wasmWasiNodeTest --tests com.example.Simple.string*length++`
+* [x] `++./gradlew -p ../examples/framework-core --quiet cleanAllTests linuxX64Test++`
++
+--
+in an IDE run configuration with an environment variable setting:
+
+* `++TEST_INCLUDE=com.example.Simple.string*length++`
+--

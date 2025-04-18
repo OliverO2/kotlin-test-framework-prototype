@@ -1,129 +1,199 @@
-== A Kotlin Multiplatform Test Framework Prototype
+:icons: font
 
-This prototype aims to explore a flexible, concise and maintainable Kotlin Multiplatform test framework architecture.
+== TestBalloon – A coroutines-first Kotlin Multiplatform test framework
 
-The goal: Testing Kotlin like Kotlin – concise, native everywhere, productive, fun. Will this help us get there?
+NOTE: Structured testing for Kotlin Multiplatform: Coroutines-powered, lightweight, easy to use
 
 image:documentation/images/Test%20Run.png[Test Run.png]
 
-=== Features
+=== How to Use TestBalloon
 
-* A *test hierarchy* represented by *nestable ``TestElement``s*.
-** ``Test``s are test elements containing actual test logic with assertions, they cannot have child elements.
-** ``TestSuite``s are test elements grouping child elements, they cannot contain test logic.
-** ``TestCompartments``s are test elements grouping top-level test suites, with each compartment running in isolation.
-** A ``TestSession`` is the root of the test hierarchy for an individual test run.
-* *Tests and suites* can be *created dynamically* via plain Kotlin.
-* Tests are fully *coroutine-aware*, coroutine contexts mirror the suites/tests hierarchy.
-* Suites support *lazily initialized test fixtures* with ``AutoCloseable``support. Fixture *initialization and tear-down* (auto-close) functions *can suspend*.
-* Suites support a *suspending ``aroundAll``* action.
-* *Suite nesting* and *suspending suite-level actions* are *fully supported on JavaScript* engines, using the Kotlin/JS test infra.
-* A global *TestSession* provides configuration defaults. A customized variant can be declared.
-* *Compartments* isolate suites with different *configuration and concurrency requirements*.
-* Test elements can be configured via an extensible set of `TestConfig` elements, which can be combined by chaining.
-* The entire framework is platform independent with almost zero redundancy.
-* The architecture favors simplicity and aims to avoid implicit constructs and indirection.
-
-link:samples/prototype-scenarios/src/commonTest/kotlin/com/example/SimpleTestSuite.kt[This example] shows how it looks like.
-
-=== Background
-
-I have been working for several years on (non-mobile) frontend and backend stuff, using the two most popular Kotlin test frameworks, https://kotlinlang.org/api/latest/kotlin.test/[kotlin-test] and https://kotest.io/[Kotest]. I am involved in maintaining Kotest. I have also researched other test framework approaches like https://www.spekframework.org/[Spek], https://github.com/failgood/failgood[failgood] and https://opensavvy.gitlab.io/groundwork/prepared/docs/index.html[OpenSavvy Prepared].
-
-What I've been missing so far is the combination of
-
-* an expressive and powerful API with a small API surface,
-* uniform multiplatform functionality (everything works everywhere in the same way),
-* a lean (maintainable) implementation,
-* a complete feature set for common usage scenarios,
-* composability, allowing users to extend the framework easily for special needs,
-* a developer experience with as little surprise (including quirks, bugs) as possible.
-
-=== Evolution
-
-The results of my research and experimentation with this prototype are reflected in these xref:documentation/Design Considerations.adoc[Design Considerations]. What matters to me is not maximizing some feature set (au contraire!), but having a well-thought-out, concise and easy-to-understand API, that lets us do testing as productively as possible.
-
-Of course, I've also been researching how to integrate with build tooling, IntelliJ IDEA and Kotlin's existing test infrastructure. Some of my findings are laid out in xref:documentation/Kotlin IDE and Build Tool Interoperability.adoc[Kotlin IDE and Build Tool Interoperability].
-
-=== Sample Applications
-
-==== Running all tests
-
-* `./gradlew -p samples/prototype-scenarios --quiet cleanAllTests allTests`
-
-'''
-
-* `./gradlew -p samples/using-kotlin-test --quiet cleanAllTests allTests`
-* `./gradlew -p samples/using-prototype --quiet cleanAllTests allTests`
-
-==== Running tests for individual targets
-
-* `./gradlew -p samples/prototype-scenarios --quiet cleanAllTests jvmTest`
-* `./gradlew -p samples/prototype-scenarios --quiet cleanAllTests jsNodeTest`
-* `./gradlew -p samples/prototype-scenarios --quiet cleanAllTests jsBrowserTest`
-* `./gradlew -p samples/prototype-scenarios --quiet cleanAllTests wasmJsNodeTest`
-* `./gradlew -p samples/prototype-scenarios --quiet cleanAllTests wasmJsBrowserTest`
-* `./gradlew -p samples/prototype-scenarios --quiet cleanAllTests wasmWasiNodeTest`
-* `./gradlew -p samples/prototype-scenarios --quiet cleanAllTests linuxX64Test`
-
-'''
-
-* `./gradlew -p samples/using-kotlin-test --quiet cleanAllTests jvmTest`
-* `./gradlew -p samples/using-prototype --quiet cleanAllTests clean jvmTest`
-* `./gradlew -p samples/using-prototype --quiet cleanAllTests clean jsNodeTest`
-
-==== Running tests for compiler plugin debugging
-
-1. `./gradlew -p samples/prototype-scenarios -Dorg.gradle.debug=true -Pkotlin.compiler.execution.strategy=in-process clean compileTestKotlinJvm`
-2. Attach the debugger to port 5005.
-
-=== Limitations
-
-==== Test reporting
-
-* The IDE does not report more than one level of suite nesting for tests using the Kotlin/JS infra (JS/Browser, JS/Node, Wasm/JS/Browser). While all suites appear, they are not properly nested, because the names of intermediate levels are cut out on their way from the test framework to the IDE.
-* Gradle XML test reports are incomplete: Wasm/JS/Node, Wasm/WASI and Native are missing.
-
-==== IntelliJ IDEA integration
-
-An IntelliJ IDEA plugin supports running individual tests or suites from source code via gutter icons.
-
-In IntelliJ IDEA, it is currently not possible to
-
-* run tests from the test run window,
-* rerun failed tests from the test run window,
-* run failed tests from the inspections window.
-
-==== Gradle Test Filtering
-
-Depending on the target, selection supports command line arguments, environment variables, or system properties. Selection patterns support the wildcard `*`.
-
-NOTE: Environment variables and system properties must be relayed to the test task (see xref:samples/prototype-scenarios/build.gradle.kts[samples/prototype-scenarios/build.gradle.kts]).
-
-Selecting tests via Gradle invocations is possible for targets checkmarked below.
-
-* [x] `++./gradlew -p samples/prototype-scenarios --quiet cleanAllTests jvmTest -DTEST_INCLUDE=com.example.Simple.string*length++`
+. Add the TestBalloon Gradle plugin to your build script:
 +
---
-NOTE: The JVM test task does not tolerate a `--tests` option without a wildcard in the fully qualified "class" name. Omitting the wildcard leads to "No tests found for given includes: [com.example.Simple](--tests filter)".
---
-* [x] `++./gradlew -p samples/prototype-scenarios --quiet cleanAllTests jsNodeTest --tests com.example.Simple.string*length++`
-+
---
-NOTE: The `jsNodeTest` supports post-run selection only: It runs all tests, then displays the selected ones in the IDE's test results hierarchy window.
---
-* [x] `++./gradlew -p samples/prototype-scenarios --quiet cleanAllTests jsBrowserTest --tests com.example.Simple.string*length++`
-* [x] `++./gradlew -p samples/prototype-scenarios --quiet cleanAllTests wasmJsNodeTest --tests com.example.Simple.string*length++`
-* [ ] `++./gradlew -p samples/prototype-scenarios --quiet cleanAllTests wasmJsBrowserTest --tests com.example.Simple.string*length++`
-* [ ] `++./gradlew -p samples/prototype-scenarios --quiet cleanAllTests wasmWasiNodeTest --tests com.example.Simple.string*length++`
-* [x] `++./gradlew -p samples/prototype-scenarios --quiet cleanAllTests linuxX64Test++`
-+
---
-in an IDE run configuration with an environment variable setting:
+[source,kotlin]
+----
+plugins {
+    id("de.infix.testBalloon") version "VERSION"
+}
+----
 
-* `++TEST_INCLUDE=com.example.Simple.string*length++`
---
+. Add a dependency for the TestBalloon framework core library:
++
+[source,kotlin]
+----
+commonTest {
+    dependencies {
+        implementation("de.infix.testBalloon:framework-core:VERSION")
+    }
+}
+----
+
+. Add the assertion library of your choice to the `commonTest` source set.
+** For kotlin-test assertions:
++
+[source,kotlin]
+----
+implementation(kotlin("test"))
+----
+** For Kotest assertions with support for soft assertion and clues:
++
+[source,kotlin]
+----
+implementation("de.infix.testBalloon:integrations-kotest-assertions:VERSION")
+----
+
+. Write a test:
++
+[source,kotlin]
+----
+val MyFirstTestSuite by testSuite {
+    test("string length") {
+        assertEquals(8, "Test me!".length)
+    }
+}
+----
+
+=== What to expect
+
+==== Structured testing, unified multiplatform API
+
+The TestBalloon DSL uses two central functions, `testSuite` and `test`. Test suites can nest on all platforms, including Kotlin/JS and Kotlin/Wasm.
+
+The entire TestBalloon API resides in the `common` source set and supports all targets uniformly.
+
+[source,kotlin]
+----
+val MyTestSuite by testSuite { <1>
+    test("string length") { <2>
+        assertEquals(8, "Test me!".length) <3>
+    }
+
+    testSuite("integer operations") { <4>
+        test("max") {
+            assertEquals(5, max(5, 3))
+        }
+
+        test("min") {
+            delay(10.milliseconds) <5>
+            assertEquals(3, min(5, 3))
+        }
+    }
+}
+----
+<1> Define a top-level test suite.
+<2> Define a test.
+<3> Use the assertion library of your choice.
+<4> Nest test suites.
+<5> Use coroutines everywhere, in a `TestScope` by default.
+
+==== Coroutines everywhere
+
+When tests execute, each test suite becomes a coroutine, as does each test. These coroutines nest naturally, making it easy to inherit coroutine contexts and manage resource setup and tear-down (more on this later).
+
+==== Dynamic tests in plain Kotlin
+
+Inside the trailing lambdas of `testSuite` and `test`, you can use all Kotlin constructs (variable scopes, conditions, loops) to create tests dynamically. There is no extra dynamic/data/factory API you need to learn.
+
+[source,kotlin]
+----
+include::examples/framework-core/src/commonTest/kotlin/com/example/DynamicTests.kt[lines=7..]
+----
+
+==== Fixtures
+
+You can use fixtures for efficient, scoped shared state:
+
+[source,kotlin]
+----
+val MyTestSuite by testSuite {
+    val starRepository = fixture { <1>
+        StarRepository() <2>
+    } closeWith {
+        disconnect() <3>
+    }
+
+    testSuite("actual users") {
+        test("alina") {
+            assertEquals(4, starRepository().userStars("alina")) <4>
+        }
+
+        test("peter") {
+            assertEquals(3, starRepository().userStars("peter")) <5>
+        }
+    }
+} <6>
+----
+<1> Declare a fixture at zero cost if not used.
+<2> Use suspend functions in setup code.
+<3> Use suspend functions in (optional) tear-down code.
+<4> Use the fixture, which initializes lazily.
+<5> Reuse the same fixture in other tests, sharing its setup cost.
+<6> The fixture will close automatically when its suite finishes.
+
+==== Extensible test DSL
+
+You can use plain Kotlin to define your own types of tests and test suites, like this test variant with an `iterations` parameter:
+
+[source,kotlin]
+----
+include::examples/framework-core/src/commonTest/kotlin/com/example/testLibrary/TestVariants.kt[lines=28..]
+----
+
+You can also use Kotlin-tailored mechanisms to easily augment suites and tests, e.g. with setup and tear-down code, and wrappers like `withTimeout`.
+
+* xref:examples/framework-core/src/commonTest/kotlin/com/example/UsingAroundAll.kt[`aroundAll`] wraps a lambda around an entire test suite.
+* xref:examples/framework-core/src/commonTest/kotlin/com/example/UsingAroundEach.kt[`aroundEach`] wraps a lambda around each test of a test suite (including those in child suites).
+
+==== User-friendly, extensible configuration API
+
+You can configure your tests or test suites through a unified, small-surface API (the `TestConfig` builder). You can extend the API with custom configurations.
+
+[source,kotlin]
+----
+configuration = TestConfig
+    .invocation(TestInvocation.CONCURRENT) <1>
+    .coroutineContext(dispatcherWithParallelism(4)) <2>
+    .statisticsReport() <3>
+----
+<1> Use concurrent test execution instead of the sequential default.
+<2> Parallelize as needed (and the platform supports).
+<3> A custom configuration for extra reporting
+
+==== Global configuration, familiar API
+
+You can declare a `TestSession` class, defining the global configuration with the `TestConfig` builder.
+
+To run some test suites in isolation, and/or provide them with special configuration, you can use
+``TestCompartment``s. These group top-level test suites, with each compartment running in isolation.
+
+`TestSession` and ``TestCompartment``s are just special types of ``TestSuite``s and use the same API for configuration.
+
+==== Lightweight, maintainable
+
+TestBalloon has a fully platform-independent API (everything is in the `common` source set) and almost zero redundancy in its platform-specific parts. Though powerful, its architecture favors simplicity and aims to avoid implicit constructs and indirection, for viable long-term maintainability.
+
+=== Examples and documentation
+
+Find examples demonstrating TestBalloon's capabilities in xref:examples/framework-core[], and an example showing how to use TestBalloon with Kotest assertions in xref:examples/integration-kotest-assertions[].
+
+The TestBalloon public API includes source code documentation.
+
+=== More Information
+
+Please familiarize yourself with TestBalloon's xref:documentation/Limitations.adoc[limitations].
+
+If you'd like to know why and how TestBalloon came to life, read about its xref:documentation/Background.adoc[background].
+
+If you are wondering why TestBalloon works the way it does, read about its xref:documentation/Design Considerations.adoc[design considerations].
+
+Finally, there is a brief xref:documentation/Development.adoc[introduction to development].
 
 === TODO
 
+* [ ] Prepare publication
+** [ ] Versioning
+** [x] License file, Copyright notices
+* [ ] Rename `TestConfig` to `Operation` or `Operator` (like `Modifier` but avoiding a clash with Compose)?
+* [ ] Rename `TestElement` properties to `test*`, reducing scope pollution? What about `fixture`?
+* [ ] Document IDE plugin installation.
 * [ ] IDE plugin: Provide a https://plugins.jetbrains.com/docs/intellij/structure-view-factory.html[structure view] for tests.

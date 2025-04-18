@@ -1,3 +1,5 @@
+:icons: font
+
 == Design Considerations for Scalable Testing with Kotlin Multiplatform
 
 === Scope
@@ -9,11 +11,11 @@ A *test framework*
 * runs tests, and
 * reports test results.
 
-A *test* is basically a function that either succeeds (terminates without an exception) or fails by throwing an `AssertionError`.
+A *test* is basically a function that either succeeds (terminates without an exception) or fails by throwing an `AssertionError` (actually, a `Throwable` is sufficient).
 
 Constructing ``AssertionError``s is the responsibility of an *assertion library*, which is outside the scope of this document.
 
-In this document, checkmarks refer to criteria fulfilled by the prototype framework. Unchecked boxes mark criteria the prototype is currently lacking.
+In this document, checkmarks refer to criteria fulfilled by the TestBalloon framework. Unchecked boxes mark criteria TestBalloon is currently lacking.
 
 === Structuring tests
 
@@ -37,9 +39,9 @@ The test framework should support
 
 ==== Rationale
 
-Dynamic declaration via plain Kotlin supports arbitrarily parameterized tests, while keeping the API surface small and the learning curve short.
+Dynamic declaration via plain Kotlin supports arbitrarily parameterized tests, while keeping the API surface small, making it easy to become proficient.
 
-In contrast, static constructs like configuration annotations introduce a new, often stringly-typed language, which has to be learned and comes with limited capabilities.
+In contrast, static constructs like configuration annotations introduce a new, often stringly-typed language, which has to be learned from scratch and comes with limited capabilities.
 
 === Configurability
 
@@ -72,7 +74,7 @@ Selectively running tests is required for build tool functions, like actions to 
 === Reporting
 
 * [x] The framework must produce a report during test execution. The report must be tailored to the needs of the respective platform's build tooling.
-* [x] The report must be _live_, showing test execution events as they happen. The report is typically consumed live by a listener.
+* [x] The report must be _live_, showing test execution events as they happen.
 
 === IDE integration
 
@@ -164,11 +166,13 @@ Tests with different concurrency requirements can live together in one test modu
 
 === Fixtures
 
+A https://en.wikipedia.org/wiki/Test_fixture#Software[test fixture] is (shared) state required for the execution of (typically multiple) tests.
+
 The test framework should support fixtures with the following capabilities:
 
 * [x] Fixtures are created lazily. They do not incur a cost in (partial) test runs where they are not used.
 * [x] Fixture initialization and tear-down can suspend.
-* [x] Fixture tear-down occurs automatically when the closing the test element where they were first used.
+* [x] Fixture tear-down occurs automatically when the closing the test element they were declared for.
 * [x] Fixtures, which are of type `AutoCloseable` will be closed automatically.
 * [x] A closing function can be defined explicitly for each fixture.
 

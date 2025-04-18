@@ -1,0 +1,26 @@
+:icons: font
+
+== Background
+
+=== Who Started TestBalloon?
+
+I am Oliver. I have been working for several years on (non-mobile) frontend and backend stuff, using the two most popular Kotlin test frameworks, https://kotlinlang.org/api/latest/kotlin.test/[kotlin-test] and https://kotest.io/[Kotest].
+
+I am involved in maintaining Kotest. I have also researched other test framework approaches like https://www.spekframework.org/[Spek], https://github.com/failgood/failgood[failgood] and https://opensavvy.gitlab.io/groundwork/prepared/docs/index.html[OpenSavvy Prepared].
+
+=== Why Something New?
+
+What I've been missing so far is the combination of
+
+* an expressive and powerful API with a small API surface,
+* unified multiplatform functionality (everything works everywhere in the same way),
+* a lean (maintainable) implementation,
+* a complete feature set for common usage scenarios,
+* composability, allowing users to extend the framework easily for special needs,
+* a developer experience with as little surprise (including quirks, bugs) as possible.
+
+=== Evolution
+
+The results of my research and experimentation are reflected xref:Design Considerations.adoc[in these Design Considerations]. What matters to me is not maximizing some feature set (au contraire!), but having a well-thought-out, concise and easy-to-understand API, that lets us do testing as productively as possible.
+
+Of course, I've also been researching how to integrate with build tooling, IntelliJ IDEA and Kotlin's existing test infrastructure. Some of my findings are laid out in xref:Kotlin IDE and Build Tool Interoperability.adoc[Kotlin IDE and Build Tool Interoperability].

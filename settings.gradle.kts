@@ -31,18 +31,19 @@ fun RepositoryHandler.specialRepositories() {
     maven("https://maven.pkg.jetbrains.space/kotlin/p/wasm/experimental")
 }
 
-rootProject.name = "kotlin-test-framework-prototype"
+rootProject.name = "testBalloon"
 
-include(":test-framework-abstractions")
-include(":test-framework-core")
-include(":test-framework-gradle-plugin")
-include(":test-framework-compiler-plugin")
+include(":framework-abstractions")
+include(":framework-core")
+include(":gradle-plugin")
+include(":compiler-plugin")
 
-include(":test-framework-integrations:kotest-assertions")
+include(":integrations-kotest-assertions")
 
-include(":samples:prototype-scenarios")
-include(":samples:using-kotlin-test")
-include(":samples:using-prototype")
-include(":samples:using-prototype-with-kotest-assertions")
+include(":examples:framework-core")
+include(":examples:integration-kotest-assertions")
+
+include(":comparisons:using-kotlin-test")
+include(":comparisons:using-testBalloon")
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")

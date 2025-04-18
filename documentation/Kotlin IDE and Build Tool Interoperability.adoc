@@ -1,3 +1,5 @@
+:icons: font
+
 == IDE and Build Tool Interoperability
 
 === JUnit Platform

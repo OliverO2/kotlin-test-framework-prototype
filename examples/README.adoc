@@ -1,0 +1,26 @@
+== TestBalloon Examples
+
+=== Using the Core Library
+
+The xref:../framework-core[framework-core] directory is intended to provide source code samples for all TestBalloon features in xref:framework-core/src/commonTest[commonTest].
+
+To run them all:
+
+* `gradlew --quiet :examples:core:cleanAllTests :examples:core:allTests`
+
+As usual, you can run examples for a single target:
+
+* `gradlew --quiet :examples:core:cleanAllTests :examples:core:jvmTest`
+* `gradlew --quiet :examples:core:cleanAllTests :examples:core:jsNodeTest`
+* `gradlew --quiet :examples:core:cleanAllTests :examples:core:jsBrowserTest`
+* `gradlew --quiet :examples:core:cleanAllTests :examples:core:wasmJsNodeTest`
+* `gradlew --quiet :examples:core:cleanAllTests :examples:core:wasmJsBrowserTest`
+* `gradlew --quiet :examples:core:cleanAllTests :examples:core:wasmWasiNodeTest`
+* `gradlew --quiet :examples:core:cleanAllTests :examples:core:linuxX64Test`
+
+
+=== Using Integrations
+
+==== Kotest Assertions
+
+Some features of the Kotest Assertions library require extra setup, e.g. soft assertions. The xref:../integration-kotest-assertions[integration-kotest-assertions] directory demonstrates how to use those with TestBalloon.

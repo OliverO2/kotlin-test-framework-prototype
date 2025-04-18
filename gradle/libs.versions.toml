@@ -2,6 +2,8 @@
 
 [versions]
 
+de-infix-testBalloon = "unspecified"
+
 # https://github.com/kotest/kotest/releases
 io-kotest = "5.9.1"
 
@@ -41,11 +43,12 @@ org-jetbrains-kotlinx-datetime = "org.jetbrains.kotlinx:kotlinx-datetime:0.5.0-w
 org-junit-platform-engine = "org.junit.platform:junit-platform-engine:1.11.3"
 
 # Self-reference, for illustrative purposes only
-test-framework-prototype-core = "kotlin-test-framework-prototype:test-framework-core:unspecified"
+de-infix-testBalloon-framework-core = { module = "de.infix.testBalloon:framework-core", version.ref = "de-infix-testBalloon" }
+de-infix-testBalloon-integrations-kotest-assertions = { module = "de.infix.testBalloon:integrations-kotest-assertions", version.ref = "de-infix-testBalloon" }
 
 [plugins]
 
-# https://github.com/gmazzo/gradle-buildconfig-plugin/releases
+# https://github-com/gmazzo/gradle-buildconfig-plugin/releases
 com-github-gmazzo-buildconfig = "com.github.gmazzo.buildconfig:5.5.1"
 
 # https://plugins.gradle.org/plugin/com.gradle.plugin-publish
@@ -61,4 +64,4 @@ org-jetbrains-kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform"
 org-jmailen-kotlinter = "org.jmailen.kotlinter:4.5.0"
 
 # Self-reference, for illustrative purposes only
-test-framework-prototype = "com.example.testFramework:unspecified"
+de-infix-testBalloon = { id = "de.infix.testBalloon", version.ref = "de-infix-testBalloon" }
