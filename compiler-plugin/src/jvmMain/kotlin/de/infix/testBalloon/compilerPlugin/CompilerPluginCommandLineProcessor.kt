@@ -8,7 +8,7 @@ import org.jetbrains.kotlin.config.CompilerConfiguration
 
 @OptIn(ExperimentalCompilerApi::class)
 class CompilerPluginCommandLineProcessor : CommandLineProcessor {
-    override val pluginId: String = BuildConfig.TEST_FRAMEWORK_PLUGIN_ID
+    override val pluginId: String = BuildConfig.PROJECT_COMPILER_PLUGIN_ID
 
     override val pluginOptions: Collection<AbstractCliOption> = Options.all
 

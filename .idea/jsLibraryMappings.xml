@@ -1,22 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="JavaScriptLibraryMappings">
-    <excludedPredefinedLibrary name="kotlin-test-framework-prototype/build/js/node_modules" />
-    <excludedPredefinedLibrary name="kotlin-test-framework-prototype/build/js/packages/kotlin-test-framework-prototype-samples-prototype-scenarios-test/node_modules" />
-    <excludedPredefinedLibrary name="kotlin-test-framework-prototype/build/js/packages/kotlin-test-framework-prototype-samples-prototype-scenarios-wasm-js-test/node_modules" />
-    <excludedPredefinedLibrary name="kotlin-test-framework-prototype/build/js/packages/kotlin-test-framework-prototype-samples-prototype-scenarios-wasm-js/node_modules" />
-    <excludedPredefinedLibrary name="kotlin-test-framework-prototype/build/js/packages/kotlin-test-framework-prototype-samples-prototype-scenarios/node_modules" />
-    <excludedPredefinedLibrary name="kotlin-test-framework-prototype/build/js/packages/kotlin-test-framework-prototype-samples-using-kotlin-test-test/node_modules" />
-    <excludedPredefinedLibrary name="kotlin-test-framework-prototype/build/js/packages/kotlin-test-framework-prototype-samples-using-kotlin-test-wasm-js-test/node_modules" />
-    <excludedPredefinedLibrary name="kotlin-test-framework-prototype/build/js/packages/kotlin-test-framework-prototype-samples-using-kotlin-test-wasm-js/node_modules" />
-    <excludedPredefinedLibrary name="kotlin-test-framework-prototype/build/js/packages/kotlin-test-framework-prototype-samples-using-kotlin-test/node_modules" />
-    <excludedPredefinedLibrary name="kotlin-test-framework-prototype/build/js/packages/kotlin-test-framework-prototype-samples-using-prototype-test/node_modules" />
-    <excludedPredefinedLibrary name="kotlin-test-framework-prototype/build/js/packages/kotlin-test-framework-prototype-samples-using-prototype-wasm-js-test/node_modules" />
-    <excludedPredefinedLibrary name="kotlin-test-framework-prototype/build/js/packages/kotlin-test-framework-prototype-samples-using-prototype-wasm-js/node_modules" />
-    <excludedPredefinedLibrary name="kotlin-test-framework-prototype/build/js/packages/kotlin-test-framework-prototype-samples-using-prototype/node_modules" />
-    <excludedPredefinedLibrary name="kotlin-test-framework-prototype/build/js/packages/kotlin-test-framework-prototype-test-framework-abstractions-test/node_modules" />
-    <excludedPredefinedLibrary name="kotlin-test-framework-prototype/build/js/packages/kotlin-test-framework-prototype-test-framework-abstractions-wasm-js-test/node_modules" />
-    <excludedPredefinedLibrary name="kotlin-test-framework-prototype/build/js/packages/kotlin-test-framework-prototype-test-framework-core-test/node_modules" />
-    <excludedPredefinedLibrary name="kotlin-test-framework-prototype/build/js/packages/kotlin-test-framework-prototype-test-framework-core-wasm-js-test/node_modules" />
+    <excludedPredefinedLibrary name="testBalloon/build/js/node_modules" />
+    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-comparisons-using-kotlin-test-test/node_modules" />
+    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-comparisons-using-kotlin-test-wasm-js-test/node_modules" />
+    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-comparisons-using-kotlin-test-wasm-js/node_modules" />
+    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-comparisons-using-kotlin-test/node_modules" />
+    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-comparisons-using-testBalloon-test/node_modules" />
+    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-comparisons-using-testBalloon-wasm-js-test/node_modules" />
+    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-comparisons-using-testBalloon-wasm-js/node_modules" />
+    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-comparisons-using-testBalloon/node_modules" />
+    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-examples-framework-core-test/node_modules" />
+    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-examples-framework-core-wasm-js-test/node_modules" />
+    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-examples-framework-core-wasm-js/node_modules" />
+    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-examples-framework-core/node_modules" />
+    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-examples-integration-kotest-assertions-test/node_modules" />
+    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-examples-integration-kotest-assertions-wasm-js-test/node_modules" />
+    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-examples-integration-kotest-assertions-wasm-js/node_modules" />
+    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-examples-integration-kotest-assertions/node_modules" />
+    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-framework-abstractions-test/node_modules" />
+    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-framework-abstractions-wasm-js-test/node_modules" />
+    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-framework-core-test/node_modules" />
+    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-framework-core-wasm-js-test/node_modules" />
+    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-integrations-kotest-assertions-test/node_modules" />
+    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-integrations-kotest-assertions-wasm-js-test/node_modules" />
   </component>
 </project>

@@ -16,7 +16,9 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
         // WORKAROUND https://youtrack.jetbrains.com/issue/KT-53477 – KGP misses transitive compiler plugin dependencies
         dependencies.add(
             "kotlinNativeCompilerPluginClasspath",
-            "de-infix-testBalloon:framework-core:unspecified"
+            with(BuildConfig) {
+                "$PROJECT_GROUP_ID:$PROJECT_ABSTRACTIONS_ARTIFACT_ID:$PROJECT_VERSION"
+            }
         )
 
         extensions.create("testBalloon", GradleExtension::class.java)
@@ -59,11 +61,11 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
         }
     }
 
-    override fun getCompilerPluginId(): String = BuildConfig.TEST_FRAMEWORK_PLUGIN_ID
+    override fun getCompilerPluginId(): String = BuildConfig.PROJECT_COMPILER_PLUGIN_ID
 
     override fun getPluginArtifact(): SubpluginArtifact = SubpluginArtifact(
-        groupId = BuildConfig.TEST_FRAMEWORK_COMPILER_PLUGIN_GROUP_ID,
-        artifactId = BuildConfig.TEST_FRAMEWORK_COMPILER_PLUGIN_ARTIFACT_ID,
-        version = BuildConfig.TEST_FRAMEWORK_COMPILER_PLUGIN_VERSION
+        groupId = BuildConfig.PROJECT_GROUP_ID,
+        artifactId = BuildConfig.PROJECT_COMPILER_PLUGIN_ARTIFACT_ID,
+        version = BuildConfig.PROJECT_VERSION
     )
 }

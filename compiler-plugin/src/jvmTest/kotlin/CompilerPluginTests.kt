@@ -152,7 +152,7 @@ private fun compilation(
     val compilation = KotlinCompilation()
 
     fun option(name: String, value: String): PluginOption =
-        PluginOption(BuildConfig.TEST_FRAMEWORK_PLUGIN_ID, name, value)
+        PluginOption(BuildConfig.PROJECT_COMPILER_PLUGIN_ID, name, value)
 
     try {
         compilation.apply {

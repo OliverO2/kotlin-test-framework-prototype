@@ -664,7 +664,7 @@ private fun IrClass.fqName(): String = "${packageFqName.asQualificationPrefix()}
 
 private fun FqName?.asQualificationPrefix(): String = if (this == null || isRoot) "" else "$this."
 
-private const val PLUGIN_DISPLAY_NAME = "Plugin ${BuildConfig.TEST_FRAMEWORK_PLUGIN_ID}"
+private const val PLUGIN_DISPLAY_NAME = "Plugin ${BuildConfig.PROJECT_COMPILER_PLUGIN_ID}"
 
 private const val MISSING_CLASSPATH_INFO =
     "was not found on the classpath. Please add the corresponding library dependency."

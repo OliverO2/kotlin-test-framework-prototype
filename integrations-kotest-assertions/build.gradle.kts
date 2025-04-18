@@ -4,8 +4,11 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinHierarchyTemplate
 
 plugins {
     alias(libs.plugins.org.jetbrains.kotlin.multiplatform)
+    alias(libs.plugins.com.vanniktech.maven.publish)
     alias(libs.plugins.org.jmailen.kotlinter)
 }
+
+group = project.property("local.PROJECT_GROUP_ID")!!
 
 val jdkVersion = project.property("local.jdk.version").toString().toInt()
 
@@ -57,6 +60,15 @@ kotlin {
                 api(projects.frameworkCore)
                 api(libs.io.kotest.assertions.core)
             }
+        }
+    }
+}
+
+publishing {
+    repositories {
+        maven {
+            name = "local"
+            url = uri("${System.getenv("HOME")!!}//.m2/local-repository")
         }
     }
 }

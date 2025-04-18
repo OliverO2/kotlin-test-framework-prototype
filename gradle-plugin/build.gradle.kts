@@ -2,9 +2,11 @@ plugins {
     alias(libs.plugins.org.jetbrains.kotlin.jvm)
     alias(libs.plugins.com.github.gmazzo.buildconfig)
     `java-gradle-plugin`
-    alias(libs.plugins.com.gradle.plugin.publish)
+    alias(libs.plugins.com.vanniktech.maven.publish)
     alias(libs.plugins.org.jmailen.kotlinter)
 }
+
+group = project.property("local.PROJECT_GROUP_ID")!!
 
 kotlin {
     jvmToolchain(11)
@@ -18,26 +20,36 @@ buildConfig {
     packageName("buildConfig")
     useKotlinOutput { internalVisibility = true }
 
-    val compilerPluginProject = projects.compilerPlugin
-    buildConfigField("String", "TEST_FRAMEWORK_PLUGIN_ID", "\"${project.property("local.TEST_FRAMEWORK_PLUGIN_ID")}\"")
-    buildConfigField("String", "TEST_FRAMEWORK_VERSION", "\"${project.version}\"")
-    buildConfigField("String", "TEST_FRAMEWORK_COMPILER_PLUGIN_GROUP_ID", "\"${compilerPluginProject.group}\"")
-    buildConfigField("String", "TEST_FRAMEWORK_COMPILER_PLUGIN_ARTIFACT_ID", "\"${compilerPluginProject.name}\"")
-    buildConfigField("String", "TEST_FRAMEWORK_COMPILER_PLUGIN_VERSION", "\"${compilerPluginProject.version}\"")
+    buildConfigField(
+        "String",
+        "PROJECT_COMPILER_PLUGIN_ID",
+        "\"${project.property("local.PROJECT_COMPILER_PLUGIN_ID")}\""
+    )
+    buildConfigField("String", "PROJECT_VERSION", "\"${project.version}\"")
+    buildConfigField("String", "PROJECT_GROUP_ID", "\"${project.group}\"")
+    buildConfigField("String", "PROJECT_COMPILER_PLUGIN_ARTIFACT_ID", "\"${projects.compilerPlugin.name}\"")
+    buildConfigField("String", "PROJECT_ABSTRACTIONS_ARTIFACT_ID", "\"${projects.frameworkAbstractions.name}\"")
 }
 
 gradlePlugin {
     plugins {
         create("testBalloonGradlePlugin") {
-            id = "${project.property("local.TEST_FRAMEWORK_PLUGIN_ID")}"
+            id = "${project.property("local.PROJECT_COMPILER_PLUGIN_ID")}"
             displayName = "TestBalloon compiler plugin for multiplatform test discovery and invocation"
             description = displayName
-            implementationClass = "de.infix.testBalloon.GradlePlugin"
+            implementationClass = "${project.group}.gradlePlugin.GradlePlugin"
         }
     }
 }
 
-apply(from = "../build-publish-local.gradle.kts")
+publishing {
+    repositories {
+        maven {
+            name = "local"
+            url = uri("${System.getenv("HOME")!!}//.m2/local-repository")
+        }
+    }
+}
 
 kotlinter {
     ignoreFailures = false

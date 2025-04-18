@@ -6,7 +6,7 @@ import org.jetbrains.kotlin.gradle.plugin.PLUGIN_CLASSPATH_CONFIGURATION_NAME
 plugins {
     alias(libs.plugins.org.jetbrains.kotlin.multiplatform)
     alias(libs.plugins.org.jmailen.kotlinter)
-    // alias(libs.plugins.de.infix.testBalloon) // Use this outside of this project
+    // alias(libs.plugins.de.infix.testBalloon) // Use this outside this project
 }
 
 // region In-project configuration normally supplied by the framework's own Gradle plugin
@@ -61,7 +61,7 @@ kotlin {
     sourceSets {
         commonTest {
             dependencies {
-                // implementation(libs.de.infix.testBalloon.framework.core) // Use this outside of this project
+                // implementation(libs.de.infix.testBalloon.framework.core) // Use this outside this project
                 implementation(projects.frameworkCore)
                 implementation(kotlin("test")) // for assertions only
             }

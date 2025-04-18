@@ -3,8 +3,11 @@ import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
     alias(libs.plugins.org.jetbrains.kotlin.multiplatform)
+    alias(libs.plugins.com.vanniktech.maven.publish)
     alias(libs.plugins.org.jmailen.kotlinter)
 }
+
+group = project.property("local.PROJECT_GROUP_ID")!!
 
 val jdkVersion = project.property("local.jdk.version").toString().toInt()
 
@@ -39,7 +42,14 @@ kotlin {
     }
 }
 
-apply(from = "../build-publish-local.gradle.kts")
+publishing {
+    repositories {
+        maven {
+            name = "local"
+            url = uri("${System.getenv("HOME")!!}//.m2/local-repository")
+        }
+    }
+}
 
 kotlinter {
     ignoreFailures = false

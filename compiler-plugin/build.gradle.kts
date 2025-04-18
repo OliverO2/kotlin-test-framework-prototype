@@ -3,9 +3,11 @@ import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 plugins {
     alias(libs.plugins.org.jetbrains.kotlin.multiplatform)
     alias(libs.plugins.com.github.gmazzo.buildconfig)
-    `maven-publish`
+    alias(libs.plugins.com.vanniktech.maven.publish)
     alias(libs.plugins.org.jmailen.kotlinter)
 }
+
+group = project.property("local.PROJECT_GROUP_ID")!!
 
 val jdkVersion = project.property("local.jdk.version").toString().toInt()
 
@@ -46,24 +48,22 @@ buildConfig {
     packageName("buildConfig")
     useKotlinOutput { internalVisibility = true }
 
-    buildConfigField("String", "TEST_FRAMEWORK_PLUGIN_ID", "\"${project.property("local.TEST_FRAMEWORK_PLUGIN_ID")}\"")
+    buildConfigField(
+        "String",
+        "PROJECT_COMPILER_PLUGIN_ID",
+        "\"${project.property("local.PROJECT_COMPILER_PLUGIN_ID")}\""
+    )
 }
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
 }
 
-apply(from = "../build-publish-local.gradle.kts")
-
 publishing {
-    publications {
-        create<MavenPublication>("default") {
-            from(components["kotlin"])
-
-            pom {
-                name.set(project.name)
-                description.set("Kotlin compiler plugin for test discovery")
-            }
+    repositories {
+        maven {
+            name = "local"
+            url = uri("${System.getenv("HOME")!!}//.m2/local-repository")
         }
     }
 }
