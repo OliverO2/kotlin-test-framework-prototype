@@ -33,15 +33,10 @@ org-jetbrains-kotlinx-coroutines-debug = { module = "org.jetbrains.kotlinx:kotli
 org-jetbrains-kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "org-jetbrains-kotlinx-coroutines" }
 
 # https://github.com/Kotlin/kotlinx-datetime/blob/master/CHANGELOG.md
-org-jetbrains-kotlinx-datetime = "org.jetbrains.kotlinx:kotlinx-datetime:0.5.0-wasm0"
-##                                                                   ⬆ :0.5.0"
-##                                                                   ⬆ :0.6.0-RC"
-##                                                                   ⬆ :0.6.0-RC.2"
-##                                                                   ⬆ :0.6.0"
-##                                                                   ⬆ :0.6.1"
+org-jetbrains-kotlinx-datetime = "org.jetbrains.kotlinx:kotlinx-datetime:0.6.2"
 
 # https://github.com/junit-team/junit5/releases
-org-junit-platform-engine = "org.junit.platform:junit-platform-engine:1.11.3"
+org-junit-platform-engine = "org.junit.platform:junit-platform-engine:1.12.2"
 
 # Self-reference, for illustrative purposes only
 de-infix-testBalloon-framework-core = { module = "de.infix.testBalloon:framework-core", version.ref = "de-infix-testBalloon" }
@@ -49,8 +44,8 @@ de-infix-testBalloon-integrations-kotest-assertions = { module = "de.infix.testB
 
 [plugins]
 
-# https://github-com/gmazzo/gradle-buildconfig-plugin/releases
-com-github-gmazzo-buildconfig = "com.github.gmazzo.buildconfig:5.5.1"
+# https://github.com/gmazzo/gradle-buildconfig-plugin/releases
+com-github-gmazzo-buildconfig = "com.github.gmazzo.buildconfig:5.6.2"
 
 # https://github.com/vanniktech/gradle-maven-publish-plugin/releases
 com-vanniktech-maven-publish = "com.vanniktech.maven.publish:0.31.0"
