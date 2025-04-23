@@ -8,23 +8,23 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.equals.shouldBeEqual
 import io.kotest.matchers.string.shouldNotEndWith
 
-class MyTestSession : TestSession(configuration = DefaultConfiguration.supportKotestAssertions())
+class MyTestSession : TestSession(testConfig = DefaultConfiguration.supportKotestAssertions())
 
 val TestSuite by testSuite {
-    log("configuring $elementName (displayName=$displayName)")
+    log("configuring $testElementName (displayName=$testElementDisplayName)")
 
     test("test1") {
-        log("in $elementName, coroutineContext=$coroutineContext")
+        log("in $testElementName, coroutineContext=$coroutineContext")
         "This test should fail?" shouldBeEqual "This test should fail!"
     }
 
     testSuite("inner suite") {
         test("test2") {
-            log("in $elementName")
+            log("in $testElementName")
         }
 
         test("test3") {
-            log("in $elementName")
+            log("in $testElementName")
             assertSoftly {
                 "Expect failure 1!" shouldNotEndWith "!"
                 "Expect failure 2!" shouldNotEndWith "!"
@@ -34,5 +34,5 @@ val TestSuite by testSuite {
 }
 
 private fun AbstractTestElement.log(message: String) {
-    println("$elementPath: $message\n")
+    println("$testElementPath: $message\n")
 }

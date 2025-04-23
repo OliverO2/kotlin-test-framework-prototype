@@ -104,11 +104,11 @@ internal class JUnitPlatformTestEngine : TestEngine {
                     override suspend fun add(event: TestElementEvent) {
                         when (event) {
                             is TestElementEvent.Starting -> {
-                                if (event.element.isEnabled) {
+                                if (event.element.testElementIsEnabled) {
                                     log { "${event.element.platformDescriptor}: ${event.element} starting" }
                                     jUnitListener.executionStarted(event.element.platformDescriptor)
                                 } else {
-                                    if (event.element.parentSuite?.isEnabled == true) {
+                                    if (event.element.testElementParent?.testElementIsEnabled == true) {
                                         // Report skipping only if it has not already been reported by a parent.
                                         // (Report nothing if this is the disabled root element.)
                                         log { "${event.element.platformDescriptor}: ${event.element} skipped" }
@@ -118,7 +118,7 @@ internal class JUnitPlatformTestEngine : TestEngine {
                             }
 
                             is TestElementEvent.Finished -> {
-                                if (event.element.isEnabled) {
+                                if (event.element.testElementIsEnabled) {
                                     log {
                                         "${event.element.platformDescriptor}: ${event.element} finished," +
                                             " result=${event.executionResult})"
@@ -162,25 +162,25 @@ private fun TestElement.newPlatformDescriptor(parentUniqueId: UniqueId): TestEle
         is TestCompartment -> "compartment"
         is TestSuite -> {
             if (topLevelTestSuites.contains(element)) {
-                source = ClassSource.from(elementName)
+                source = ClassSource.from(testElementName)
                 "class"
             } else {
                 "suite"
             }
         }
     }
-    uniqueId = parentUniqueId.append(segmentType, elementName)
+    uniqueId = parentUniqueId.append(segmentType, testElementName)
 
     return TestElementJUnitPlatformDescriptor(
         uniqueId = uniqueId,
-        displayName = displayName,
+        displayName = testElementDisplayName,
         source = source,
         element = element
     ).apply {
         log { "created TestDescriptor($uniqueId, $displayName)" }
         testElementDescriptors[element] = this
         if (this@newPlatformDescriptor is TestSuite) {
-            childElements.forEach { addChild(it.newPlatformDescriptor(uniqueId)) }
+            testElementChildren.forEach { addChild(it.newPlatformDescriptor(uniqueId)) }
         }
     }
 }

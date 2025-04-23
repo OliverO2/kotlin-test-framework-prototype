@@ -1,37 +1,37 @@
 package de.infix.testBalloon.framework
 
 sealed class TestElement(
-    override val parentSuite: TestSuite?,
-    override val elementName: String,
-    override val displayName: String = elementName,
-    var configuration: TestConfig
+    override val testElementParent: TestSuite?,
+    override val testElementName: String,
+    override val testElementDisplayName: String = testElementName,
+    var testConfig: TestConfig
 ) : AbstractTestElement {
-    override val elementPath: TestElementPath get() =
-        when (parentSuite) {
-            null, is TestCompartment, is TestSession -> elementName
-            else -> "${parentSuite?.elementPath}.$elementName"
+    override val testElementPath: TestElementPath get() =
+        when (testElementParent) {
+            null, is TestCompartment, is TestSession -> testElementName
+            else -> "${testElementParent?.testElementPath}.$testElementName"
         }
 
     /**
      * The element's path in a "flattened" form, which external test infrastructure does not split into components.
-     * TODO: [flattenedElementPath] is currently unused. It is intended to be evaluated when producing test reports,
+     * TODO: [flattenedPath] is currently unused. It is intended to be evaluated when producing test reports,
      *     where the external test infrastructure would eagerly split an element's path into an assumed class/function
      *     combination.
      */
-    val flattenedElementPath: TestElementPath get() =
-        when (parentSuite) {
-            null, is TestCompartment, is TestSession -> elementName.spacesEscaped()
-            else -> "${parentSuite?.flattenedElementPath}$spacer${elementName.spacesEscaped()}"
+    internal val flattenedPath: TestElementPath get() =
+        when (testElementParent) {
+            null, is TestCompartment, is TestSession -> testElementName.spacesEscaped()
+            else -> "${testElementParent?.flattenedPath}$spacer${testElementName.spacesEscaped()}"
         }
 
     private val spacer: Char get() = if (this is Test) '.' else MIDDLE_DOT
 
-    override var isEnabled: Boolean = true
+    override var testElementIsEnabled: Boolean = true
         internal set
 
     init {
         @Suppress("LeakingThis")
-        parentSuite?.registerChildElement(this)
+        testElementParent?.registerChildElement(this)
     }
 
     /**
@@ -47,10 +47,10 @@ sealed class TestElement(
      * The framework invokes this method for all test elements before creating an execution plan.
      */
     internal open fun parameterize(selection: Selection) {
-        parentSuite?.let {
-            if (!it.isEnabled) isEnabled = false // Inherit a 'disabled' state
+        testElementParent?.let { parent ->
+            if (!parent.testElementIsEnabled) testElementIsEnabled = false // Inherit a 'disabled' state
         }
-        configuration.parameterize(this)
+        testConfig.parameterize(this)
     }
 
     /**
@@ -64,7 +64,7 @@ sealed class TestElement(
      * Executes [action], reporting its [TestElementEvent]s to the [report].
      */
     internal suspend fun executeReporting(report: TestReport, action: suspend () -> Unit) {
-        configuration.withReportSetup(this) { additionalReports ->
+        testConfig.withReportSetup(this) { additionalReports ->
             suspend fun TestElementEvent.Finished.addToReports() {
                 // address reports in reverse order for finish events
                 additionalReports?.reversed()?.forEach { it.add(this) }
@@ -86,7 +86,7 @@ sealed class TestElement(
         }
     }
 
-    override fun toString(): String = "${this::class.simpleName}($elementPath)"
+    override fun toString(): String = "${this::class.simpleName}($testElementPath)"
 
     internal companion object {
         /**

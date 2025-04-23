@@ -12,28 +12,28 @@ import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
 // Disabling the coroutines `TestScope` at the top-level suite makes everything run on real time.
-val SequentialVsConcurrent by testSuite(configuration = TestConfig.testScope(isEnabled = false)) {
+val SequentialVsConcurrent by testSuite(testConfig = TestConfig.testScope(isEnabled = false)) {
 
     // Compare test runs with different concurrency settings.
     // Use our own custom TestConfig.statisticsReport() to report results for each suite.
 
     testSuite(
         "sequential",
-        configuration = TestConfig.invocation(TestInvocation.SEQUENTIAL).statisticsReport()
+        testConfig = TestConfig.invocation(TestInvocation.SEQUENTIAL).statisticsReport()
     ) {
         testSeries()
     }
 
     testSuite(
         "concurrent (default)",
-        configuration = TestConfig.invocation(TestInvocation.CONCURRENT).statisticsReport()
+        testConfig = TestConfig.invocation(TestInvocation.CONCURRENT).statisticsReport()
     ) {
         testSeries()
     }
 
     testSuite(
         "concurrent (single-threaded)",
-        configuration = TestConfig.invocation(TestInvocation.CONCURRENT).singleThreaded().statisticsReport()
+        testConfig = TestConfig.invocation(TestInvocation.CONCURRENT).singleThreaded().statisticsReport()
     ) {
         testSeries()
     }

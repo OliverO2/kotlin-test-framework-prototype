@@ -8,21 +8,21 @@ import de.infix.testBalloon.framework.TestElementName
 @TestDiscoverable
 fun testSuite(@TestElementName name: String = "", content: TestSuite.() -> Unit): Lazy<TestSuite> = lazy {
     TestSuite(
-        elementName = name,
+        name = name,
         content = content
     )
 }
 
 @TestDiscoverable
-open class TestSuite(@TestElementName elementName: String = "", content: TestSuite.() -> Unit = {}) :
-    TestElement(null, elementName),
+open class TestSuite(@TestElementName name: String = "", content: TestSuite.() -> Unit = {}) :
+    TestElement(null, name),
     AbstractTestSuite {
 
     init {
         content()
     }
 
-    override val childElements: MutableList<TestElement> = mutableListOf()
+    override val testElementChildren: MutableList<TestElement> = mutableListOf()
 
-    override var isEnabled = true
+    override var testElementIsEnabled = true
 }

@@ -16,22 +16,22 @@ internal class IntellijLogTestReport(val outputEntry: (String) -> Unit = ::print
     private val outputMutex = Mutex()
 
     override suspend fun add(event: TestElementEvent) {
-        val parentElement = event.element.parentSuite
+        val elementParent = event.element.testElementParent
 
         // Apparently, `className` must be unique, even across platform targets. Otherwise, IntelliJ's "run test"
         // window will mix tests for different targets under common `className` hierarchy nodes.
         // Therefore, we cannot use `event.element::class.simpleName` here.
         // Unfortunately, if IntelliJ is not given a correct fully qualified class name, it does not offer to run a
         // single test class via its run window.
-        val className = event.element.elementPath
+        val className = event.element.testElementPath
 
         suspend fun addBeforeEvent() {
             ijLog {
                 event(type = if (event.element is Test) "beforeTest" else "beforeSuite") {
-                    test(id = event.element.elementPath, parentId = parentElement?.elementPath) {
+                    test(id = event.element.testElementPath, parentId = elementParent?.testElementPath) {
                         descriptor(
-                            name = event.element.elementPath,
-                            displayName = event.element.displayName,
+                            name = event.element.testElementPath,
+                            displayName = event.element.testElementDisplayName,
                             className = className
                         )
                     }
@@ -46,10 +46,10 @@ internal class IntellijLogTestReport(val outputEntry: (String) -> Unit = ::print
         ) {
             ijLog {
                 event(type = if (event.element is Test) "afterTest" else "afterSuite") {
-                    test(id = event.element.elementPath, parentId = parentElement?.elementPath) {
+                    test(id = event.element.testElementPath, parentId = elementParent?.testElementPath) {
                         descriptor(
-                            name = event.element.elementPath,
-                            displayName = event.element.displayName,
+                            name = event.element.testElementPath,
+                            displayName = event.element.testElementDisplayName,
                             className = className
                         )
                         result(
@@ -70,7 +70,7 @@ internal class IntellijLogTestReport(val outputEntry: (String) -> Unit = ::print
 
             is TestElementEvent.Finished -> {
                 val resultType = when {
-                    !event.element.isEnabled -> "SKIPPED"
+                    !event.element.testElementIsEnabled -> "SKIPPED"
                     event.throwable == null -> "SUCCESS"
                     else -> "FAILURE"
                 }

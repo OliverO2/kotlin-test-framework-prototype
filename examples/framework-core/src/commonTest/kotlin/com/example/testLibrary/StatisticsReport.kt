@@ -31,7 +31,7 @@ private class StatisticsReport : TestExecutionTraversal {
     private var testFailureCount = 0
     private var cumulativeTestDuration = 0.seconds
     private var slowestTestDuration: Duration = Duration.ZERO
-    private var slowestTestName = "(none)"
+    private var slowestTestPath = "(none)"
     private val threadIdsUsed = mutableSetOf<ULong>()
 
     override suspend fun aroundEach(testElement: TestElement, elementAction: suspend TestElement.() -> Unit) {
@@ -52,7 +52,7 @@ private class StatisticsReport : TestExecutionTraversal {
 
                     cumulativeTestDuration += duration
                     if (duration > slowestTestDuration) {
-                        slowestTestName = testElement.elementPath
+                        slowestTestPath = testElement.testElementPath
                         slowestTestDuration = duration
                     }
 
@@ -67,13 +67,13 @@ private class StatisticsReport : TestExecutionTraversal {
         if (isReportRootElement) {
             val elapsedTime = reportStart.value!!.elapsedNow()
             printlnFixed(
-                "${testElement.elementPath}[${testPlatform.displayName}]: ran $testCount test(s)" +
+                "${testElement.testElementPath}[${testPlatform.displayName}]: ran $testCount test(s)" +
                     " on ${threadIdsUsed.size} thread(s) in $elapsedTime," +
                     " cumulative test duration: $cumulativeTestDuration"
             )
             if (slowestTestDuration != Duration.ZERO) {
                 printlnFixed(
-                    "\tThe slowest test '$slowestTestName' took $slowestTestDuration."
+                    "\tThe slowest test '$slowestTestPath' took $slowestTestDuration."
                 )
             }
         }

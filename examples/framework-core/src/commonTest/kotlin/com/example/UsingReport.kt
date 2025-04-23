@@ -17,12 +17,12 @@ import kotlin.time.Duration.Companion.seconds
 
 // Use a test report to print information about disabled tests.
 
-val UsingReport by testSuite(configuration = TestConfig.report(DisabledTestsReport())) {
+val UsingReport by testSuite(testConfig = TestConfig.report(DisabledTestsReport())) {
     test("test1") {
         delay(1.seconds)
     }
 
-    testSuite("innerSuite", configuration = TestConfig.disable()) {
+    testSuite("innerSuite", testConfig = TestConfig.disable()) {
         test("testA") {
             delay(2.seconds)
         }
@@ -45,13 +45,13 @@ private class DisabledTestsReport : TestReport() {
 
         val element = event.element
 
-        if (!element.isEnabled && element is Test) {
-            lock.withLock { disabledTestPaths.add(element.elementPath) }
+        if (!element.testElementIsEnabled && element is Test) {
+            lock.withLock { disabledTestPaths.add(element.testElementPath) }
         }
 
         if (element == rootElement.value && disabledTestPaths.isNotEmpty()) {
             printlnFixed(
-                "WARNING: ${disabledTestPaths.size} disabled test(s) in ${rootElement.value?.elementPath}:\n\t" +
+                "WARNING: ${disabledTestPaths.size} disabled test(s) in ${rootElement.value?.testElementPath}:\n\t" +
                     disabledTestPaths.joinToString("\n\t")
             )
         }

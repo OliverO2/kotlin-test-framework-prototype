@@ -4,11 +4,17 @@ import de.infix.testBalloon.framework.AbstractTestElement
 import de.infix.testBalloon.framework.TestElementPath
 
 sealed class TestElement(
-    override val parentSuite: TestSuite?,
-    override val elementName: String = "[TestElement]",
-    override val displayName: String = elementName
+    override val testElementParent: TestSuite?,
+    override val testElementName: String = "[TestElement]",
+    override val testElementDisplayName: String = testElementName
 ) : AbstractTestElement {
 
-    override val elementPath: TestElementPath
-        get() = if (parentSuite != null) "${parentSuite?.elementPath}.$elementName" else elementName
+    override val testElementPath: TestElementPath
+        get() = if (testElementParent !=
+            null
+        ) {
+            "${testElementParent?.testElementPath}.$testElementName"
+        } else {
+            testElementName
+        }
 }

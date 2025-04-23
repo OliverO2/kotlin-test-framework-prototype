@@ -20,7 +20,7 @@ class TestTests {
     }
 
     @Test
-    fun noTestScope() = assertSuccessfulSuite(configuration = TestConfig.testScope(isEnabled = false)) {
+    fun noTestScope() = assertSuccessfulSuite(testConfig = TestConfig.testScope(isEnabled = false)) {
         @OptIn(ExperimentalCoroutinesApi::class)
         test("test1") {
             assertFails {

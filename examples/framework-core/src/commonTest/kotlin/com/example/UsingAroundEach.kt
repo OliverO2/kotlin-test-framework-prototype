@@ -13,7 +13,7 @@ import kotlin.time.measureTime
 // `TestConfig.aroundEach` applies to each test of this suite (and tests in suites below it if there were any).
 
 val UsingAroundEach by testSuite {
-    configuration = TestConfig
+    testConfig = TestConfig
         .testScope(isEnabled = false) // Disable the coroutines `TestScope` to use real time
         .aroundEach { elementAction ->
             if (this is Test) {

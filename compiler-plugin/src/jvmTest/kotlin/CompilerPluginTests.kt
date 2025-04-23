@@ -62,7 +62,7 @@ private class CompilerPluginTests {
                 import fakeTestFramework.testSuite
 
                 val TestSuiteOne by testSuite {
-                    println("$d{elementPath}")
+                    println("$d{testElementPath}")
                 }
                 
                 class MyTestSession : TestSession() {
@@ -72,11 +72,11 @@ private class CompilerPluginTests {
                 }
 
                 class TestSuiteTwo : TestSuite(content = {
-                    println("$d{elementPath}")
+                    println("$d{testElementPath}")
                 })
 
                 val testSuiteThree by testSuite("my test suite three") {
-                    println("$d{elementPath}")
+                    println("$d{testElementPath}")
                 }
             """,
             debugEnabled = true,

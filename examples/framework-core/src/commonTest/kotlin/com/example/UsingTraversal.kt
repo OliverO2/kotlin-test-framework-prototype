@@ -8,7 +8,7 @@ import kotlin.time.Duration.Companion.seconds
 
 // Collect and report information via a custom traversal object visiting elements of a test tree.
 
-val UsingTraversal by testSuite(configuration = TestConfig.statisticsReport()) {
+val UsingTraversal by testSuite(testConfig = TestConfig.statisticsReport()) {
     test("1 second") {
         delay(1.seconds)
     }

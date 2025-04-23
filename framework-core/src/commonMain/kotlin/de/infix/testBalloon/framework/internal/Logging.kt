@@ -5,7 +5,7 @@ import kotlinx.datetime.Clock
 
 enum class LogLevel { DEBUG, INFO, ERROR }
 
-var logLevel = LogLevel.INFO
+var testFrameworkLogLevel = LogLevel.INFO
 
 internal fun logDebug(message: () -> String) {
     log(LogLevel.DEBUG) { "DEBUG: ${message()}" }
@@ -20,8 +20,20 @@ internal fun logError(message: () -> String) {
 }
 
 internal fun log(messageLevel: LogLevel, message: () -> String) {
-    if (messageLevel >= logLevel) {
+    if (messageLevel >= testFrameworkLogLevel) {
         printlnFixed("${Clock.System.now()} [${testPlatform.threadId()}] ${message()}")
+    }
+}
+
+internal inline fun <Result> withLog(messageLevel: LogLevel, message: String, action: () -> Result): Result {
+    try {
+        log(messageLevel) { "$message [${testPlatform.displayName}] – start" }
+        val result = action()
+        log(messageLevel) { "$message [${testPlatform.displayName}] – end" }
+        return result
+    } catch (throwable: Throwable) {
+        log(messageLevel) { "$message [${testPlatform.displayName}] – end with $throwable" }
+        throw throwable
     }
 }
 

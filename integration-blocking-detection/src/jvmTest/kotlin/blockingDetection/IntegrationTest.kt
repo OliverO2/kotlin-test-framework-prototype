@@ -11,18 +11,18 @@ import reactor.blockhound.BlockingOperationError
 import kotlin.test.assertFailsWith
 
 val IntegrationTest by testSuite {
-    test("detecting", configuration = TestConfig.blockingDetection()) {
+    test("detecting", testConfig = TestConfig.blockingDetection()) {
         assertFailsWith<BlockingOperationError> { blockInNonBlockingContext() }
     }
 
-    test("disabling", configuration = TestConfig.blockingDetection()) {
+    test("disabling", testConfig = TestConfig.blockingDetection()) {
         assertFailsWith<BlockingOperationError> { blockInNonBlockingContext() }
         withBlockingDetection(BlockingDetection.DISABLED) {
             blockInNonBlockingContext()
         }
     }
 
-    test("detecting printing", configuration = TestConfig.blockingDetection(BlockingDetection.PRINT)) {
+    test("detecting printing", testConfig = TestConfig.blockingDetection(BlockingDetection.PRINT)) {
         blockInNonBlockingContext()
     }
 

@@ -13,23 +13,23 @@ import kotlinx.coroutines.Dispatchers
  * ```
  * class MyTestSession :
  *     TestSession(
- *         configuration = TestConfig.coroutineContext(UnconfinedTestDispatcher()),
+ *         testConfig = TestConfig.coroutineContext(UnconfinedTestDispatcher()),
  *         defaultCompartment = { TestCompartment.Concurrent }
  *     )
  * ```
  */
 @TestDiscoverable
 open class TestSession protected constructor(
-    configuration: TestConfig = DefaultConfiguration,
+    testConfig: TestConfig = DefaultConfiguration,
     defaultCompartment: (() -> TestCompartment) = { TestCompartment.Default }
 ) : TestSuite(
-    parentSuite = null,
-    elementName = "${testPlatform.displayName} session",
-    configuration = configuration
+    parent = null,
+    name = "${testPlatform.displayName} session",
+    testConfig = testConfig
 ),
     AbstractTestSession {
 
-    val defaultCompartment: TestCompartment by lazy { defaultCompartment() }
+    internal val defaultCompartment: TestCompartment by lazy { defaultCompartment() }
 
     init {
         if (singleton != null) {
@@ -42,7 +42,7 @@ open class TestSession protected constructor(
         singleton = this
     }
 
-    internal constructor() : this(configuration = DefaultConfiguration)
+    internal constructor() : this(testConfig = DefaultConfiguration)
 
     companion object {
         /**

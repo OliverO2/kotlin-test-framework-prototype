@@ -32,14 +32,14 @@ import kotlin.time.Duration.Companion.seconds
  *
  * Example:
  * ```
- * configuration = TestConfig
+ * testConfig = TestConfig
  *     .coroutineContext(UnconfinedTestDispatcher())
  *     .invocation(TestInvocation.CONCURRENT)
  * ```
  */
 open class TestConfig internal constructor(
     private val parameterizingAction: ParameterizingAction?,
-    private val executionWrappingAction: ExecutionWrappingAction?,
+    private val executionWrappingAction: TestExecutionWrappingAction?,
     private val reportSetupAction: ReportSetupAction?
 ) {
     /** Returns a [TestConfig] which combines `this` configuration with a parameterizing action. */
@@ -57,7 +57,7 @@ open class TestConfig internal constructor(
     )
 
     /** Returns a [TestConfig] which combines `this` configuration with an execution-wrapping action. */
-    internal fun executionWrapping(innerExecutionWrappingAction: ExecutionWrappingAction): TestConfig = TestConfig(
+    internal fun executionWrapping(innerExecutionWrappingAction: TestExecutionWrappingAction): TestConfig = TestConfig(
         parameterizingAction = parameterizingAction,
         executionWrappingAction = if (executionWrappingAction != null) {
             { elementAction ->
@@ -143,26 +143,26 @@ private typealias ReportSetupAction = suspend TestElement.(elementAction: suspen
  * plus the elements primary action.
  *
  * Requirements:
- * - An [ExecutionWrappingAction] must invoke `elementAction` exactly once.
+ * - An [TestExecutionWrappingAction] must invoke `elementAction` exactly once.
  *
  * Requirements for [TestElement]s of type [Test]:
- * - If `elementAction` throws, it is considered a test failure. If [ExecutionWrappingAction] catches the exception,
+ * - If `elementAction` throws, it is considered a test failure. If [TestExecutionWrappingAction] catches the exception,
  *   it should re-throw, or the test failure will be muted.
- * - [ExecutionWrappingAction] may throw an exception on its own initiative, which will be considered a test failure.
+ * - [TestExecutionWrappingAction] may throw an exception on its own initiative, which will be considered a test failure.
  *
  * Requirements for [TestElement]s of types other than [Test]:
  * - If `elementAction` throws, it is considered a failure of the test framework.
- * - [ExecutionWrappingAction] should not throw to indicate a failing test or to block further tests from
+ * - [TestExecutionWrappingAction] should not throw to indicate a failing test or to block further tests from
  *   executing.
  */
-typealias ExecutionWrappingAction = suspend TestElement.(elementAction: suspend TestElement.() -> Unit) -> Unit
+typealias TestExecutionWrappingAction = suspend TestElement.(elementAction: suspend TestElement.() -> Unit) -> Unit
 
 /**
  * Returns a test configuration chaining [this] with a configuration disabling the [TestElement].
  *
  * Child elements inherit this setting's effect.
  */
-fun TestConfig.disable() = parameterizing { isEnabled = false }
+fun TestConfig.disable() = parameterizing { testElementIsEnabled = false }
 
 /**
  * Returns a test configuration chaining [this] with a coroutine [context].
@@ -180,7 +180,7 @@ fun TestConfig.coroutineContext(context: CoroutineContext): TestConfig = executi
  *
  * [executionWrappingAction] wraps around the [TestElement]'s cumulative action (a cumulative action includes
  * all wrapping actions following this one, and the elements primary action).
- * See [ExecutionWrappingAction] for requirements.
+ * See [TestExecutionWrappingAction] for requirements.
  *
  * The [executionWrappingAction] is performed at the level of its [TestElement] only.
  *
@@ -193,7 +193,7 @@ fun TestConfig.coroutineContext(context: CoroutineContext): TestConfig = executi
  * }
  * ```
  */
-fun TestConfig.aroundAll(executionWrappingAction: ExecutionWrappingAction): TestConfig =
+fun TestConfig.aroundAll(executionWrappingAction: TestExecutionWrappingAction): TestConfig =
     executionWrapping(executionWrappingAction)
 
 /**
@@ -202,23 +202,23 @@ fun TestConfig.aroundAll(executionWrappingAction: ExecutionWrappingAction): Test
  * [executionWrappingAction] operates on the [TestElement] it is configured for and each of its child elements.
  * [executionWrappingAction] wraps around each [TestElement]'s cumulative action (a cumulative action includes
  * all wrapping actions following this one, and the elements primary action).
- * See [ExecutionWrappingAction] for requirements.
+ * See [TestExecutionWrappingAction] for requirements.
  *
  * Multiple [aroundEach] invocations nest outside-in in the order of appearance.
  *
  * Example:
  * ```
- * configuration = TestConfig.aroundEach { elementAction ->
+ * testConfig = TestConfig.aroundEach { elementAction ->
  *     println("$elementPath aroundEach entering")
  *     elementAction()
  *     println("$elementPath aroundEach exiting")
  * }
  * ```
  */
-fun TestConfig.aroundEach(executionWrappingAction: ExecutionWrappingAction): TestConfig =
+fun TestConfig.aroundEach(executionWrappingAction: TestExecutionWrappingAction): TestConfig =
     traversal(AroundEachTraversal(executionWrappingAction))
 
-private class AroundEachTraversal(val executionWrappingAction: ExecutionWrappingAction) : TestExecutionTraversal {
+private class AroundEachTraversal(val executionWrappingAction: TestExecutionWrappingAction) : TestExecutionTraversal {
     override suspend fun aroundEach(testElement: TestElement, elementAction: suspend TestElement.() -> Unit) {
         testElement.executionWrappingAction {
             testElement.elementAction()
@@ -318,7 +318,7 @@ private class ExecutionTraversalContext private constructor(
     }
 }
 
-private suspend inline fun <SpecificTestElement : TestElement> ExecutionWrappingAction?.wrapIfNotNull(
+private suspend inline fun <SpecificTestElement : TestElement> TestExecutionWrappingAction?.wrapIfNotNull(
     testElement: SpecificTestElement,
     crossinline elementAction: suspend SpecificTestElement.() -> Unit
 ) {

@@ -20,10 +20,10 @@ import kotlin.time.Duration.Companion.minutes
 /** Configures a test suite with [content] and asserts its successful execution. */
 internal fun assertSuccessfulSuite(
     testSession: AbstractTestSession? = null,
-    configuration: TestConfig = TestConfig,
+    testConfig: TestConfig = TestConfig,
     content: TestSuite.() -> Unit
 ): TestResult = withTestFramework(testSession) {
-    val suite by testSuite("suite", configuration = configuration) {
+    val suite by testSuite("suite", testConfig = testConfig) {
         content()
     }
 
@@ -104,7 +104,7 @@ internal class InMemoryTestReport : TestReport() {
         if (!all { it.succeeded }) {
             fail(
                 mapNotNull {
-                    if (!it.succeeded) "Test '${it.element.elementName}' failed with ${it.throwable}" else null
+                    if (!it.succeeded) "Test '${it.element.testElementName}' failed with ${it.throwable}" else null
                 }.joinToString(separator = ",\n\t")
             )
         }
@@ -114,7 +114,7 @@ internal class InMemoryTestReport : TestReport() {
         expectedPaths: List<String>,
         exhaustive: Boolean = false
     ) {
-        map { it.element.elementPath }.assertContainsInOrder(expectedPaths, exhaustive)
+        map { it.element.testElementPath }.assertContainsInOrder(expectedPaths, exhaustive)
     }
 }
 

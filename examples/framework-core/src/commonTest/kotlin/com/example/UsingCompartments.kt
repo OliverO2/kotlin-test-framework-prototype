@@ -18,7 +18,7 @@ import kotlin.time.Duration.Companion.milliseconds
 
 val concurrentSuite by testSuite(
     compartment = TestCompartment.Concurrent,
-    configuration = TestConfig
+    testConfig = TestConfig
         .testScope(isEnabled = false)
         .statisticsReport()
 ) {
@@ -31,7 +31,7 @@ val concurrentSuite by testSuite(
 
 val uiSuite by testSuite(
     compartment = TestCompartment.UI(),
-    configuration = TestConfig.statisticsReport()
+    testConfig = TestConfig.statisticsReport()
 ) {
     test("On UI thread") {
         launch(Dispatchers.Main) {

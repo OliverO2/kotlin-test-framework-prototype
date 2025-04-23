@@ -99,14 +99,14 @@ Inside the trailing lambdas of `testSuite` and `test`, you can use all Kotlin co
 include::examples/framework-core/src/commonTest/kotlin/com/example/DynamicTests.kt[lines=7..]
 ----
 
-==== Fixtures
+==== Test fixtures
 
-You can use fixtures for efficient, scoped shared state:
+You can use test fixtures for efficient, scoped shared state:
 
 [source,kotlin]
 ----
 val MyTestSuite by testSuite {
-    val starRepository = fixture { <1>
+    val starRepository = testFixture { <1>
         StarRepository() <2>
     } closeWith {
         disconnect() <3>
@@ -123,7 +123,7 @@ val MyTestSuite by testSuite {
     }
 } <6>
 ----
-<1> Declare a fixture at zero cost if not used.
+<1> Declare a test fixture at zero cost if not used.
 <2> Use suspend functions in setup code.
 <3> Use suspend functions in (optional) tear-down code.
 <4> Use the fixture, which initializes lazily.
@@ -150,7 +150,7 @@ You can configure your tests, test suites, and global settings through a unified
 
 [source,kotlin]
 ----
-configuration = TestConfig
+testConfig = TestConfig
     .invocation(TestInvocation.CONCURRENT) <1>
     .coroutineContext(dispatcherWithParallelism(4)) <2>
     .statisticsReport() <3>
@@ -161,11 +161,11 @@ configuration = TestConfig
 
 ==== Global configuration, compartments
 
-If you declare a subclass of `TestSession`, its `configuration` parameter will define the global configuration for the entire compilation module. This example extends the framework's default configuration:
+If you declare a subclass of `TestSession`, its `testConfig` parameter will define the global configuration for the entire compilation module. This example extends the framework's default configuration:
 
 [source,kotlin]
 ----
-class MyTestSession : TestSession(configuration = DefaultConfiguration.statisticsReport())
+class MyTestSession : TestSession(testConfig = DefaultConfiguration.statisticsReport())
 ----
 
 To run some test suites in isolation, and/or provide them with special configuration, you can use``TestCompartment``s. These group top-level test suites, with each compartment running in isolation.
@@ -174,7 +174,7 @@ To run some test suites in isolation, and/or provide them with special configura
 
 ==== Lightweight, maintainable
 
-TestBalloon has a fully platform-independent API (everything is in the `common` source set) and almost zero redundancy in its platform-specific parts. Though powerful, its architecture favors simplicity and aims to avoid implicit constructs and indirection, for viable long-term maintainability.
+TestBalloon's API is fully platform-independent (everything is in the `common` source set), with almost zero redundancy in its platform-specific implementations. Though powerful, TestBalloon's architecture favors simplicity and aims to avoid implicit constructs and indirection, for viable long-term maintainability.
 
 === Examples and documentation
 
@@ -198,10 +198,10 @@ Finally, there is a brief xref:documentation/Development.adoc[introduction to de
 ** [ ] API Documentation
 ** [ ] Versioning
 ** [x] License file, Copyright notices
+** [ ] https://www.apache.org/licenses/contributor-agreements.html[Contributor License agreements]
 * [ ] Investigate spurious Main dispatcher concurrency conflict
-* [ ] Rename `TestConfig` to `Operation` or `Operator` (like `Modifier` but avoiding a clash with Compose)?
-* [ ] Rename `TestElement` properties to `test*`, reducing scope pollution? What about `fixture`?
+* [x] Rename `TestElement` properties to `test*`, reducing scope pollution? What about `fixture`?
 * [ ] Document IDE plugin installation.
 * [ ] IDE plugin: Provide a https://plugins.jetbrains.com/docs/intellij/structure-view-factory.html[structure view] for tests.
 * [ ] Add framework library dependency version check in compiler plugin?
-* [ ] Add test element hierarchy diagram.
+* [ ] Docs: Add test element hierarchy diagram.

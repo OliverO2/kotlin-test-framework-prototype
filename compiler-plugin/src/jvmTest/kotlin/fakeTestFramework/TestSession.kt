@@ -6,5 +6,5 @@ import de.infix.testBalloon.framework.TestDiscoverable
 @Suppress("unused")
 @TestDiscoverable
 open class TestSession :
-    TestSuite(elementName = "TestSession"),
+    TestSuite(name = "TestSession"),
     AbstractTestSession

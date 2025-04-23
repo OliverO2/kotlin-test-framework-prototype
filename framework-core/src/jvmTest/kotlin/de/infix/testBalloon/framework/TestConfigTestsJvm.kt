@@ -15,7 +15,7 @@ class TestConfigTestsJvm {
     @Test
     fun singleThreadedDispatcher() = withTestFramework {
         withSingleThreadedDispatcher { defaultDispatcher ->
-            val testSuite by testSuite("testSuite", configuration = TestConfig.coroutineContext(defaultDispatcher)) {}
+            val testSuite by testSuite("testSuite", testConfig = TestConfig.coroutineContext(defaultDispatcher)) {}
 
             val defaultDispatcherThreadId = testPlatform.threadId()
 

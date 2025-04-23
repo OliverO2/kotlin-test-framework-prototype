@@ -5,7 +5,7 @@ package de.infix.testBalloon.framework
  */
 @TestElementDsl
 interface AbstractTestElement {
-    val parentSuite: AbstractTestSuite?
+    val testElementParent: AbstractTestSuite?
 
     /**
      * A path uniquely identifying the element in its test hierarchy.
@@ -13,19 +13,19 @@ interface AbstractTestElement {
      * The element's path must be identical across multiple test sessions.
      * Element paths must form a hierarchy: Each element's path must be prefixed with that of its parent element.
      */
-    val elementPath: TestElementPath
+    val testElementPath: TestElementPath
 
     /**
      * The element's name, uniquely identifying it within its suite or the top level.
      */
-    val elementName: String
+    val testElementName: String
 
     /**
      * A shortened variant of the element's name.
      */
-    val displayName: String
+    val testElementDisplayName: String
 
-    val isEnabled: Boolean
+    val testElementIsEnabled: Boolean
 }
 
 /**
@@ -34,10 +34,10 @@ interface AbstractTestElement {
 interface AbstractTest : AbstractTestElement
 
 /**
- * A test suite declaring a number of child test elements (tests and/or suites).  A suite may not contain test logic.
+ * A test suite declaring a number of children (tests and/or suites).  A suite may not contain test logic.
  */
 interface AbstractTestSuite : AbstractTestElement {
-    val childElements: Iterable<AbstractTestElement>
+    val testElementChildren: Iterable<AbstractTestElement>
 }
 
 /**

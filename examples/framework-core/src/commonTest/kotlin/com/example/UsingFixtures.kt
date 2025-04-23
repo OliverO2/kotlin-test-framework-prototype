@@ -10,14 +10,14 @@ import kotlin.test.assertTrue
 // Fixtures lazily initialize on first use and automatically release resources when no longer needed.
 
 val UsingFixtures by testSuite {
-    val starRepository = fixture {
+    val starRepository = testFixture {
         StarRepository()
     } closeWith {
         disconnect()
     }
 
     testSuite("actual users") {
-        val userRepository = fixture { UserRepository() }
+        val userRepository = testFixture { UserRepository() }
 
         test("alina") {
             assertEquals(4, starRepository().userStars("alina"))

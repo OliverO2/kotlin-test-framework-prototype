@@ -12,7 +12,7 @@ import kotlin.time.Duration
  * Declares a test with a [timeout] as defined in kotlinx.coroutines [withTimeout].
  */
 fun TestSuite.test(name: String, timeout: Duration, action: TestAction) =
-    test(name, configuration = TestConfig.testScope(isEnabled = false)) {
+    test(name, testConfig = TestConfig.testScope(isEnabled = false)) {
         try {
             withTimeout(timeout) {
                 action()

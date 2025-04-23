@@ -12,23 +12,23 @@ import kotlinx.coroutines.test.TestScope
  * A test containing a test [action] which raises assertion errors on failure. The [action] may suspend.
  */
 class Test internal constructor(
-    parentSuite: TestSuite,
-    elementName: String,
-    configuration: TestConfig,
+    parent: TestSuite,
+    name: String,
+    testConfig: TestConfig,
     private val action: TestAction
-) : TestElement(parentSuite, elementName = elementName, configuration = configuration),
+) : TestElement(parent, testElementName = name, testConfig = testConfig),
     AbstractTest {
 
     override fun parameterize(selection: Selection) {
         super.parameterize(selection)
 
-        if (isEnabled && !selection.includes(this)) isEnabled = false
+        if (testElementIsEnabled && !selection.includes(this)) testElementIsEnabled = false
     }
 
     override suspend fun execute(report: TestReport) {
         executeReporting(report) {
-            if (isEnabled) {
-                configuration.executeWrapped(this) {
+            if (testElementIsEnabled) {
+                testConfig.executeWrapped(this) {
                     val testScopeContext = TestScopeContext.current()
 
                     if (testScopeContext != null) {
@@ -60,8 +60,11 @@ class Test internal constructor(
     }
 }
 
-class TestCoroutineScope(private val test: Test, scope: CoroutineScope, private val testScopeOrNull: TestScope?) :
-    AbstractTest by test,
+class TestCoroutineScope internal constructor(
+    private val test: Test,
+    scope: CoroutineScope,
+    private val testScopeOrNull: TestScope?
+) : AbstractTest by test,
     CoroutineScope by scope {
 
     val testScope: TestScope get() = testScopeOrNull

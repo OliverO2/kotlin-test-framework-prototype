@@ -25,14 +25,14 @@ fun testSuite(
     @TestElementName name: String = "",
     @TestDisplayName displayName: String = name,
     compartment: TestCompartment,
-    configuration: TestConfig = TestConfig,
+    testConfig: TestConfig = TestConfig,
     content: TestSuite.() -> Unit
 ): Lazy<TestSuite> = lazy {
     TestSuite(
-        parentSuite = compartment,
-        elementName = name,
+        parent = compartment,
+        name = name,
         displayName = displayName,
-        configuration = configuration,
+        testConfig = testConfig,
         content = content
     )
 }
@@ -51,14 +51,14 @@ fun testSuite(
 fun testSuite(
     @TestElementName name: String = "",
     @TestDisplayName displayName: String = name,
-    configuration: TestConfig = TestConfig,
+    testConfig: TestConfig = TestConfig,
     content: TestSuite.() -> Unit
 ): Lazy<TestSuite> = lazy {
     TestSuite(
-        parentSuite = TestSession.global.defaultCompartment,
-        elementName = name,
+        parent = TestSession.global.defaultCompartment,
+        name = name,
         displayName = displayName,
-        configuration = configuration,
+        testConfig = testConfig,
         content = content
     )
 }
@@ -68,15 +68,15 @@ fun testSuite(
  */
 @TestDiscoverable
 open class TestSuite internal constructor(
-    parentSuite: TestSuite?,
-    elementName: String,
-    displayName: String = elementName,
-    configuration: TestConfig = TestConfig,
+    parent: TestSuite?,
+    name: String,
+    displayName: String = name,
+    testConfig: TestConfig = TestConfig,
     private val content: TestSuite.() -> Unit = {}
-) : TestElement(parentSuite, elementName = elementName, displayName = displayName, configuration),
+) : TestElement(parent, testElementName = name, testElementDisplayName = displayName, testConfig),
     AbstractTestSuite {
 
-    override val childElements: MutableList<TestElement> = mutableListOf()
+    override val testElementChildren: MutableList<TestElement> = mutableListOf()
 
     private var privateConfiguration: TestConfig = TestConfig.fixtureLifecycleAction()
 
@@ -94,23 +94,23 @@ open class TestSuite internal constructor(
         @TestElementName name: String = "",
         @TestDisplayName displayName: String = name
     ) : this(
-        parentSuite = TestSession.global.defaultCompartment,
-        elementName = name,
+        parent = TestSession.global.defaultCompartment,
+        name = name,
         displayName = displayName,
         content = content
     )
 
     protected constructor(
-        configuration: TestConfig,
+        testConfig: TestConfig,
         content: TestSuite.() -> Unit,
         @TestElementName name: String = "",
         @TestDisplayName displayName: String = name
     ) :
         this(
-            parentSuite = TestSession.global.defaultCompartment,
-            elementName = name,
+            parent = TestSession.global.defaultCompartment,
+            name = name,
             displayName = displayName,
-            configuration = configuration,
+            testConfig = testConfig,
             content = content
         )
 
@@ -120,76 +120,76 @@ open class TestSuite internal constructor(
         @TestElementName name: String = "",
         @TestDisplayName displayName: String = name
     ) : this(
-        parentSuite = compartment,
-        elementName = name,
+        parent = compartment,
+        name = name,
         displayName = displayName,
         content = content
     )
 
     protected constructor(
         compartment: TestCompartment,
-        configuration: TestConfig,
+        testConfig: TestConfig,
         content: TestSuite.() -> Unit,
         @TestElementName name: String = "",
         @TestDisplayName displayName: String = name
     ) : this(
-        parentSuite = compartment,
-        elementName = name,
+        parent = compartment,
+        name = name,
         displayName = displayName,
-        configuration = configuration,
+        testConfig = testConfig,
         content = content
     )
 
     protected constructor(
         name: String,
-        configuration: TestConfig,
+        testConfig: TestConfig,
         content: TestSuite.() -> Unit,
         @TestDisplayName displayName: String = name
     ) : this(
-        parentSuite = TestSession.global.defaultCompartment,
-        elementName = name,
+        parent = TestSession.global.defaultCompartment,
+        name = name,
         displayName = displayName,
-        configuration = configuration,
-        content = content
-    )
-
-    protected constructor(
-        name: String,
-        compartment: TestCompartment,
-        content: TestSuite.() -> Unit,
-        @TestDisplayName displayName: String = name
-    ) : this(
-        parentSuite = compartment,
-        elementName = name,
-        displayName = displayName,
+        testConfig = testConfig,
         content = content
     )
 
     protected constructor(
         name: String,
         compartment: TestCompartment,
-        configuration: TestConfig,
         content: TestSuite.() -> Unit,
         @TestDisplayName displayName: String = name
     ) : this(
-        parentSuite = compartment,
-        elementName = name,
+        parent = compartment,
+        name = name,
         displayName = displayName,
-        configuration = configuration,
+        content = content
+    )
+
+    protected constructor(
+        name: String,
+        compartment: TestCompartment,
+        testConfig: TestConfig,
+        content: TestSuite.() -> Unit,
+        @TestDisplayName displayName: String = name
+    ) : this(
+        parent = compartment,
+        name = name,
+        displayName = displayName,
+        testConfig = testConfig,
         content = content
     )
 
     // endregion
 
     internal fun registerChildElement(childElement: TestElement) {
-        childElements.add(childElement)
+        testElementChildren.add(childElement)
     }
 
     /**
      * Executes [action] on all child elements, recursively, in depth-first order.
      */
     internal suspend fun forEachChildTreeElement(action: suspend (element: TestElement) -> Unit) {
-        for (childElement in childElements) {
+        for (childElement in testElementChildren) {
             if (childElement is TestSuite) {
                 childElement.forEachChildTreeElement(action)
             }
@@ -201,7 +201,7 @@ open class TestSuite internal constructor(
      * Declares an [executionWrappingAction] wrapping the actions of this test suite.
      *
      * The wrapping action will be invoked only if at least one child element is enabled.
-     * See also [ExecutionWrappingAction] for requirements.
+     * See also [TestExecutionWrappingAction] for requirements.
      *
      * Usage:
      * ```
@@ -222,20 +222,16 @@ open class TestSuite internal constructor(
      * Declares a test suite with a number of child test elements (tests and/or suites). A suite may not contain test logic.
      */
     @TestDiscoverable
-    fun testSuite(
-        @TestElementName name: String,
-        configuration: TestConfig = TestConfig,
-        content: TestSuite.() -> Unit
-    ) {
-        TestSuite(this, elementName = name, displayName = name, configuration = configuration, content = content)
+    fun testSuite(@TestElementName name: String, testConfig: TestConfig = TestConfig, content: TestSuite.() -> Unit) {
+        TestSuite(this, name = name, displayName = name, testConfig = testConfig, content = content)
     }
 
     /**
      * Declares a test with an [action] containing test logic.
      */
     @TestDiscoverable
-    fun test(@TestElementName name: String, configuration: TestConfig = TestConfig, action: TestAction) {
-        Test(this, name, configuration = configuration, action)
+    fun test(@TestElementName name: String, testConfig: TestConfig = TestConfig, action: TestAction) {
+        Test(this, name, testConfig = testConfig, action)
     }
 
     override fun parameterize(selection: Selection) {
@@ -243,27 +239,27 @@ open class TestSuite internal constructor(
 
         super.parameterize(selection)
 
-        childElements.forEach {
+        testElementChildren.forEach {
             it.parameterize(selection)
         }
 
-        if (isEnabled && childElements.none { it.isEnabled }) {
-            isEnabled = false
+        if (testElementIsEnabled && testElementChildren.none { it.testElementIsEnabled }) {
+            testElementIsEnabled = false
         }
     }
 
     override suspend fun execute(report: TestReport) {
         executeReporting(report) {
-            if (isEnabled) {
-                configuration.chainedWith(privateConfiguration).executeWrapped(this) {
-                    val invocation = if (parentSuite == null) {
+            if (testElementIsEnabled) {
+                testConfig.chainedWith(privateConfiguration).executeWrapped(this) {
+                    val invocation = if (testElementParent == null) {
                         // A TestSession (no parent) must always execute its compartments sequentially.
                         TestInvocation.SEQUENTIAL
                     } else {
                         TestInvocation.current()
                     }
                     coroutineScope {
-                        for (childElement in childElements) {
+                        for (childElement in testElementChildren) {
                             when (invocation) {
                                 TestInvocation.SEQUENTIAL -> {
                                     childElement.execute(report)
@@ -280,7 +276,7 @@ open class TestSuite internal constructor(
                 }
             } else {
                 // "Execute" disabled child elements for reporting only.
-                for (childElement in childElements) {
+                for (childElement in testElementChildren) {
                     childElement.execute(report)
                 }
             }
@@ -300,7 +296,7 @@ open class TestSuite internal constructor(
      *
      * Declare a fixture at the suite level like this:
      * ```
-     * val repository = fixture { MyRepository(this) } closeWith { disconnect() }
+     * val repository = testFixture { MyRepository(this) } closeWith { disconnect() }
      * ```
      *
      * Use its value in the suite's child elements by invoking the fixture like this:
@@ -308,7 +304,7 @@ open class TestSuite internal constructor(
      * repository().getScore(...)
      * ```
      */
-    fun <Value : Any> fixture(value: suspend TestSuite.() -> Value): Fixture<Value> = Fixture(this, value)
+    fun <Value : Any> testFixture(value: suspend TestSuite.() -> Value): Fixture<Value> = Fixture(this, value)
 
     /**
      * A fixture is a state holder for a lazily initialized [Value] with a lifetime of the test suite declaring it.

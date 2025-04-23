@@ -8,15 +8,14 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
  *
  * Compartments make sure that tests with special runtime requirements, like UI tests, can execute in isolation.
  */
-open class TestCompartment(name: String, configuration: TestConfig) :
-    TestSuite(parentSuite = TestSession.global, elementName = "@$name", configuration = configuration) {
+open class TestCompartment(name: String, testConfig: TestConfig) :
+    TestSuite(parent = TestSession.global, name = "@$name", testConfig = testConfig) {
 
     companion object {
         /**
          * The default compartment.
          */
-        val Default get() = default
-            ?: TestCompartment(name = "Default", configuration = TestConfig).also { default = it }
+        val Default get() = default ?: TestCompartment(name = "Default", testConfig = TestConfig).also { default = it }
 
         private var default: TestCompartment? = null
 
@@ -27,7 +26,7 @@ open class TestCompartment(name: String, configuration: TestConfig) :
             concurrent
                 ?: TestCompartment(
                     name = "Concurrent",
-                    configuration = TestConfig.invocation(TestInvocation.CONCURRENT)
+                    testConfig = TestConfig.invocation(TestInvocation.CONCURRENT)
                 ).also { concurrent = it }
 
         private var concurrent: TestCompartment? = null
@@ -36,17 +35,17 @@ open class TestCompartment(name: String, configuration: TestConfig) :
          * A compartment executing its tests sequentially and establishing a Main dispatcher.
          *
          * If [mainDispatcher] is `null`, a single-threaded dispatcher is used.
-         * [configuration] is chained to the compartment's default configuration, and thus can override it.
+         * [testConfig] is chained to the compartment's default configuration, and thus can override it.
          */
         @Suppress("FunctionName")
         @OptIn(ExperimentalCoroutinesApi::class)
-        fun UI(mainDispatcher: CoroutineDispatcher? = null, configuration: TestConfig = TestConfig): TestCompartment =
+        fun UI(mainDispatcher: CoroutineDispatcher? = null, testConfig: TestConfig = TestConfig): TestCompartment =
             TestCompartment(
                 name = "UI",
-                configuration = TestConfig
+                testConfig = TestConfig
                     .invocation(TestInvocation.SEQUENTIAL)
                     .mainDispatcher(mainDispatcher)
-                    .chainedWith(configuration)
+                    .chainedWith(testConfig)
             )
 
         /** Resets global state, enabling the execution of multiple test sessions in one process. */

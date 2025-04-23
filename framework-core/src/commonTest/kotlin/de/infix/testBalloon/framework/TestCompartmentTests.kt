@@ -15,7 +15,7 @@ import kotlin.time.Duration.Companion.milliseconds
 class TestCompartmentTests {
     @Test
     fun defaultCompartment() = assertSuccessfulSuite {
-        val compartment = parentSuite as? TestCompartment
+        val compartment = testElementParent as? TestCompartment
         test("test1") {
             assertEquals(TestCompartment.Default, compartment)
         }
@@ -27,7 +27,7 @@ class TestCompartmentTests {
     @Test
     fun twoCompartments() = withTestFramework {
         val suite1 by testSuite("suite1") {
-            val compartment = parentSuite as? TestCompartment
+            val compartment = testElementParent as? TestCompartment
             test("test1") {
                 assertEquals(TestCompartment.Default, compartment)
                 assertNull(currentCoroutineContext()[CoroutineName.Key])
@@ -40,9 +40,9 @@ class TestCompartmentTests {
 
         val coroutineName2 = CoroutineName("#2")
         val compartment2 =
-            TestCompartment("Compartment 2", configuration = TestConfig.coroutineContext(coroutineName2))
+            TestCompartment("Compartment 2", testConfig = TestConfig.coroutineContext(coroutineName2))
         val suite2 by testSuite("suite2", compartment = compartment2) {
-            val compartment = parentSuite as? TestCompartment
+            val compartment = testElementParent as? TestCompartment
             test("test1") {
                 assertEquals(compartment2, compartment)
                 assertEquals(coroutineName2, currentCoroutineContext()[CoroutineName.Key])
@@ -54,7 +54,7 @@ class TestCompartmentTests {
         }
 
         val suite3 by testSuite("suite3") {
-            val compartment = parentSuite as? TestCompartment
+            val compartment = testElementParent as? TestCompartment
             test("test1") {
                 assertEquals(TestCompartment.Default, compartment)
                 assertNull(currentCoroutineContext()[CoroutineName.Key])
@@ -66,7 +66,7 @@ class TestCompartmentTests {
         }
 
         val suite4 by testSuite("suite4", compartment = compartment2) {
-            val compartment = parentSuite as? TestCompartment
+            val compartment = testElementParent as? TestCompartment
             test("test1") {
                 assertEquals(compartment, compartment2)
                 assertEquals(coroutineName2, currentCoroutineContext()[CoroutineName.Key])
@@ -84,10 +84,10 @@ class TestCompartmentTests {
 
                 // Tests in each compartment must be processed consecutively.
                 assertElementPathsContainInOrder(
-                    map { it.element.elementPath }.filter { it.startsWith("suite1") || it.startsWith("suite3") }
+                    map { it.element.testElementPath }.filter { it.startsWith("suite1") || it.startsWith("suite3") }
                 )
                 assertElementPathsContainInOrder(
-                    map { it.element.elementPath }.filter { it.startsWith("suite2") || it.startsWith("suite4") }
+                    map { it.element.testElementPath }.filter { it.startsWith("suite2") || it.startsWith("suite4") }
                 )
             }
         }
@@ -146,8 +146,16 @@ class TestCompartmentTests {
                 assertEquals(1, sequentialThreadIds.elements().size)
 
                 // Tests in each compartment must be processed consecutively.
-                assertElementPathsContainInOrder(map { it.element.elementPath }.filter { it.startsWith("topSuite1") })
-                assertElementPathsContainInOrder(map { it.element.elementPath }.filter { it.startsWith("topSuite2") })
+                assertElementPathsContainInOrder(
+                    map {
+                        it.element.testElementPath
+                    }.filter { it.startsWith("topSuite1") }
+                )
+                assertElementPathsContainInOrder(
+                    map {
+                        it.element.testElementPath
+                    }.filter { it.startsWith("topSuite2") }
+                )
             }
         }
     }
@@ -179,9 +187,10 @@ class TestCompartmentTests {
 
         withTestReport(suite) {
             with(finishedTestEvents()) {
-                assertTrue(isNotEmpty())
+                assertTrue(isNotEmpty(), "Missing finished test events.")
                 assertAllSucceeded()
-                assertEquals(1, uiThreadIds.elements().size)
+                var threadCount = uiThreadIds.elements().size
+                assertEquals(1, threadCount, "Expected 1 thread, but got $threadCount.")
             }
         }
     }

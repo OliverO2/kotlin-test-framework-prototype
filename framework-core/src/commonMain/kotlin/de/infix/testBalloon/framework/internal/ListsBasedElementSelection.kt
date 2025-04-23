@@ -20,8 +20,8 @@ internal open class ListsBasedElementSelection protected constructor(
             used = true
         }
 
-        return (includePatterns.isEmpty() || includePatterns.any { it.matches(testElement.elementPath) }) &&
-            excludePatterns.none { it.matches(testElement.elementPath) }
+        return (includePatterns.isEmpty() || includePatterns.any { it.matches(testElement.testElementPath) }) &&
+            excludePatterns.none { it.matches(testElement.testElementPath) }
     }
 
     override fun toString(): String =

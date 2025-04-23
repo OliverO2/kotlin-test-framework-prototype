@@ -32,23 +32,23 @@ internal fun TestElement.registerWithKotlinJsTestFramework() {
             // real top-level suites. This is required for test filtering expressions to work without wildcards.
             // Example: `TestSuite1.test1` can be found this way, otherwise we'd need to use `*TestSuite1.test1`,
             // which can be ambiguous.
-            if (isEnabled) {
-                childElements.forEach {
+            if (testElementIsEnabled) {
+                testElementChildren.forEach {
                     it.registerWithKotlinJsTestFramework()
                 }
             }
         }
 
         is TestSuite -> {
-            kotlinJsTestFramework.suite(elementName.spacesEscaped(), ignored = !isEnabled) {
-                childElements.forEach {
+            kotlinJsTestFramework.suite(testElementName.spacesEscaped(), ignored = !testElementIsEnabled) {
+                testElementChildren.forEach {
                     it.registerWithKotlinJsTestFramework()
                 }
             }
         }
 
         is Test -> {
-            kotlinJsTestFramework.test(elementName.spacesEscaped(), ignored = !isEnabled) {
+            kotlinJsTestFramework.test(testElementName.spacesEscaped(), ignored = !testElementIsEnabled) {
                 TestSessionRelay.resultReceivingPromise(this)
             }
         }
@@ -123,7 +123,7 @@ private object TestSessionRelay {
                     // A TestReport relaying test results to the corresponding test elements' result channel(s).
 
                     override suspend fun add(event: TestElementEvent) {
-                        if (event.element.isEnabled && event is TestElementEvent.Finished) {
+                        if (event.element.testElementIsEnabled && event is TestElementEvent.Finished) {
                             event.sendResult()
                         }
                     }

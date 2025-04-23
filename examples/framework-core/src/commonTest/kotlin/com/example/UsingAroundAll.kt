@@ -13,7 +13,7 @@ val UsingAroundAll by testSuite {
         measureTime {
             testSuiteAction() // Never forget to actually call the action executing the test suite.
         }.also {
-            printlnFixed("$elementPath took $it") // This will show the execution time of the entire suite.
+            printlnFixed("$testElementPath took $it") // This will show the execution time of the entire suite.
         }
     }
 

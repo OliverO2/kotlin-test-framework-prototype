@@ -58,7 +58,10 @@ class TestFrameworkTests {
 
         withTestReport(suite1, suite2, selection = selection) {
             with(finishedTestEvents()) {
-                assertContentEquals(expectedResult, map { Pair(it.element.elementPath, it.element.isEnabled) })
+                assertContentEquals(
+                    expectedResult,
+                    map { Pair(it.element.testElementPath, it.element.testElementIsEnabled) }
+                )
             }
         }
     }
