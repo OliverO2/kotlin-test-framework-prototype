@@ -127,15 +127,47 @@ private class CompilerPluginTests {
     }
 
     @Test
-    fun missingAnnotationsLibraryDependency() {
+    fun disableForNonTestModule() {
+        compilation(
+            """
+                val foo = 1
+            """,
+            isTestModule = false,
+            classPathInheritanceEnabled = false,
+            debugEnabled = true
+        ) {
+            assertTrue("[DEBUG] Disabling the plugin for module <module>: It is not a test module." in messages)
+        }
+    }
+
+    @Test
+    fun disableOnMissingFrameworkLibraryDependency() {
         compilation(
             """
                 val foo = 1
             """,
             classPathInheritanceEnabled = false,
+            debugEnabled = true
+        ) {
+            assertTrue(
+                "[DEBUG] Disabling the plugin for module <module_test>: It has no framework library dependency." in
+                    messages
+            )
+        }
+    }
+
+    @Test
+    fun defectiveFrameworkLibraryDependency() {
+        compilation(
+            """
+                package de.infix.testBalloon.framework
+                interface AbstractTestSuite
+                val foo = 1
+            """,
+            classPathInheritanceEnabled = false,
             expectedExitCode = KotlinCompilation.ExitCode.COMPILATION_ERROR
         ) {
-            assertTrue("Please add the corresponding library dependency." in messages)
+            assertTrue("Please add the dependency '" in messages)
         }
     }
 }
@@ -143,6 +175,7 @@ private class CompilerPluginTests {
 @OptIn(ExperimentalCompilerApi::class)
 private fun compilation(
     sourceCode: String,
+    isTestModule: Boolean = true,
     debugEnabled: Boolean = false,
     executionPackageName: String? = null,
     classPathInheritanceEnabled: Boolean = true,
@@ -156,6 +189,7 @@ private fun compilation(
 
     try {
         compilation.apply {
+            moduleName = if (isTestModule) "module_test" else "module"
             sources = listOf(SourceFile.kotlin("Main.kt", sourceCode.trimIndent()))
             verbose = false
             compilerPluginRegistrars = listOf(CompilerPluginRegistrar())

@@ -1,6 +1,9 @@
 package de.infix.testBalloon.compilerPlugin
 
 import buildConfig.BuildConfig
+import buildConfig.BuildConfig.PROJECT_FRAMEWORK_CORE_ARTIFACT_ID
+import buildConfig.BuildConfig.PROJECT_GROUP_ID
+import buildConfig.BuildConfig.PROJECT_VERSION
 import de.infix.testBalloon.framework.AbstractTestSession
 import de.infix.testBalloon.framework.AbstractTestSuite
 import de.infix.testBalloon.framework.TestDiscoverable
@@ -91,9 +94,35 @@ class CompilerPluginIrGenerationExtension(private val compilerConfiguration: Com
         compilerConfiguration.get(CLIConfigurationKeys.MESSAGE_COLLECTOR_KEY, MessageCollector.NONE)
 
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
+        fun reportDisablingReason(detail: String) {
+            if (Options.debug.value(compilerConfiguration)) {
+                messageCollector.report(
+                    CompilerMessageSeverity.WARNING,
+                    "$PLUGIN_DISPLAY_NAME: [DEBUG] Disabling the plugin for module ${moduleFragment.name}: $detail"
+                )
+            }
+        }
+
+        // If we are not compiling a test module: Disable the compiler plugin.
+        // Otherwise, we end up defining the discovery result property twice (one for the main module, another one
+        // for the test module). If the test module picks up the main module's symbol, no suites will be considered
+        // discovered.
+        // TODO: Relying on the module name ending in "_test" is probably not stable. An alternative way could be
+        //     to generate the test discovery result property only if at least one suite has been discovered.
+        if (!moduleFragment.name.asStringStripSpecialMarkers().endsWith("_test")) {
+            reportDisablingReason("It is not a test module.")
+            return
+        }
+
+        // If we are not compiling a module with the framework library dependency: Disable the compiler plugin.
+        if (!ModuleProbe(pluginContext).hasFrameworkLibraryDependency()) {
+            reportDisablingReason("It has no framework library dependency.")
+            return
+        }
+
         val configuration: Configuration = try {
             Configuration(compilerConfiguration, pluginContext)
-        } catch (exception: IllegalStateException) {
+        } catch (exception: MissingFrameworkSymbol) {
             messageCollector.report(CompilerMessageSeverity.ERROR, "$PLUGIN_DISPLAY_NAME: ${exception.message}")
             return
         }
@@ -104,6 +133,11 @@ class CompilerPluginIrGenerationExtension(private val compilerConfiguration: Com
 
 private interface IrPluginContextOwner {
     val pluginContext: IrPluginContext
+}
+
+private class ModuleProbe(override val pluginContext: IrPluginContext) : IrPluginContextOwner {
+    /** Returns true if the currently compiled module is `TestSuite`-aware. */
+    fun hasFrameworkLibraryDependency(): Boolean = irClassSymbolOrNull(AbstractTestSuite::class.qualifiedName!!) != null
 }
 
 private class Configuration(compilerConfiguration: CompilerConfiguration, override val pluginContext: IrPluginContext) :
@@ -653,17 +687,20 @@ private fun IrPluginContextOwner.irClassSymbolOrNull(fqName: String): IrClassSym
     pluginContext.referenceClass(ClassId.topLevel(FqName(fqName)))
 
 private fun IrPluginContextOwner.irClassSymbol(fqName: String): IrClassSymbol = irClassSymbolOrNull(fqName)
-    ?: throw IllegalStateException("Class '$fqName' $MISSING_CLASSPATH_INFO")
+    ?: throw MissingFrameworkSymbol("class '$fqName'")
 
 private fun IrPluginContextOwner.irFunctionSymbol(packageName: String, functionName: String): IrSimpleFunctionSymbol =
     pluginContext.referenceFunctions(CallableId(FqName(packageName), Name.identifier(functionName))).singleOrNull()
-        ?: throw IllegalStateException("Function '$packageName.$functionName' $MISSING_CLASSPATH_INFO")
+        ?: throw MissingFrameworkSymbol("function '$packageName.$functionName'")
+
+private class MissingFrameworkSymbol(typeAndName: String) :
+    Error(
+        "Could not find $typeAndName.\n" +
+            "\tPlease add the dependency '$PROJECT_GROUP_ID:$PROJECT_FRAMEWORK_CORE_ARTIFACT_ID:$PROJECT_VERSION'."
+    )
 
 private fun IrClass.fqName(): String = "${packageFqName.asQualificationPrefix()}$name"
 
 private fun FqName?.asQualificationPrefix(): String = if (this == null || isRoot) "" else "$this."
 
 private const val PLUGIN_DISPLAY_NAME = "Plugin ${BuildConfig.PROJECT_COMPILER_PLUGIN_ID}"
-
-private const val MISSING_CLASSPATH_INFO =
-    "was not found on the classpath. Please add the corresponding library dependency."

@@ -53,6 +53,9 @@ buildConfig {
         "PROJECT_COMPILER_PLUGIN_ID",
         "\"${project.property("local.PROJECT_COMPILER_PLUGIN_ID")}\""
     )
+    buildConfigField("String", "PROJECT_VERSION", "\"${project.version}\"")
+    buildConfigField("String", "PROJECT_GROUP_ID", "\"${project.group}\"")
+    buildConfigField("String", "PROJECT_FRAMEWORK_CORE_ARTIFACT_ID", "\"${projects.frameworkCore.name}\"")
 }
 
 tasks.withType<Test>().configureEach {
