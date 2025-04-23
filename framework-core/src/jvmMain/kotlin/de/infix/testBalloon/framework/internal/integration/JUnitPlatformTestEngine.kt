@@ -48,10 +48,9 @@ internal class JUnitPlatformTestEngine : TestEngine {
         // in which "source file". (The plugin needs to use one of the existing source files.)
         val frameworkDiscoveryResultPropertyGetterName = "getTestFrameworkDiscoveryResult"
         val frameworkDiscoveryResultFileClass = withClassGraphScan {
-            allClasses
-                .asSequence()
+            allStandardClasses
                 .firstOrNull {
-                    it.name.endsWith("Kt") && it.getMethodInfo(frameworkDiscoveryResultPropertyGetterName) != null
+                    it.name.endsWith("Kt") && it.hasDeclaredMethod(frameworkDiscoveryResultPropertyGetterName)
                 }
         }?.let { Class.forName(it.name) }
 
@@ -67,8 +66,8 @@ internal class JUnitPlatformTestEngine : TestEngine {
                 as TestFrameworkDiscoveryResult
         } catch (throwable: Throwable) {
             throw IllegalArgumentException(
-                "Could not access the test discovery result." +
-                    " Please ensure that the correct version of the framework's compiler plugin was applied.",
+                "Could not access the test discovery result.\n" +
+                    "\tPlease ensure that the correct version of the framework's compiler plugin was applied.",
                 throwable
             )
         }
