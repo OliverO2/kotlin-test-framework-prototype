@@ -11,7 +11,7 @@ TestBalloon comprises these components (appearing as Gradle subprojects):
 . *gradle-plugin*: A Gradle plugin enabling the TestBalloon Kotlin compiler plugin, configurable in Gradle build scripts via the `testBalloon` extension. The Gradle plugin also sets up JUnit Platform, which is required to run tests on the JVM.
 . *framework-abstractions*: Basic abstractions defining what a hierarchical test structure looks like, so that the core library, the compiler plugin, and an IDE plugin share a common concept of that test structure.
 
-In addition to the above, there are *integrations-**, providing TestBalloon interoperability with other test-related libraries.
+In addition to the above, there are *integration-** modules, providing TestBalloon interoperability with other test-related libraries.
 
 === Tasks
 

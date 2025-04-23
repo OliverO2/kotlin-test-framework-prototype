@@ -3,12 +3,12 @@ package com.example
 import de.infix.testBalloon.framework.AbstractTestElement
 import de.infix.testBalloon.framework.TestSession
 import de.infix.testBalloon.framework.testSuite
-import de.infix.testBalloon.integrations.kotest.assertions.withKotestAssertions
+import de.infix.testBalloon.integration.kotest.assertions.supportKotestAssertions
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.equals.shouldBeEqual
 import io.kotest.matchers.string.shouldNotEndWith
 
-class MyTestSession : TestSession(configuration = DefaultConfiguration.withKotestAssertions())
+class MyTestSession : TestSession(configuration = DefaultConfiguration.supportKotestAssertions())
 
 val TestSuite by testSuite {
     log("configuring $elementName (displayName=$displayName)")

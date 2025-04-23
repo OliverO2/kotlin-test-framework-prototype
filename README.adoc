@@ -6,7 +6,7 @@ NOTE: Structured testing for Kotlin Multiplatform: Coroutines-powered, lightweig
 
 image:documentation/images/Test%20Run.png[Test Run.png]
 
-=== How to Use TestBalloon
+=== How to use TestBalloon
 
 . Add the TestBalloon Gradle plugin to your build script:
 +
@@ -39,7 +39,7 @@ implementation(kotlin("test"))
 +
 [source,kotlin]
 ----
-implementation("de.infix.testBalloon:integrations-kotest-assertions:VERSION")
+implementation("de.infix.testBalloon:integration-kotest-assertions:VERSION")
 ----
 
 . Write a test:
@@ -146,7 +146,7 @@ You can also use Kotlin-tailored mechanisms to easily augment suites and tests, 
 
 ==== User-friendly, extensible configuration API
 
-You can configure your tests or test suites through a unified, small-surface API (the `TestConfig` builder). You can extend the API with custom configurations.
+You can configure your tests, test suites, and global settings through a unified, small-surface API (the `TestConfig` builder). You can extend the API with custom configurations.
 
 [source,kotlin]
 ----
@@ -159,14 +159,18 @@ configuration = TestConfig
 <2> Parallelize as needed (and the platform supports).
 <3> A custom configuration for extra reporting
 
-==== Global configuration, familiar API
+==== Global configuration, compartments
 
-You can declare a `TestSession` class, defining the global configuration with the `TestConfig` builder.
+If you declare a subclass of `TestSession`, its `configuration` parameter will define the global configuration for the entire compilation module. This example extends the framework's default configuration:
 
-To run some test suites in isolation, and/or provide them with special configuration, you can use
-``TestCompartment``s. These group top-level test suites, with each compartment running in isolation.
+[source,kotlin]
+----
+class MyTestSession : TestSession(configuration = DefaultConfiguration.statisticsReport())
+----
 
-`TestSession` and ``TestCompartment``s are just special types of ``TestSuite``s and use the same API for configuration.
+To run some test suites in isolation, and/or provide them with special configuration, you can use``TestCompartment``s. These group top-level test suites, with each compartment running in isolation.
+
+`TestSession` and ``TestCompartment``s are just special types of ``TestSuite``s that form the top of the test element tree.
 
 ==== Lightweight, maintainable
 
@@ -191,9 +195,13 @@ Finally, there is a brief xref:documentation/Development.adoc[introduction to de
 === TODO
 
 * [ ] Prepare publication
+** [ ] API Documentation
 ** [ ] Versioning
 ** [x] License file, Copyright notices
+* [ ] Investigate spurious Main dispatcher concurrency conflict
 * [ ] Rename `TestConfig` to `Operation` or `Operator` (like `Modifier` but avoiding a clash with Compose)?
 * [ ] Rename `TestElement` properties to `test*`, reducing scope pollution? What about `fixture`?
 * [ ] Document IDE plugin installation.
 * [ ] IDE plugin: Provide a https://plugins.jetbrains.com/docs/intellij/structure-view-factory.html[structure view] for tests.
+* [ ] Add framework library dependency version check in compiler plugin?
+* [ ] Add test element hierarchy diagram.

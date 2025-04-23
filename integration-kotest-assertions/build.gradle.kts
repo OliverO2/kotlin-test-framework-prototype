@@ -1,12 +1,13 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import org.jetbrains.kotlin.gradle.plugin.KotlinHierarchyTemplate
 import org.jetbrains.kotlin.gradle.plugin.NATIVE_COMPILER_PLUGIN_CLASSPATH_CONFIGURATION_NAME
 import org.jetbrains.kotlin.gradle.plugin.PLUGIN_CLASSPATH_CONFIGURATION_NAME
 import org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalWasmDsl
 
 plugins {
     alias(libs.plugins.org.jetbrains.kotlin.multiplatform)
+    alias(libs.plugins.com.vanniktech.maven.publish)
     alias(libs.plugins.org.jmailen.kotlinter)
-    // alias(libs.plugins.de.infix.testBalloon) // Use this outside this project
 }
 
 // region In-project configuration normally supplied by the framework's own Gradle plugin
@@ -18,34 +19,38 @@ dependencies {
 }
 // endregion
 
+group = project.property("local.PROJECT_GROUP_ID")!!
+
 val jdkVersion = project.property("local.jdk.version").toString().toInt()
 
 kotlin {
     jvmToolchain(jdkVersion)
 
     @OptIn(ExperimentalKotlinGradlePluginApi::class)
+    compilerOptions {
+        // freeCompilerArgs.addAll("-P", "plugin:de.infix.testBalloon:debug=true")
+    }
+
     jvm {
+        @OptIn(ExperimentalKotlinGradlePluginApi::class)
         compilerOptions {
             freeCompilerArgs.addAll("-Xjdk-release=$jdkVersion")
         }
     }
 
     js {
-        binaries.executable()
         nodejs()
         browser()
     }
 
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
-        binaries.executable()
         nodejs()
         browser()
     }
 
     // @OptIn(ExperimentalWasmDsl::class)
     // wasmWasi {
-    //     binaries.executable()
     //     nodejs()
     // }
 
@@ -54,15 +59,22 @@ kotlin {
     }
 
     @OptIn(ExperimentalKotlinGradlePluginApi::class)
-    compilerOptions {
-        // freeCompilerArgs.addAll("-P", "plugin:de.infix.testBalloon:debug=true")
+    applyHierarchyTemplate(KotlinHierarchyTemplate.default) {
+        group("common") {
+            group("nonJvm") {
+                withJs()
+                withWasmJs()
+                // withWasmWasi()
+                withLinux()
+            }
+        }
     }
 
     sourceSets {
-        commonTest {
+        commonMain {
             dependencies {
-                // implementation(libs.de.infix.testBalloon.integration.kotest.assertions) // Use this outside this project
-                implementation(projects.integrationKotestAssertions)
+                api(projects.frameworkCore)
+                api(libs.io.kotest.assertions.core)
             }
         }
     }
@@ -94,26 +106,12 @@ tasks.withType<Test>().configureEach {
 }
 // endregion
 
-tasks {
-    val orderedTaskPrefixes =
-        listOf(
-            "jvm",
-            "jsNode",
-            "jsBrowser",
-            "wasmJsNode",
-            "wasmJsBrowser",
-            // "wasmWasiNode",
-            "linuxX64"
-        )
-    var lastTaskName: String? = null
-    orderedTaskPrefixes.forEach {
-        val taskName = "${it}Test"
-        lastTaskName?.let {
-            named(taskName).configure {
-                mustRunAfter(it)
-            }
+publishing {
+    repositories {
+        maven {
+            name = "local"
+            url = uri("${System.getenv("HOME")!!}//.m2/local-repository")
         }
-        lastTaskName = taskName
     }
 }
 
