@@ -39,6 +39,7 @@ include(":gradle-plugin")
 include(":compiler-plugin")
 
 include(":integration-kotest-assertions")
+include(":integration-blocking-detection")
 
 include(":examples:framework-core")
 include(":examples:integration-kotest-assertions")

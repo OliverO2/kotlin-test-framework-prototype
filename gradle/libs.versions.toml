@@ -22,7 +22,11 @@ dev-zacsweers-kctfork = "dev.zacsweers.kctfork:core:0.5.1"
 # https://github.com/classgraph/classgraph/releases
 io-github-classgraph = "io.github.classgraph:classgraph:4.8.179"
 
+# https://github.com/kotest/kotest/releases
 io-kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "io-kotest" }
+
+# https://github.com/reactor/BlockHound/releases
+io-projectreactor-tools-blockhound = "io.projectreactor.tools:blockhound:1.0.11.RELEASE"
 
 # https://github.com/Kotlin/kotlinx-atomicfu/releases
 org-jetbrains-kotlinx-atomicfu = "org.jetbrains.kotlinx:atomicfu:0.25.0"
