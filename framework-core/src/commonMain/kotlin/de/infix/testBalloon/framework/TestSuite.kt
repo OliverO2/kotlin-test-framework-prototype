@@ -1,9 +1,12 @@
 package de.infix.testBalloon.framework
 
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.coroutines.CoroutineContext
 
 typealias TestSuiteExecutionAction = suspend TestSuite.() -> Unit
 typealias TestSuiteExecutionWrappingAction = suspend (suiteAction: TestSuiteExecutionAction) -> Unit
@@ -78,7 +81,20 @@ open class TestSuite internal constructor(
 
     override val testElementChildren: MutableList<TestElement> = mutableListOf()
 
-    private var privateConfiguration: TestConfig = TestConfig.fixtureLifecycleAction()
+    /**
+     * The test suite's [CoroutineScope], valid only during the suite's execution.
+     *
+     * It can be used to launch coroutines in test fixtures. Such coroutines should complete or be cancelled
+     * explicitly when their fixture closes.
+     */
+    val testSuiteScope: CoroutineScope
+        get() = executionContext?.let { CoroutineScope(it) }
+            ?: throw IllegalStateException("$testElementPath: testSuiteScope is only available during execution")
+
+    /** The [CoroutineContext] used by this suite during execution. */
+    private var executionContext: CoroutineContext? = null
+
+    private var privateConfiguration: TestConfig = TestConfig.suiteLifecycleAction()
 
     /** Fixtures created while executing this suite, in reverse order of fixture creation. */
     private val fixtures = mutableListOf<Fixture<*>>()
@@ -342,8 +358,10 @@ open class TestSuite internal constructor(
         }
     }
 
-    private fun TestConfig.fixtureLifecycleAction(): TestConfig = executionWrapping { elementAction ->
+    private fun TestConfig.suiteLifecycleAction(): TestConfig = executionWrapping { elementAction ->
         var actionException: Throwable? = null
+
+        this@TestSuite.executionContext = currentCoroutineContext()
 
         try {
             elementAction()
@@ -363,6 +381,9 @@ open class TestSuite internal constructor(
                     }
                 }
             }
+
+            this@TestSuite.executionContext = null
+
             if (actionException != null) {
                 throw actionException
             }

@@ -1,10 +1,14 @@
 package com.example
 
 import de.infix.testBalloon.framework.testSuite
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.seconds
 
 // Use suspend-capable test fixtures across tests and suites.
 // Fixtures lazily initialize on first use and automatically release resources when no longer needed.
@@ -17,7 +21,7 @@ val UsingFixtures by testSuite {
     }
 
     testSuite("actual users") {
-        val userRepository = testFixture { UserRepository() }
+        val userRepository = testFixture { UserRepository(testSuiteScope) }
 
         test("alina") {
             assertEquals(4, starRepository().userStars("alina"))
@@ -27,7 +31,7 @@ val UsingFixtures by testSuite {
             assertEquals(3, starRepository().userStars("peter"))
         }
 
-        test("all") {
+        test("stars for all") {
             userRepository().users().collect { user ->
                 assertTrue(starRepository().userStars(user) > 0)
             }
@@ -39,10 +43,18 @@ val UsingFixtures by testSuite {
     }
 }
 
-private class UserRepository : AutoCloseable {
+private class UserRepository(scope: CoroutineScope) : AutoCloseable {
+    val clientJob = scope.launch {
+        // Could be running infinitely like with
+        //     client.webSocket("https://ktor.io/docs/client-websockets.html") { ... }
+        delay(3.seconds)
+    }
+
     suspend fun users(): Flow<String> = flowOf("alina", "peter")
 
-    override fun close() {} // The standard (non-suspending) close function.
+    override fun close() { // The standard (non-suspending) close function.
+        clientJob.cancel()
+    }
 }
 
 private class StarRepository {
