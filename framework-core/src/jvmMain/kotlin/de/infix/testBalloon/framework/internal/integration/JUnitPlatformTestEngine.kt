@@ -14,6 +14,7 @@ import de.infix.testBalloon.framework.internal.TestFrameworkDiscoveryResult
 import de.infix.testBalloon.framework.internal.logDebug
 import io.github.classgraph.ClassGraph
 import io.github.classgraph.ScanResult
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.junit.platform.engine.EngineDiscoveryRequest
 import org.junit.platform.engine.ExecutionRequest
@@ -96,7 +97,10 @@ internal class JUnitPlatformTestEngine : TestEngine {
 
         val jUnitListener = request.engineExecutionListener
 
-        runBlocking {
+        runBlocking(Dispatchers.Default) {
+            // Why are we running on Dispatchers.Default? Because otherwise, a nested runBlocking could hang the entire
+            // system due to thread starvation. See https://github.com/Kotlin/kotlinx.coroutines/issues/3983
+
             TestSession.global.execute(
                 report = object : TestReport() {
                     // A TestReport relaying each TestElementEvent to the JUnit listener.
@@ -185,15 +189,17 @@ private fun TestElement.newPlatformDescriptor(parentUniqueId: UniqueId): TestEle
     }
 }
 
-private val TestElement.platformDescriptor: AbstractTestDescriptor get() =
-    checkNotNull(testElementDescriptors[this]) { "$this is missing its TestDescriptor" }
+private val TestElement.platformDescriptor: AbstractTestDescriptor
+    get() =
+        checkNotNull(testElementDescriptors[this]) { "$this is missing its TestDescriptor" }
 
-private val TestElementEvent.Finished.executionResult: TestExecutionResult get() =
-    when (throwable) {
-        null -> TestExecutionResult.successful()
-        is FailFastException -> TestExecutionResult.aborted(throwable)
-        else -> TestExecutionResult.failed(throwable)
-    }
+private val TestElementEvent.Finished.executionResult: TestExecutionResult
+    get() =
+        when (throwable) {
+            null -> TestExecutionResult.successful()
+            is FailFastException -> TestExecutionResult.aborted(throwable)
+            else -> TestExecutionResult.failed(throwable)
+        }
 
 private fun <Result> withClassGraphScan(action: ScanResult.() -> Result): Result = ClassGraph()
     .disableJarScanning()

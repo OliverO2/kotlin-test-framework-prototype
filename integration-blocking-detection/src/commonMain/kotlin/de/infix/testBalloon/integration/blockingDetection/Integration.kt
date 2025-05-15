@@ -12,10 +12,12 @@ enum class BlockingDetection {
 /**
  * Returns a test configuration chaining [this] with a configuration enabling blocking call detection.
  *
- * Blocking call detection is only available on the JVM. This configuration has no effect on other platforms.
- *
- * NOTE: If blocking call detection is enabled, [TestConfig.testScope] will automatically be disabled. This is
- * necessary since kotlinx-coroutines uses blocking calls in `TestScope`.
+ * NOTES:
+ * - Blocking call detection is only available on the JVM. This configuration has no effect on other platforms.
+ * - Blocking call detection is only available with [kotlinx.coroutines.Dispatchers.Default], which is used by
+ *   default.
+ * - Enabling blocking call detection disables [TestConfig.testScope]. This is necessary since kotlinx-coroutines
+ *   uses blocking calls in `TestScope`.
  *
  * Child elements inherit this setting's effect.
  */

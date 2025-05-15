@@ -6,6 +6,7 @@ import de.infix.testBalloon.framework.TestSession
 import de.infix.testBalloon.framework.internal.integration.IntellijLogTestReport
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.toKString
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -31,7 +32,12 @@ internal actual suspend fun configureAndExecuteTests(suites: Array<AbstractTestS
 @Suppress("unused")
 @InvokedByGeneratedCode
 internal fun configureAndExecuteTestsBlocking(suites: Array<AbstractTestSuite>) {
-    runBlocking { configureAndExecuteTests(suites) }
+    runBlocking(Dispatchers.Default) {
+        // Why are we running on Dispatchers.Default? Because otherwise, a nested runBlocking could hang the entire
+        // system due to thread starvation. See https://github.com/Kotlin/kotlinx.coroutines/issues/3983
+
+        configureAndExecuteTests(suites)
+    }
 }
 
 internal actual suspend fun TestScope.runTestAwaitingCompletion(
