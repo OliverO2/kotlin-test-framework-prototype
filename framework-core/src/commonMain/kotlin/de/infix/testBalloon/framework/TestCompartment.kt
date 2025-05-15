@@ -13,29 +13,58 @@ open class TestCompartment(name: String, testConfig: TestConfig) :
 
     companion object {
         /**
-         * The default compartment.
+         * The default compartment, which inherits its entire configuration from the [TestSession].
          */
-        val Default get() = default ?: TestCompartment(name = "Default", testConfig = TestConfig).also { default = it }
+        val Default
+            get() = default ?: TestCompartment(name = "Default", testConfig = TestConfig).also { default = it }
 
         private var default: TestCompartment? = null
 
         /**
          * A compartment executing its tests concurrently.
          */
-        val Concurrent get() =
-            concurrent
-                ?: TestCompartment(
-                    name = "Concurrent",
-                    testConfig = TestConfig.invocation(TestInvocation.CONCURRENT)
-                ).also { concurrent = it }
+        val Concurrent
+            get() = concurrent ?: TestCompartment(
+                name = "Concurrent",
+                testConfig = TestConfig.invocation(TestInvocation.CONCURRENT)
+            ).also { concurrent = it }
 
         private var concurrent: TestCompartment? = null
+
+        /**
+         * A compartment executing its tests sequentially.
+         *
+         * As sequential execution is the [TestSession]'s default, using this compartment instead of [Default]
+         * makes sense
+         * - if the session's configuration was changed, or
+         * - to signal an explicit choice.
+         */
+        val Sequential
+            get() = sequential ?: TestCompartment(
+                name = "Sequential",
+                testConfig = TestConfig.invocation(TestInvocation.SEQUENTIAL)
+            ).also { sequential = it }
+
+        private var sequential: TestCompartment? = null
+
+        /**
+         * A compartment executing its tests sequentially on a real time dispatcher.
+         *
+         * This disables [TestConfig.testScope], which is otherwise enabled by default.
+         */
+        val RealTime
+            get() = realTime ?: TestCompartment(
+                name = "RealTime",
+                testConfig = TestConfig.invocation(TestInvocation.SEQUENTIAL).testScope(isEnabled = false)
+            ).also { realTime = it }
+
+        private var realTime: TestCompartment? = null
 
         /**
          * A compartment executing its tests sequentially and establishing a Main dispatcher.
          *
          * If [mainDispatcher] is `null`, a single-threaded dispatcher is used.
-         * [testConfig] is chained to the compartment's default configuration, and thus can override it.
+         * [testConfig] overrides the compartment's default configuration.
          */
         @Suppress("FunctionName")
         @OptIn(ExperimentalCoroutinesApi::class)
@@ -52,6 +81,8 @@ open class TestCompartment(name: String, testConfig: TestConfig) :
         internal fun resetState() {
             default = null
             concurrent = null
+            sequential = null
+            realTime = null
         }
     }
 }
