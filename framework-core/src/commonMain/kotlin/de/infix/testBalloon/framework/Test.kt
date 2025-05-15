@@ -4,6 +4,7 @@ import de.infix.testBalloon.framework.internal.runTestAwaitingCompletion
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -34,7 +35,9 @@ class Test internal constructor(
                     if (testScopeContext != null) {
                         executeInTestScope(testScopeContext)
                     } else {
-                        TestCoroutineScope(this@Test, CoroutineScope(currentCoroutineContext()), null).action()
+                        coroutineScope {
+                            TestCoroutineScope(this@Test, this, null).action()
+                        }
                     }
                 }
             }
