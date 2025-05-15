@@ -8,7 +8,7 @@ import kotlinx.atomicfu.locks.synchronized
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.async
 import kotlinx.coroutines.test.TestResult
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -35,7 +35,7 @@ internal fun assertSuccessfulSuite(
 /** Performs [action] in an initialized framework session. */
 @OptIn(DelicateCoroutinesApi::class)
 internal fun withTestFramework(testSession: AbstractTestSession? = null, action: suspend () -> Unit): TestResult {
-    val job = GlobalScope.launch(Dispatchers.Default) {
+    val deferredJob = GlobalScope.async(Dispatchers.Default) {
         initializeTestFramework(testSession)
         try {
             action()
@@ -50,10 +50,12 @@ internal fun withTestFramework(testSession: AbstractTestSession? = null, action:
 
     return TestScope().runTest(timeout = 2.minutes) {
         if (testPlatform.type == TestPlatform.Type.WASM_WASI) {
+            // WORKAROUND: `join()` and `await()` will hang on Wasm/WASI if a `Test` is running on the test dispatcher.
             logInfo { "WORKAROUND: Skip waiting for primary coroutine on ${testPlatform.displayName}." }
         } else {
-            // WORKAROUND: `job.join()` will hang on Wasm/WASI if a `Test` is running on the test dispatcher.
-            job.join()
+            // Why `await()` if all we get is a `Unit`?
+            // `join()` would ignore a possible exception in its job, while `await()` will re-throw it.
+            deferredJob.await()
         }
     }
 }
