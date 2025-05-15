@@ -175,7 +175,7 @@ class TestCompartmentTests {
                         }.assertMessageStartsWith("Another invocation of withMainDispatcher() is still active.")
                     }
 
-                    for (testNumber in 1..3) {
+                    for (testNumber in 2..4) {
                         test("test$testNumber") {
                             uiThreadIds.add(testPlatform.threadId())
                             delay(1.milliseconds)

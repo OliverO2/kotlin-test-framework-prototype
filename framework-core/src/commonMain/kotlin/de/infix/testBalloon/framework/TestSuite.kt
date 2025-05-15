@@ -76,10 +76,14 @@ open class TestSuite internal constructor(
     displayName: String = name,
     testConfig: TestConfig = TestConfig,
     private val content: TestSuite.() -> Unit = {}
-) : TestElement(parent, testElementName = name, testElementDisplayName = displayName, testConfig),
+) : TestElement(parent, name = name, displayName = displayName, testConfig),
     AbstractTestSuite {
 
-    override val testElementChildren: MutableList<TestElement> = mutableListOf()
+    override val testElementChildren: Iterable<TestElement> by ::children
+
+    private val children: MutableList<TestElement> = mutableListOf()
+
+    private val childNameCount: MutableMap<String, Int> = mutableMapOf()
 
     /**
      * The test suite's [CoroutineScope], valid only during the suite's execution.
@@ -197,8 +201,18 @@ open class TestSuite internal constructor(
 
     // endregion
 
+    internal fun registerUniqueChildElementName(initialName: String): String {
+        val nameCount = (childNameCount[initialName] ?: 0) + 1
+        childNameCount[initialName] = nameCount
+        return if (nameCount == 1) {
+            initialName
+        } else {
+            "$initialName($nameCount)"
+        }
+    }
+
     internal fun registerChildElement(childElement: TestElement) {
-        testElementChildren.add(childElement)
+        children.add(childElement)
     }
 
     /**

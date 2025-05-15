@@ -17,7 +17,7 @@ class Test internal constructor(
     name: String,
     testConfig: TestConfig,
     private val action: TestAction
-) : TestElement(parent, testElementName = name, testConfig = testConfig),
+) : TestElement(parent, name = name, testConfig = testConfig),
     AbstractTest {
 
     override fun parameterize(selection: Selection) {

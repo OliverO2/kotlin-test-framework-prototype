@@ -596,6 +596,27 @@ class TestSuiteTests {
     }
 
     @Test
+    fun uniqueElementPaths() = withTestFramework {
+        val suite1 by testSuite("suite1") {
+            test("test1") {
+            }
+
+            test("test1") { // same element path!
+            }
+        }
+
+        withTestReport(suite1) {
+            with(finishedTestEvents()) {
+                assertEquals(
+                    size,
+                    map { it.element.testElementPath }.toSet().size,
+                    "All test elements must have a unique element path"
+                )
+            }
+        }
+    }
+
+    @Test
     fun additionalReports() = withTestFramework {
         val eventLog = mutableListOf<String>()
 
@@ -731,9 +752,9 @@ class TestSuiteTests {
                 assertElementPathsContainInOrder(
                     listOf(
                         ".(1)test1",
-                        ".(2)test1",
-                        ".(3)test1",
-                        ".(4)test1",
+                        "(2).(2)test1",
+                        "(3).(3)test1",
+                        "(4).(4)test1",
                         "Suite5.test1",
                         "Suite6.test1",
                         "Suite7.test1"

@@ -1,11 +1,12 @@
 package de.infix.testBalloon.framework
 
-sealed class TestElement(
-    override val testElementParent: TestSuite?,
-    override val testElementName: String,
-    override val testElementDisplayName: String = testElementName,
-    var testConfig: TestConfig
-) : AbstractTestElement {
+sealed class TestElement(parent: TestSuite?, name: String, displayName: String = name, var testConfig: TestConfig) :
+    AbstractTestElement {
+
+    override val testElementParent: TestSuite? = parent
+    override val testElementName: String = parent?.registerUniqueChildElementName(name) ?: name
+    override val testElementDisplayName: String = displayName
+
     override val testElementPath: TestElementPath
         get() =
             when (testElementParent) {
