@@ -58,12 +58,13 @@ open class TestSession protected constructor(
 
         private var singleton: TestSession? = null
 
-        internal val global: TestSession get() =
-            singleton ?: throw IllegalStateException(
-                "The test framework was not initialized." +
-                    " A TestSession must exist before creating any top-level TestSuite." +
-                    "\n\tPlease ensure that the test framework's Gradle plugin is configured."
-            )
+        internal val global: TestSession
+            get() =
+                singleton ?: throw IllegalStateException(
+                    "The test framework was not initialized." +
+                        " A TestSession must exist before creating any top-level TestSuite." +
+                        "\n\tPlease ensure that the test framework's Gradle plugin is configured."
+                )
 
         /** Resets global state, enabling the execution of multiple test sessions in one process. */
         internal fun resetState() {

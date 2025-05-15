@@ -70,8 +70,9 @@ class TestCoroutineScope internal constructor(
 ) : AbstractTest by test,
     CoroutineScope by scope {
 
-    val testScope: TestScope get() = testScopeOrNull
-        ?: throw IllegalArgumentException("$test is not executing in a TestScope.")
+    val testScope: TestScope
+        get() = testScopeOrNull
+            ?: throw IllegalArgumentException("$test is not executing in a TestScope.")
 }
 
 /**

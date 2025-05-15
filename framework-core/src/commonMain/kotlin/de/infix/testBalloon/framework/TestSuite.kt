@@ -235,7 +235,7 @@ open class TestSuite internal constructor(
     }
 
     /**
-     * Declares a test suite with a number of child test elements (tests and/or suites). A suite may not contain test logic.
+     * Declares a test suite with child test elements (tests and/or suites). A suite may not contain test logic.
      */
     @TestDiscoverable
     fun testSuite(@TestElementName name: String, testConfig: TestConfig = TestConfig, content: TestSuite.() -> Unit) {

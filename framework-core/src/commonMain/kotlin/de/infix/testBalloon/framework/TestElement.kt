@@ -6,11 +6,12 @@ sealed class TestElement(
     override val testElementDisplayName: String = testElementName,
     var testConfig: TestConfig
 ) : AbstractTestElement {
-    override val testElementPath: TestElementPath get() =
-        when (testElementParent) {
-            null, is TestCompartment, is TestSession -> testElementName
-            else -> "${testElementParent?.testElementPath}.$testElementName"
-        }
+    override val testElementPath: TestElementPath
+        get() =
+            when (testElementParent) {
+                null, is TestCompartment, is TestSession -> testElementName
+                else -> "${testElementParent?.testElementPath}.$testElementName"
+            }
 
     /**
      * The element's path in a "flattened" form, which external test infrastructure does not split into components.
@@ -18,11 +19,12 @@ sealed class TestElement(
      *     where the external test infrastructure would eagerly split an element's path into an assumed class/function
      *     combination.
      */
-    internal val flattenedPath: TestElementPath get() =
-        when (testElementParent) {
-            null, is TestCompartment, is TestSession -> testElementName.spacesEscaped()
-            else -> "${testElementParent?.flattenedPath}$spacer${testElementName.spacesEscaped()}"
-        }
+    internal val flattenedPath: TestElementPath
+        get() =
+            when (testElementParent) {
+                null, is TestCompartment, is TestSession -> testElementName.spacesEscaped()
+                else -> "${testElementParent?.flattenedPath}$spacer${testElementName.spacesEscaped()}"
+            }
 
     private val spacer: Char get() = if (this is Test) '.' else MIDDLE_DOT
 
