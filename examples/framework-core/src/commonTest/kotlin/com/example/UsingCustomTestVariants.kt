@@ -1,5 +1,6 @@
 package com.example
 
+import com.example.testLibrary.databaseTest
 import com.example.testLibrary.test
 import de.infix.testBalloon.framework.testSuite
 import kotlin.test.assertEquals
@@ -15,5 +16,9 @@ val UsingCustomTestVariants by testSuite {
 
     test("true iterations", iterations = 10) {
         assertTrue(true)
+    }
+
+    databaseTest("using a database") {
+        assertTrue(true) // Do transactions here
     }
 }

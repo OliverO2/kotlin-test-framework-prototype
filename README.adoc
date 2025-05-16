@@ -57,6 +57,10 @@ val MyFirstTestSuite by testSuite {
 }
 ----
 
+. Run tests via the familiar Gradle test targets.
+
+. Coming soon: Install the TestBalloon plugin for IntelliJ IDEA from the marketplace to run individual tests or test suites via the editor's gutter icons.
+
 === What to expect
 
 ==== Structured testing, unified multiplatform API
@@ -136,12 +140,18 @@ val MyTestSuite by testSuite {
 
 ==== Extensible test DSL
 
+===== Custom tests and test suites
+
 You can use idiomatic Kotlin to define your own types of tests and test suites, like this test variant with an `iterations` parameter:
 
 [source,kotlin]
 ----
 include::examples/framework-core/src/commonTest/kotlin/com/example/testLibrary/TestVariants.kt[lines=28..]
 ----
+
+NOTE: The IDE plugin may not recognize invocations of your custom function as defining a test or test suite. In that case, xref:examples/framework-core/src/commonTest/kotlin/com/example/testLibrary/TestVariants.kt[add a `@TestDiscoverable` annotation to your custom test] or test suite function.
+
+===== Wrappers
 
 You can use TestBalloon's wrappers for setup and tear-down code. Inside the wrappers, Kotlin idioms like `withTimeout` and `try`/`catch` blocks can surround tests and suites.
 
@@ -201,10 +211,7 @@ Finally, there is a brief xref:documentation/Development.adoc[introduction to de
 * [ ] Prepare publication
 ** [ ] API Documentation (Dokka)
 ** [ ] Versioning
-** [x] License file, Copyright notices
 ** [ ] https://www.apache.org/licenses/contributor-agreements.html[Contributor License agreements]
-* [x] Rename `TestElement` properties to `test*`, reducing scope pollution? What about `fixture`?
-* [ ] Document IDE plugin installation.
 * [ ] Document use of `Dispatchers.Default` by default.
 * [ ] Add framework library dependency version check in compiler plugin?
 * [ ] Docs: Add test element hierarchy diagram.
