@@ -215,3 +215,25 @@ Finally, there is a brief xref:documentation/Development.adoc[introduction to de
 * [ ] Document use of `Dispatchers.Default` by default.
 * [ ] Add framework library dependency version check in compiler plugin?
 * [ ] Docs: Add test element hierarchy diagram.
+* [ ] Fix incremental compilation errors
+** Symptoms: _TestEngine with ID 'de.infix.testBalloon' failed to discover tests_
++
+--
+. _The module has been initialized with a TestSession before. There must be only one TestSession per compilation module._
+. _The test framework was not initialized. A TestSession must exist before creating any top-level TestSuite._
+--
+** Analysis
+*** There are two variables which are populated with symbols from visited files only:
++
+[source,kotlin]
+----
+    val discoveredSuiteExpressions = mutableListOf<IrBuilderWithScope.() -> IrExpression>()
+    var customSessionClass: IrClass? = null
+----
+*** These variables will not be up-to-date with incremental compilation if one or more files containing the respective declarations were not part of the compilation (files that did not change and are thus not marked "dirty").
+** What next?
+*** Workaround: Add `-Pkotlin.incremental=false` to each Gradle test invocation
+*** Limitation: https://youtrack.jetbrains.com/issue/KT-55982[K2: Consider global lookups from plugins in incremental compilation : KT-55982]
+*** Use https://github.com/JetBrains/kotlin/blob/e4a51dfa1b11d295970af6d0d01c4877dc8c5ad3/compiler/fir/tree/src/org/jetbrains/kotlin/fir/extensions/predicate/AbstractPredicate.kt#L28[fir/extensions/predicate/AbstractPredicate.kt]?
+*** There is a `LookupTracker` in the compiler which might be used.
+*** Check how https://github.com/JetBrains/kotlin/blob/2d76ad4fd0af3387c2dbdbe21ee191662ea34924/compiler/ir/backend.js/src/org/jetbrains/kotlin/ir/backend/js/lower/TestGenerator.kt[the compiler] does it.
