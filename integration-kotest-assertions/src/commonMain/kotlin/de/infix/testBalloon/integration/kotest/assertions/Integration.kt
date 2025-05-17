@@ -10,4 +10,4 @@ import de.infix.testBalloon.framework.TestConfig
  *
  * Child elements inherit this setting's effect.
  */
-expect fun TestConfig.supportKotestAssertions(): TestConfig
+expect fun TestConfig.kotestAssertionsSupport(): TestConfig

@@ -9,7 +9,7 @@ import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotEndWith
 
 val IntegrationTest by testSuite {
-    test("assertSoftly", testConfig = TestConfig.supportKotestAssertions()) {
+    test("assertSoftly", testConfig = TestConfig.kotestAssertionsSupport()) {
         shouldThrow<MultiAssertionError> {
             assertSoftly {
                 "Expect failure 1!" shouldNotEndWith "!"
