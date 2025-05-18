@@ -54,8 +54,8 @@ org-junit-platform-engine = "org.junit.platform:junit-platform-engine:1.12.2"
 ##                                                                ⬆ :1.13.0-RC1"
 
 # Self-reference, for illustrative purposes only
-de-infix-testBalloon-framework-core = { module = "de.infix.testBalloon:framework-core", version.ref = "de-infix-testBalloon" }
-de-infix-testBalloon-integrations-kotest-assertions = { module = "de.infix.testBalloon:integrations-kotest-assertions", version.ref = "de-infix-testBalloon" }
+de-infix-testBalloon-framework-core = { module = "de.infix.testBalloon:testBalloon-framework-core", version.ref = "de-infix-testBalloon" }
+de-infix-testBalloon-integrations-kotest-assertions = { module = "de.infix.testBalloon:testBalloon-integrations-kotest-assertions", version.ref = "de-infix-testBalloon" }
 
 [plugins]
 

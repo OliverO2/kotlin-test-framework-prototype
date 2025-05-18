@@ -1,47 +1,19 @@
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
-
 plugins {
-    alias(libs.plugins.org.jetbrains.kotlin.multiplatform)
+    alias(libs.plugins.org.jetbrains.kotlin.jvm)
     alias(libs.plugins.com.github.gmazzo.buildconfig)
+    `java-gradle-plugin`
     alias(libs.plugins.com.vanniktech.maven.publish)
     alias(libs.plugins.org.jmailen.kotlinter)
 }
 
 group = project.property("local.PROJECT_GROUP_ID")!!
 
-val jdkVersion = project.property("local.jdk.version").toString().toInt()
-
 kotlin {
-    jvmToolchain(jdkVersion)
+    jvmToolchain(11)
+}
 
-    jvm {
-        @OptIn(ExperimentalKotlinGradlePluginApi::class)
-        compilerOptions {
-            freeCompilerArgs.addAll("-Xjdk-release=$jdkVersion")
-        }
-    }
-
-    sourceSets {
-        commonMain {
-            dependencies {
-                implementation(projects.frameworkAbstractions)
-            }
-        }
-
-        jvmMain {
-            dependencies {
-                implementation(kotlin("compiler-embeddable"))
-                implementation(libs.org.jetbrains.kotlinx.coroutines.core)
-            }
-        }
-
-        jvmTest {
-            dependencies {
-                implementation(libs.dev.zacsweers.kctfork)
-                implementation(kotlin("test"))
-            }
-        }
-    }
+dependencies {
+    implementation(kotlin("gradle-plugin-api"))
 }
 
 buildConfig {
@@ -55,11 +27,23 @@ buildConfig {
     )
     buildConfigField("String", "PROJECT_VERSION", "\"${project.version}\"")
     buildConfigField("String", "PROJECT_GROUP_ID", "\"${project.group}\"")
-    buildConfigField("String", "PROJECT_FRAMEWORK_CORE_ARTIFACT_ID", "\"${projects.frameworkCore.name}\"")
+    buildConfigField("String", "PROJECT_COMPILER_PLUGIN_ARTIFACT_ID", "\"${projects.testBalloonCompilerPlugin.name}\"")
+    buildConfigField(
+        "String",
+        "PROJECT_ABSTRACTIONS_ARTIFACT_ID",
+        "\"${projects.testBalloonFrameworkAbstractions.name}\""
+    )
 }
 
-tasks.withType<Test>().configureEach {
-    useJUnitPlatform()
+gradlePlugin {
+    plugins {
+        create("testBalloonGradlePlugin") {
+            id = "${project.property("local.PROJECT_COMPILER_PLUGIN_ID")}"
+            displayName = "TestBalloon compiler plugin for multiplatform test discovery and invocation"
+            description = displayName
+            implementationClass = "${project.group}.gradlePlugin.GradlePlugin"
+        }
+    }
 }
 
 publishing {

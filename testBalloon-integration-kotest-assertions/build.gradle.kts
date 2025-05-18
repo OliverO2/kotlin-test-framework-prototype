@@ -12,10 +12,10 @@ plugins {
 
 // region In-project configuration normally supplied by the framework's own Gradle plugin
 dependencies {
-    add(PLUGIN_CLASSPATH_CONFIGURATION_NAME, projects.compilerPlugin)
-    add(NATIVE_COMPILER_PLUGIN_CLASSPATH_CONFIGURATION_NAME, projects.compilerPlugin)
+    add(PLUGIN_CLASSPATH_CONFIGURATION_NAME, projects.testBalloonCompilerPlugin)
+    add(NATIVE_COMPILER_PLUGIN_CLASSPATH_CONFIGURATION_NAME, projects.testBalloonCompilerPlugin)
     // WORKAROUND https://youtrack.jetbrains.com/issue/KT-53477 – KGP misses transitive compiler plugin dependencies
-    add(NATIVE_COMPILER_PLUGIN_CLASSPATH_CONFIGURATION_NAME, projects.frameworkAbstractions)
+    add(NATIVE_COMPILER_PLUGIN_CLASSPATH_CONFIGURATION_NAME, projects.testBalloonFrameworkAbstractions)
 }
 // endregion
 
@@ -49,10 +49,10 @@ kotlin {
         browser()
     }
 
-    @OptIn(ExperimentalWasmDsl::class)
-    wasmWasi {
-        nodejs()
-    }
+    // @OptIn(ExperimentalWasmDsl::class)
+    // wasmWasi {
+    //     nodejs()
+    // }
 
     linuxX64 {
         binaries.executable()
@@ -64,7 +64,7 @@ kotlin {
             group("nonJvm") {
                 withJs()
                 withWasmJs()
-                withWasmWasi()
+                // withWasmWasi()
                 withLinux()
             }
         }
@@ -73,37 +73,11 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                api(projects.frameworkCore)
-            }
-        }
-
-        commonTest {
-            dependencies {
-                implementation(kotlin("test")) // for assertions only
-            }
-        }
-
-        jvmMain {
-            dependencies {
-                implementation(libs.io.projectreactor.tools.blockhound)
-                implementation(libs.org.jetbrains.kotlinx.coroutines.debug)
+                api(projects.testBalloonFrameworkCore)
+                api(libs.io.kotest.assertions.core)
             }
         }
     }
-}
-
-tasks.withType<Test>().configureEach {
-    jvmArgumentProviders.add(
-        CommandLineArgumentProvider {
-            val javaLauncher = javaLauncher.orNull
-            buildList {
-                if (javaLauncher != null && javaLauncher.metadata.languageVersion >= JavaLanguageVersion.of(16)) {
-                    // https://github.com/reactor/BlockHound/issues/33
-                    add("-XX:+AllowRedefinitionToAddDeleteMethods")
-                }
-            }
-        }
-    )
 }
 
 // region In-project configuration normally supplied by the framework's own Gradle plugin

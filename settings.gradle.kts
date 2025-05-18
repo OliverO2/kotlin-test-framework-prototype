@@ -33,13 +33,13 @@ fun RepositoryHandler.specialRepositories() {
 
 rootProject.name = "testBalloon"
 
-include(":framework-abstractions")
-include(":framework-core")
-include(":gradle-plugin")
-include(":compiler-plugin")
+include(":testBalloon-framework-abstractions")
+include(":testBalloon-framework-core")
+include(":testBalloon-gradle-plugin")
+include(":testBalloon-compiler-plugin")
 
-include(":integration-kotest-assertions")
-include(":integration-blocking-detection")
+include(":testBalloon-integration-kotest-assertions")
+include(":testBalloon-integration-blocking-detection")
 
 include(":examples:framework-core")
 include(":examples:integration-kotest-assertions")

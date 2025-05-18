@@ -11,10 +11,10 @@ plugins {
 
 // region In-project configuration normally supplied by the framework's own Gradle plugin
 dependencies {
-    add(PLUGIN_CLASSPATH_CONFIGURATION_NAME, projects.compilerPlugin)
-    add(NATIVE_COMPILER_PLUGIN_CLASSPATH_CONFIGURATION_NAME, projects.compilerPlugin)
+    add(PLUGIN_CLASSPATH_CONFIGURATION_NAME, projects.testBalloonCompilerPlugin)
+    add(NATIVE_COMPILER_PLUGIN_CLASSPATH_CONFIGURATION_NAME, projects.testBalloonCompilerPlugin)
     // WORKAROUND https://youtrack.jetbrains.com/issue/KT-53477 – KGP misses transitive compiler plugin dependencies
-    add(NATIVE_COMPILER_PLUGIN_CLASSPATH_CONFIGURATION_NAME, projects.frameworkAbstractions)
+    add(NATIVE_COMPILER_PLUGIN_CLASSPATH_CONFIGURATION_NAME, projects.testBalloonFrameworkAbstractions)
 }
 // endregion
 
@@ -62,7 +62,7 @@ kotlin {
         commonTest {
             dependencies {
                 // implementation(libs.de.infix.testBalloon.integration.kotest.assertions) // Use this outside this project
-                implementation(projects.integrationKotestAssertions)
+                implementation(projects.testBalloonIntegrationKotestAssertions)
             }
         }
     }

@@ -27,7 +27,7 @@ plugins {
 ----
 commonTest {
     dependencies {
-        implementation("de.infix.testBalloon:framework-core:VERSION")
+        implementation("de.infix.testBalloon:testBalloon-framework-core:VERSION")
     }
 }
 ----
@@ -43,7 +43,7 @@ implementation(kotlin("test"))
 +
 [source,kotlin]
 ----
-implementation("de.infix.testBalloon:integration-kotest-assertions:VERSION")
+implementation("de.infix.testBalloon:testBalloon-integration-kotest-assertions:VERSION")
 ----
 
 . Write a test:
@@ -260,6 +260,9 @@ val outer by testSuite {
 ** What next?
 *** Workaround: Add `-Pkotlin.incremental=false` to each Gradle test invocation
 *** Limitation: https://youtrack.jetbrains.com/issue/KT-55982[K2: Consider global lookups from plugins in incremental compilation : KT-55982]
+**** https://blog.jetbrains.com/kotlin/2022/07/a-new-approach-to-incremental-compilation-in-kotlin/[A New Approach to Incremental Compilation in Kotlin | The Kotlin Blog]
+**** https://blog.jetbrains.com/kotlin/2020/09/the-dark-secrets-of-fast-compilation-for-kotlin/[The Dark Secrets of Fast Compilation for Kotlin | The Kotlin Blog]
+**** https://youtrack.jetbrains.com/issue/KT-13677[IC fails when base class member visibility is changed with new usage through child class : KT-13677]
 *** Use https://github.com/JetBrains/kotlin/blob/e4a51dfa1b11d295970af6d0d01c4877dc8c5ad3/compiler/fir/tree/src/org/jetbrains/kotlin/fir/extensions/predicate/AbstractPredicate.kt#L28[fir/extensions/predicate/AbstractPredicate.kt]?
 *** There is a `LookupTracker` in the compiler which might be used.
 *** Check how https://github.com/JetBrains/kotlin/blob/2d76ad4fd0af3387c2dbdbe21ee191662ea34924/compiler/ir/backend.js/src/org/jetbrains/kotlin/ir/backend/js/lower/TestGenerator.kt[the compiler] does it.

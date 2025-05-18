@@ -12,12 +12,12 @@ tasks {
         register("prePublishingTests${type.capitalize()}") {
             group = "verification"
 
-            dependsOn(":compiler-plugin:$type")
-            dependsOn(":gradle-plugin:test")
-            dependsOn(":framework-core:$type")
+            dependsOn(":testBalloon-compiler-plugin:$type")
+            dependsOn(":testBalloon-gradle-plugin:test")
+            dependsOn(":testBalloon-framework-core:$type")
 
-            dependsOn(":integration-kotest-assertions:$type")
-            dependsOn(":integration-blocking-detection:$type")
+            dependsOn(":testBalloon-integration-kotest-assertions:$type")
+            dependsOn(":testBalloon-integration-blocking-detection:$type")
         }
     }
 
