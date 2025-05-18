@@ -208,6 +208,32 @@ Finally, there is a brief xref:documentation/Development.adoc[introduction to de
 
 === TODO
 
+* [ ] Diagnose or document: A custom test or testSuite function may never register a test or suite for a test suite, which is a parent of the suite it is invoked in.
+** Example:
++
+[source,kotlin]
+----
+val outer by testSuite {
+    @TestDiscoverable
+    fun customTest1(name: String, action: suspend () -> Unit) = test(name) {
+        action()
+    }
+
+    @TestDiscoverable
+    fun TestSuite.customTest2(name: String, action: suspend () -> Unit) = test(name) {
+        action()
+    }
+
+    testSuite("inner") {
+        customTest1("not OK") { // registering a test in `outer`, invoked in `inner`
+        }
+        customTest2("OK") {
+        }
+    }
+}
+----
+** Symptoms: _TestEngine with ID 'de.infix.testBalloon' failed to discover tests_ with
+*** the test report showing a root cause of _java.util.ConcurrentModificationException_ triggered `at de.infix.testBalloon.framework.TestSuite.parameterize$framework_core(TestSuite.kt:273)`
 * [ ] Prepare publication
 ** [ ] API Documentation (Dokka)
 ** [ ] Versioning

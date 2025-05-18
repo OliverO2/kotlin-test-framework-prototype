@@ -443,7 +443,7 @@ suspend fun withMainDispatcher(dispatcher: CoroutineDispatcher? = null, action: 
             action()
         } finally {
             Dispatchers.resetMain()
-            check(mainDispatcherChanged.getAndSet(false) == true)
+            check(mainDispatcherChanged.getAndSet(false))
         }
     }
 }
