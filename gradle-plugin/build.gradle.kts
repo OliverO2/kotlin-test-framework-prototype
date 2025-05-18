@@ -52,7 +52,7 @@ publishing {
 }
 
 kotlinter {
-    ignoreFailures = false
+    ignoreLintFailures = false
     reporters = arrayOf("checkstyle", "plain")
 }
 

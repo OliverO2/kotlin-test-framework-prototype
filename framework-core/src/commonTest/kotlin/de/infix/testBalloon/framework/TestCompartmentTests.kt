@@ -189,7 +189,7 @@ class TestCompartmentTests {
             with(finishedTestEvents()) {
                 assertTrue(isNotEmpty(), "Missing finished test events.")
                 assertAllSucceeded()
-                var threadCount = uiThreadIds.elements().size
+                val threadCount = uiThreadIds.elements().size
                 assertEquals(1, threadCount, "Expected 1 thread, but got $threadCount.")
             }
         }
