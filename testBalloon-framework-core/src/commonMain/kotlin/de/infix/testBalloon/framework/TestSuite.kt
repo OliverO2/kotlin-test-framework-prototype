@@ -27,12 +27,12 @@ typealias TestSuiteExecutionWrappingAction = suspend (suiteAction: TestSuiteExec
 fun testSuite(
     @TestElementName name: String = "",
     @TestDisplayName displayName: String = name,
-    compartment: TestCompartment,
+    compartment: () -> TestCompartment,
     testConfig: TestConfig = TestConfig,
     content: TestSuite.() -> Unit
 ): Lazy<TestSuite> = lazy {
     TestSuite(
-        parent = compartment,
+        parent = compartment(),
         name = name,
         displayName = displayName,
         testConfig = testConfig,

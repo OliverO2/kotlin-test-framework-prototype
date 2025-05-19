@@ -41,7 +41,7 @@ class TestCompartmentTests {
         val coroutineName2 = CoroutineName("#2")
         val compartment2 =
             TestCompartment("Compartment 2", testConfig = TestConfig.coroutineContext(coroutineName2))
-        val suite2 by testSuite("suite2", compartment = compartment2) {
+        val suite2 by testSuite("suite2", compartment = { compartment2 }) {
             val compartment = testElementParent as? TestCompartment
             test("test1") {
                 assertEquals(compartment2, compartment)
@@ -65,7 +65,7 @@ class TestCompartmentTests {
             }
         }
 
-        val suite4 by testSuite("suite4", compartment = compartment2) {
+        val suite4 by testSuite("suite4", compartment = { compartment2 }) {
             val compartment = testElementParent as? TestCompartment
             test("test1") {
                 assertEquals(compartment, compartment2)
@@ -97,7 +97,7 @@ class TestCompartmentTests {
     fun concurrency() = withTestFramework {
         val concurrentThreadIds = ConcurrentSet<ULong>()
 
-        val suite1 by testSuite("topSuite1", compartment = TestCompartment.Concurrent) {
+        val suite1 by testSuite("topSuite1", compartment = { TestCompartment.Concurrent }) {
             val outerSuiteThreadId = testPlatform.threadId()
 
             for (suiteNumber in 1..3) {
@@ -164,7 +164,7 @@ class TestCompartmentTests {
     fun ui() = withTestFramework {
         val uiThreadIds = ConcurrentSet<ULong>()
 
-        val suite by testSuite("topSuite", compartment = TestCompartment.UI(Dispatchers.Unconfined)) {
+        val suite by testSuite("topSuite", compartment = { TestCompartment.UI(Dispatchers.Unconfined) }) {
             for (suiteNumber in 1..3) {
                 testSuite("subSuite$suiteNumber") {
                     test("test1") {

@@ -17,7 +17,7 @@ import kotlin.time.Duration.Companion.milliseconds
 // Compartments ensure that this does not interfere with tests requiring the default sequential execution.
 
 val concurrentSuite by testSuite(
-    compartment = TestCompartment.Concurrent,
+    compartment = { TestCompartment.Concurrent },
     testConfig = TestConfig
         .testScope(isEnabled = false)
         .statisticsReport()
@@ -30,7 +30,7 @@ val concurrentSuite by testSuite(
 // Declare a suite for UI tests. This will combine sequential execution with the presence of a Main dispatcher.
 
 val uiSuite by testSuite(
-    compartment = TestCompartment.UI(),
+    compartment = { TestCompartment.UI() },
     testConfig = TestConfig.statisticsReport()
 ) {
     test("On UI thread") {

@@ -22,3 +22,5 @@ include(":examples:integration-kotest-assertions")
 
 include(":comparisons:using-kotlin-test")
 include(":comparisons:using-testBalloon")
+
+include(":experiments")

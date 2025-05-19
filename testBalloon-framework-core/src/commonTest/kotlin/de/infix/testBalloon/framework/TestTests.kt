@@ -36,7 +36,7 @@ class TestTests {
         val launchCount = 10
         val completedLaunches = ConcurrentList<Int>()
 
-        val suite1 by testSuite("suite1", compartment = TestCompartment.RealTime) {
+        val suite1 by testSuite("suite1", compartment = { TestCompartment.RealTime }) {
             test("test1") {
                 repeat(launchCount) { launchIndex ->
                     launch {
