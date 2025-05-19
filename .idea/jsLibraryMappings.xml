@@ -4,25 +4,21 @@
     <excludedPredefinedLibrary name="testBalloon/build/js/node_modules" />
     <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-comparisons-using-kotlin-test-test/node_modules" />
     <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-comparisons-using-kotlin-test-wasm-js-test/node_modules" />
-    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-comparisons-using-kotlin-test-wasm-js/node_modules" />
-    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-comparisons-using-kotlin-test/node_modules" />
     <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-comparisons-using-testBalloon-test/node_modules" />
     <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-comparisons-using-testBalloon-wasm-js-test/node_modules" />
-    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-comparisons-using-testBalloon-wasm-js/node_modules" />
-    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-comparisons-using-testBalloon/node_modules" />
     <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-examples-framework-core-test/node_modules" />
     <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-examples-framework-core-wasm-js-test/node_modules" />
-    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-examples-framework-core-wasm-js/node_modules" />
-    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-examples-framework-core/node_modules" />
     <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-examples-integration-kotest-assertions-test/node_modules" />
     <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-examples-integration-kotest-assertions-wasm-js-test/node_modules" />
-    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-examples-integration-kotest-assertions-wasm-js/node_modules" />
-    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-examples-integration-kotest-assertions/node_modules" />
-    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-framework-abstractions-test/node_modules" />
-    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-framework-abstractions-wasm-js-test/node_modules" />
-    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-framework-core-test/node_modules" />
-    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-framework-core-wasm-js-test/node_modules" />
-    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-integrations-kotest-assertions-test/node_modules" />
-    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-integrations-kotest-assertions-wasm-js-test/node_modules" />
+    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-testBalloon-compiler-plugin-test/node_modules" />
+    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-testBalloon-compiler-plugin-wasm-js-test/node_modules" />
+    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-testBalloon-framework-abstractions-test/node_modules" />
+    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-testBalloon-framework-abstractions-wasm-js-test/node_modules" />
+    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-testBalloon-framework-core-test/node_modules" />
+    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-testBalloon-framework-core-wasm-js-test/node_modules" />
+    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-testBalloon-integration-blocking-detection-test/node_modules" />
+    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-testBalloon-integration-blocking-detection-wasm-js-test/node_modules" />
+    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-testBalloon-integration-kotest-assertions-test/node_modules" />
+    <excludedPredefinedLibrary name="testBalloon/build/js/packages/testBalloon-testBalloon-integration-kotest-assertions-wasm-js-test/node_modules" />
   </component>
 </project>

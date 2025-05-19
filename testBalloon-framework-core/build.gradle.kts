@@ -1,58 +1,11 @@
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
-import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
-import org.jetbrains.kotlin.gradle.plugin.KotlinHierarchyTemplate
-
 plugins {
-    alias(libs.plugins.org.jetbrains.kotlin.multiplatform)
-    alias(libs.plugins.org.jetbrains.kotlin.atomicfu)
-    alias(libs.plugins.com.vanniktech.maven.publish)
-    alias(libs.plugins.org.jmailen.kotlinter)
+    id("buildLogic.multiplatform-all")
+    id("buildLogic.publishing")
 }
 
-group = project.property("local.PROJECT_GROUP_ID")!!
-
-val jdkVersion = project.property("local.jdk.version").toString().toInt()
+description = "Core library for the TestBalloon framework"
 
 kotlin {
-    jvmToolchain(jdkVersion)
-
-    jvm {
-        @OptIn(ExperimentalKotlinGradlePluginApi::class)
-        compilerOptions {
-            freeCompilerArgs.addAll("-Xjdk-release=$jdkVersion")
-        }
-    }
-
-    js {
-        nodejs()
-        browser()
-    }
-
-    @OptIn(ExperimentalWasmDsl::class)
-    wasmJs {
-        nodejs()
-        browser()
-    }
-
-    @OptIn(ExperimentalWasmDsl::class)
-    wasmWasi {
-        nodejs()
-    }
-
-    linuxX64 {
-        binaries.sharedLib()
-    }
-
-    @OptIn(ExperimentalKotlinGradlePluginApi::class)
-    applyHierarchyTemplate(KotlinHierarchyTemplate.default) {
-        group("common") {
-            group("jsHosted") {
-                withJs()
-                withWasmJs()
-            }
-        }
-    }
-
     sourceSets {
         commonMain {
             dependencies {
@@ -88,18 +41,4 @@ tasks.withType<Test>().configureEach {
     useJUnitPlatform {
         excludeEngines("de.infix.testBalloon")
     }
-}
-
-publishing {
-    repositories {
-        maven {
-            name = "local"
-            url = uri("${System.getenv("HOME")!!}//.m2/local-repository")
-        }
-    }
-}
-
-kotlinter {
-    ignoreLintFailures = false
-    reporters = arrayOf("checkstyle", "plain")
 }

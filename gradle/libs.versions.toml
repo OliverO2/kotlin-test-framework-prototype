@@ -2,6 +2,9 @@
 
 [versions]
 
+# https://github.com/vanniktech/gradle-maven-publish-plugin/releases
+com-vanniktech-maven-publish = "0.32.0"
+
 # Self-reference, for illustrative purposes only
 de-infix-testBalloon = "VERSION"
 
@@ -18,10 +21,21 @@ org-jetbrains-kotlin = "2.1.21"
 ##                ⬆ = "2.2.0-Beta2"
 ##                ⬆ = "2.2.0-RC"
 
+# https://github.com/Kotlin/dokka/releases
+org-jetbrains-kotlin-dokka = "2.0.0"
+
 # https://github.com/Kotlin/kotlinx.coroutines/releases
 org-jetbrains-kotlinx-coroutines = "1.10.2"
 
+# https://github.com/Kotlin/kotlinx-kover/releases
+org-jetbrains-kotlinx-kover = "0.9.1"
+
+# https://github.com/jeremymailen/kotlinter-gradle/releases
+org-jmailen-kotlinter = "5.0.2"
+
 [libraries]
+
+com-vanniktech-maven-publish-gradle-plugin = { module = "com.vanniktech:gradle-maven-publish-plugin", version.ref = "com-vanniktech-maven-publish" }
 
 # https://github.com/ZacSweers/kotlin-compile-testing/releases
 dev-zacsweers-kctfork = "dev.zacsweers.kctfork:core:0.7.1"
@@ -35,6 +49,12 @@ io-kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", versi
 # https://github.com/reactor/BlockHound/releases
 io-projectreactor-tools-blockhound = "io.projectreactor.tools:blockhound:1.0.11.RELEASE"
 
+org-jetbrains-kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "org-jetbrains-kotlin" }
+
+org-jetbrains-kotlin-atomicfu-gradle-plugin = { module = "org.jetbrains.kotlin.plugin.atomicfu:org.jetbrains.kotlin.plugin.atomicfu.gradle.plugin", version.ref = "org-jetbrains-kotlin" }
+org-jetbrains-kotlin-dokka-gradle-plugin = { module = "org.jetbrains.dokka:dokka-gradle-plugin", version.ref = "org-jetbrains-kotlin-dokka" }
+org-jetbrains-kotlinx-kover-gradle-plugin = { module = "org.jetbrains.kotlinx:kover-gradle-plugin", version.ref = "org-jetbrains-kotlinx-kover" }
+
 # https://github.com/Kotlin/kotlinx-atomicfu/releases
 org-jetbrains-kotlinx-atomicfu = "org.jetbrains.kotlinx:atomicfu:0.27.0"
 
@@ -45,6 +65,8 @@ org-jetbrains-kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotli
 
 # https://github.com/Kotlin/kotlinx-datetime/blob/master/CHANGELOG.md
 org-jetbrains-kotlinx-datetime = "org.jetbrains.kotlinx:kotlinx-datetime:0.6.2"
+
+org-jmailen-kotlinter-gradle-plugin = { module = "org.jmailen.kotlinter:org.jmailen.kotlinter.gradle.plugin", version.ref = "org-jmailen-kotlinter" }
 
 # https://github.com/junit-team/junit5/releases
 org-junit-platform-engine = "org.junit.platform:junit-platform-engine:1.12.2"
@@ -62,8 +84,7 @@ de-infix-testBalloon-integrations-kotest-assertions = { module = "de.infix.testB
 # https://github-com/gmazzo/gradle-buildconfig-plugin/releases
 com-github-gmazzo-buildconfig = "com.github.gmazzo.buildconfig:5.6.5"
 
-# https://github.com/vanniktech/gradle-maven-publish-plugin/releases
-com-vanniktech-maven-publish = "com.vanniktech.maven.publish:0.32.0"
+com-vanniktech-maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "com-vanniktech-maven-publish" }
 
 org-jetbrains-kotlin-atomicfu = { id = "org.jetbrains.kotlin.plugin.atomicfu", version.ref = "org-jetbrains-kotlin" }
 
@@ -72,7 +93,7 @@ org-jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "org
 org-jetbrains-kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "org-jetbrains-kotlin" }
 
 # https://github.com/jeremymailen/kotlinter-gradle/releases
-org-jmailen-kotlinter = "org.jmailen.kotlinter:5.0.2"
+org-jmailen-kotlinter = { id = "org.jmailen.kotlinter", version.ref = "org-jmailen-kotlinter" }
 
 # Self-reference, for illustrative purposes only
 de-infix-testBalloon = { id = "de.infix.testBalloon", version.ref = "de-infix-testBalloon" }

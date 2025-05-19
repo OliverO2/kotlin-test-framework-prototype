@@ -1,10 +1,7 @@
 plugins {
-    alias(libs.plugins.org.jetbrains.kotlin.multiplatform)
+    alias(libs.plugins.org.jetbrains.kotlin.multiplatform) apply false
     alias(libs.plugins.org.jetbrains.kotlin.jvm) apply false
-}
-
-kotlin {
-    jvm() // To keep the Gradle KMP plugin happy
+    alias(libs.plugins.com.vanniktech.maven.publish) apply false
 }
 
 tasks {
@@ -12,7 +9,7 @@ tasks {
         register("prePublishingTests${type.capitalize()}") {
             group = "verification"
 
-            dependsOn(":testBalloon-compiler-plugin:$type")
+            dependsOn(":testBalloon-compiler-plugin:test")
             dependsOn(":testBalloon-gradle-plugin:test")
             dependsOn(":testBalloon-framework-core:$type")
 

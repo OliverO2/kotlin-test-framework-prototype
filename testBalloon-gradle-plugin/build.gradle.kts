@@ -1,16 +1,11 @@
 plugins {
-    alias(libs.plugins.org.jetbrains.kotlin.jvm)
+    id("buildLogic.jvm")
+    id("buildLogic.publishing")
     alias(libs.plugins.com.github.gmazzo.buildconfig)
     `java-gradle-plugin`
-    alias(libs.plugins.com.vanniktech.maven.publish)
-    alias(libs.plugins.org.jmailen.kotlinter)
 }
 
-group = project.property("local.PROJECT_GROUP_ID")!!
-
-kotlin {
-    jvmToolchain(11)
-}
+description = "Gradle plugin for the TestBalloon framework"
 
 dependencies {
     implementation(kotlin("gradle-plugin-api"))
@@ -44,26 +39,4 @@ gradlePlugin {
             implementationClass = "${project.group}.gradlePlugin.GradlePlugin"
         }
     }
-}
-
-publishing {
-    repositories {
-        maven {
-            name = "local"
-            url = uri("${System.getenv("HOME")!!}//.m2/local-repository")
-        }
-    }
-}
-
-kotlinter {
-    ignoreLintFailures = false
-    reporters = arrayOf("checkstyle", "plain")
-}
-
-tasks.withType<org.jmailen.gradle.kotlinter.tasks.LintTask> {
-    source = source.minus(fileTree("build")).asFileTree
-}
-
-tasks.withType<org.jmailen.gradle.kotlinter.tasks.FormatTask> {
-    source = source.minus(fileTree("build")).asFileTree
 }
