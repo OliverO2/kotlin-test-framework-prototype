@@ -2,7 +2,7 @@
 
 === Using the Core Library
 
-The xref:../framework-core[framework-core] directory is intended to provide source code samples for all TestBalloon features in xref:framework-core/src/commonTest[commonTest].
+The link:../examples/framework-core[examples/framework-core] directory is intended to provide source code samples for all TestBalloon features in link:../examples/framework-core/src/commonTest[commonTest].
 
 To run them all:
 
@@ -10,17 +10,17 @@ To run them all:
 
 As usual, you can run examples for a single target:
 
-* `gradlew --quiet :examples:core:cleanAllTests :examples:core:jvmTest`
-* `gradlew --quiet :examples:core:cleanAllTests :examples:core:jsNodeTest`
-* `gradlew --quiet :examples:core:cleanAllTests :examples:core:jsBrowserTest`
-* `gradlew --quiet :examples:core:cleanAllTests :examples:core:wasmJsNodeTest`
-* `gradlew --quiet :examples:core:cleanAllTests :examples:core:wasmJsBrowserTest`
-* `gradlew --quiet :examples:core:cleanAllTests :examples:core:wasmWasiNodeTest`
-* `gradlew --quiet :examples:core:cleanAllTests :examples:core:linuxX64Test`
+* `gradlew --quiet :examples:framework-core:cleanAllTests :examples:framework-core:jvmTest`
+* `gradlew --quiet :examples:framework-core:cleanAllTests :examples:framework-core:jsNodeTest`
+* `gradlew --quiet :examples:framework-core:cleanAllTests :examples:framework-core:jsBrowserTest`
+* `gradlew --quiet :examples:framework-core:cleanAllTests :examples:framework-core:wasmJsNodeTest`
+* `gradlew --quiet :examples:framework-core:cleanAllTests :examples:framework-core:wasmJsBrowserTest`
+* `gradlew --quiet :examples:framework-core:cleanAllTests :examples:framework-core:wasmWasiNodeTest`
+* `gradlew --quiet :examples:framework-core:cleanAllTests :examples:framework-core:linuxX64Test`
 
 
 === Using Integrations
 
 ==== Kotest Assertions
 
-Some features of the Kotest Assertions library require extra setup, e.g. soft assertions. The xref:../integration-kotest-assertions[integration-kotest-assertions] directory demonstrates how to use those with TestBalloon.
+Some features of the Kotest Assertions library require extra setup, e.g. soft assertions. The link:../testBalloon-integration-kotest-assertions[testBalloon-integration-kotest-assertions] directory demonstrates how to use those with TestBalloon.

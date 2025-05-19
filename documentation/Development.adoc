@@ -20,9 +20,9 @@ In addition to the above, there are *integration-** modules, providing TestBallo
 1. Run the compiler plugin in-process with Gradle.
 +
 --
-To run the Gradle tasks `clean compileTestKotlinJvm` for the xref:../examples/framework-core[examples/framework-core] project:
+To run the Gradle tasks `clean compileTestKotlinJvm` for the link:../examples/framework-core[examples/framework-core] project:
 
-* `gradlew -Dorg.gradle.debug=true -Pkotlin.compiler.execution.strategy=in-process :examples:core:clean :examples:core:compileTestKotlinJvm`
+* `gradlew -Dorg.gradle.debug=true -Pkotlin.compiler.execution.strategy=in-process :examples:framework-core:clean :examples:framework-core:compileTestKotlinJvm`
 --
 
 2. Attach the JVM debugger to port 5005. In IntelliJ IDEA, use the command _Run – Attach to Process_.

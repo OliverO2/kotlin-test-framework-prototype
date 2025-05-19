@@ -192,7 +192,7 @@ TestBalloon's API is fully platform-independent (everything is in the `common` s
 
 === Examples and documentation
 
-Find examples demonstrating TestBalloon's capabilities in xref:examples/framework-core[], and an example showing how to use TestBalloon with Kotest assertions in xref:examples/integration-kotest-assertions[].
+Find examples demonstrating TestBalloon's capabilities in link:examples/framework-core[], and an example showing how to use TestBalloon with Kotest assertions in link:examples/integration-kotest-assertions[].
 
 The TestBalloon public API includes source code documentation.
 
