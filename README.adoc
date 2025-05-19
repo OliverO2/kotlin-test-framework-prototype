@@ -104,7 +104,19 @@ Inside the trailing lambdas of `testSuite` and `test`, you can use all Kotlin co
 
 [source,kotlin]
 ----
-include::examples/framework-core/src/commonTest/kotlin/com/example/DynamicTests.kt[lines=7..]
+val Dynamic by testSuite {
+    val testCases = mapOf(
+        "one" to 3,
+        "two" to 3,
+        "three" to 5
+    )
+
+    testCases.forEach { (string, expectedLength) ->
+        test("length of '$string'") {
+            assertEquals(expectedLength, string.length)
+        }
+    }
+}
 ----
 
 ==== Test fixtures
@@ -146,7 +158,13 @@ You can use idiomatic Kotlin to define your own types of tests and test suites, 
 
 [source,kotlin]
 ----
-include::examples/framework-core/src/commonTest/kotlin/com/example/testLibrary/TestVariants.kt[lines=28..]
+fun TestSuite.test(name: String, iterations: Int, action: TestAction) {
+    for (iteration in 1..iterations) {
+        test("$name#$iteration") {
+            action()
+        }
+    }
+}
 ----
 
 NOTE: The IDE plugin may not recognize invocations of your custom function as defining a test or test suite. In that case, xref:examples/framework-core/src/commonTest/kotlin/com/example/testLibrary/TestVariants.kt[add a `@TestDiscoverable` annotation to your custom test] or test suite function.
