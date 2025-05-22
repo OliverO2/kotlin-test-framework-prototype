@@ -16,7 +16,7 @@ io-kotest = "5.9.1"
 ##     ⬆ = "6.0.0.M4"
 
 # https://github.com/JetBrains/kotlin/releases
-org-jetbrains-kotlin = "2.1.21"
+org-jetbrains-kotlin = "2.1.0"
 ##                ⬆ = "2.2.0-Beta1"
 ##                ⬆ = "2.2.0-Beta2"
 ##                ⬆ = "2.2.0-RC"
