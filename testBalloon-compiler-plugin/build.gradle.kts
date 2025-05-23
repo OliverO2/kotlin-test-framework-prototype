@@ -2,7 +2,6 @@ plugins {
     id("buildLogic.jvm")
     id("buildLogic.publishing-jvm")
     alias(libs.plugins.com.github.gmazzo.buildconfig)
-    `java-gradle-plugin` // required for publishing
 }
 
 description = "Compiler plugin for the TestBalloon framework"
