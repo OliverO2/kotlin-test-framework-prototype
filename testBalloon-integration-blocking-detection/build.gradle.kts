@@ -2,7 +2,7 @@ import buildLogic.addTestBalloonPluginFromProject
 
 plugins {
     id("buildLogic.multiplatform-all")
-    id("buildLogic.publishing")
+    id("buildLogic.publishing-multiplatform")
 }
 
 description = "Library supporting blocking code detection with the TestBalloon framework"
