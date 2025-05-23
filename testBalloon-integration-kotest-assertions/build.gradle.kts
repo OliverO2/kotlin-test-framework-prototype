@@ -2,7 +2,7 @@ import buildLogic.addTestBalloonPluginFromProject
 
 plugins {
     id("buildLogic.multiplatform-noWasmWasi")
-    id("buildLogic.publishing")
+    id("buildLogic.publishing-multiplatform")
 }
 
 description = "Library supporting Kotest Assertions with the TestBalloon framework"
