@@ -1,6 +1,6 @@
 plugins {
     id("buildLogic.multiplatform-all")
-    id("buildLogic.publishing")
+    id("buildLogic.publishing-multiplatform")
 }
 
 description = "Core library for the TestBalloon framework"
