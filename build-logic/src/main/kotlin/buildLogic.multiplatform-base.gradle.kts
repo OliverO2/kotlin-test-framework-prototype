@@ -1,24 +1,25 @@
+import org.jetbrains.kotlin.buildtools.api.ExperimentalBuildToolsApi
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
     id("buildLogic.common")
     kotlin("multiplatform")
+    id("com.gradleup.compat.patrouille")
     kotlin("plugin.atomicfu")
     id("org.jmailen.kotlinter")
 }
 
-val jdkVersion = project.property("local.jdk.version").toString().toInt()
+compatPatrouille {
+    java(project.property("local.jdk.version").toString().toInt())
+
+    // We always stick to the same compiler version that our compiler plugin is adapted for.
+    @OptIn(ExperimentalBuildToolsApi::class, ExperimentalKotlinGradlePluginApi::class)
+    kotlin(project.kotlin.compilerVersion.get())
+}
 
 kotlin {
-    jvmToolchain(jdkVersion)
-
-    jvm {
-        @OptIn(ExperimentalKotlinGradlePluginApi::class)
-        compilerOptions {
-            freeCompilerArgs.addAll("-Xjdk-release=$jdkVersion")
-        }
-    }
+    jvm()
 
     js {
         nodejs()
