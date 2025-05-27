@@ -9,4 +9,5 @@ dependencies {
     implementation(libs.org.jetbrains.kotlinx.kover.gradle.plugin)
     implementation(libs.org.jmailen.kotlinter.gradle.plugin)
     implementation(libs.com.vanniktech.maven.publish.gradle.plugin)
+    implementation(libs.com.gradleup.compat.patrouille.gradle.plugin)
 }
