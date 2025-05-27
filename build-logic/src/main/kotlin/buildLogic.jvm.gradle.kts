@@ -1,17 +1,14 @@
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import buildLogic.versionFromCatalog
 
 plugins {
     id("buildLogic.common")
     kotlin("jvm")
+    id("com.gradleup.compat.patrouille")
 }
 
-val jdkVersion = project.property("local.jdk.version").toString().toInt()
+compatPatrouille {
+    java(project.versionFromCatalog("jdk").toInt())
 
-kotlin {
-    jvmToolchain(jdkVersion)
-
-    @OptIn(ExperimentalKotlinGradlePluginApi::class)
-    compilerOptions {
-        freeCompilerArgs.addAll("-Xjdk-release=$jdkVersion")
-    }
+    // We always stick to the same compiler version that our compiler plugin is adapted for.
+    kotlin(project.versionFromCatalog("org.jetbrains.kotlin"))
 }
