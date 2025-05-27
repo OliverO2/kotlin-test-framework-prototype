@@ -2,6 +2,12 @@
 
 [versions]
 
+# Target JDK version for Kotlin and Java compilations
+jdk = "11"
+
+# https://github.com/GradleUp/compat-patrouille/releases
+com-gradleup-compat-patrouille = "0.0.0"
+
 # https://github.com/vanniktech/gradle-maven-publish-plugin/releases
 com-vanniktech-maven-publish = "0.32.0"
 
@@ -31,6 +37,8 @@ org-jetbrains-kotlinx-kover = "0.9.1"
 org-jmailen-kotlinter = "5.0.2"
 
 [libraries]
+
+com-gradleup-compat-patrouille-gradle-plugin = { module = "com.gradleup.compat.patrouille:compat-patrouille-gradle-plugin", version.ref = "com-gradleup-compat-patrouille" }
 
 com-vanniktech-maven-publish-gradle-plugin = { module = "com.vanniktech:gradle-maven-publish-plugin", version.ref = "com-vanniktech-maven-publish" }
 
@@ -77,6 +85,8 @@ de-infix-testBalloon-framework-core = { module = "de.infix.testBalloon:testBallo
 de-infix-testBalloon-integrations-kotest-assertions = { module = "de.infix.testBalloon:testBalloon-integrations-kotest-assertions", version.ref = "de-infix-testBalloon" }
 
 [plugins]
+
+com-gradleup-compat-patrouille = { id = "com.gradleup.compat.patrouille", version.ref = "com-gradleup-compat-patrouille" }
 
 # https://github-com/gmazzo/gradle-buildconfig-plugin/releases
 com-github-gmazzo-buildconfig = "com.github.gmazzo.buildconfig:5.6.5"
