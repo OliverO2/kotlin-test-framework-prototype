@@ -2,6 +2,9 @@
 
 [versions]
 
+# Target JDK version for Kotlin and Java compilations
+jdk = "11"
+
 # https://github.com/GradleUp/compat-patrouille/releases
 com-gradleup-compat-patrouille = "0.0.0"
 

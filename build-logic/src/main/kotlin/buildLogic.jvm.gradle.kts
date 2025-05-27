@@ -1,5 +1,4 @@
-import org.jetbrains.kotlin.buildtools.api.ExperimentalBuildToolsApi
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import buildLogic.versionFromCatalog
 
 plugins {
     id("buildLogic.common")
@@ -8,9 +7,8 @@ plugins {
 }
 
 compatPatrouille {
-    java(project.property("local.jdk.version").toString().toInt())
+    java(project.versionFromCatalog("jdk").toInt())
 
     // We always stick to the same compiler version that our compiler plugin is adapted for.
-    @OptIn(ExperimentalBuildToolsApi::class, ExperimentalKotlinGradlePluginApi::class)
-    kotlin(project.kotlin.compilerVersion.get())
+    kotlin(project.versionFromCatalog("org.jetbrains.kotlin"))
 }
