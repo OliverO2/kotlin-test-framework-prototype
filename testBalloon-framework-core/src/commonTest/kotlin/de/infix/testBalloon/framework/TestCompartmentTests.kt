@@ -95,16 +95,19 @@ class TestCompartmentTests {
 
     @Test
     fun concurrency() = withTestFramework {
+        val suiteCount = 8
+        val testCount = 8
+
         val concurrentThreadIds = ConcurrentSet<ULong>()
 
         val suite1 by testSuite("topSuite1", compartment = { TestCompartment.Concurrent }) {
             val outerSuiteThreadId = testPlatform.threadId()
 
-            for (suiteNumber in 1..3) {
+            for (suiteNumber in 1..suiteCount) {
                 testSuite("subSuite$suiteNumber") {
                     assertEquals(outerSuiteThreadId, testPlatform.threadId())
 
-                    for (testNumber in 1..3) {
+                    for (testNumber in 1..testCount) {
                         test("test$testNumber") {
                             concurrentThreadIds.add(testPlatform.threadId())
                             delay(1.milliseconds)
@@ -117,9 +120,9 @@ class TestCompartmentTests {
         val sequentialThreadIds = ConcurrentSet<ULong>()
 
         val suite2 by testSuite("topSuite2") {
-            for (suiteNumber in 1..3) {
+            for (suiteNumber in 1..suiteCount) {
                 testSuite("subSuite$suiteNumber") {
-                    for (testNumber in 1..3) {
+                    for (testNumber in 1..testCount) {
                         test("test$testNumber") {
                             sequentialThreadIds.add(testPlatform.threadId())
                             delay(1.milliseconds)

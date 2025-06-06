@@ -1,0 +1,22 @@
+name: 'CI: Push on main branch'
+
+on:
+  push:
+    branches:
+      - main
+      - 'releases/**'
+    paths-ignore:
+      - '*.adoc'
+      - '*.md'
+      - '*.txt'
+      - '.editorconfig'
+      - '.gitignore'
+      - '.github/**'
+      - 'comparisons/**'
+      - 'documentation/**'
+      - 'examples/**'
+      - 'experiments/**'
+
+jobs:
+  validate:
+    uses: ./.github/workflows/validate.yml

@@ -1,0 +1,55 @@
+name: setup
+description: Setup project environment
+
+inputs:
+  cache-disabled:
+    description: 'gradle.cache-disabled'
+    default: 'false'
+
+runs:
+  using: 'composite'
+
+  steps:
+    - name: 'Validate Gradle Wrapper'
+      uses: gradle/actions/wrapper-validation@v3
+
+    - name: 'Set up JDK'
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu'
+        java-version: 17
+
+    - name: 'Redirect caches to fast D: drive on Windows'
+      if: runner.os == 'Windows'
+      shell: cmd
+      run: |
+        mkdir D:\.gradle
+        mklink /D C:\Users\runneradmin\.gradle D:\.gradle
+        
+        mkdir D:\.konan
+        mklink /D C:\Users\runneradmin\.konan D:\.konan
+        echo KONAN_DATA_DIR=D:\.konan>>%GITHUB_ENV%
+
+    - name: 'Setup Kotlin/Native cache on Unix-like systems'
+      if: runner.os != 'Windows'
+      shell: bash
+      run: |
+        echo "KONAN_DATA_DIR=${HOME}/.konan" >> $GITHUB_ENV
+
+    - name: 'Set up Gradle'
+      uses: gradle/actions/setup-gradle@v4
+      with:
+        build-scan-publish: true
+        build-scan-terms-of-use-url: 'https://gradle.com/terms-of-service'
+        build-scan-terms-of-use-agree: 'yes'
+
+        cache-disabled: ${{ inputs.cache-disabled }}
+        gradle-home-cache-cleanup: true
+
+    - name: 'Cache Kotlin/Native'
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.KONAN_DATA_DIR }}
+        key: konan-${{ runner.os }}-gradle-${{ hashFiles('*.gradle.kts', 'gradle/*.versions.toml') }}
+        restore-keys: |
+          konan-${{ runner.os }}-gradle-
