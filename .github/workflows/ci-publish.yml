@@ -12,15 +12,12 @@ jobs:
     if: github.repository == 'infix-de/testBalloon'
     needs: [ validate ]
     runs-on: macOS-latest
-
     steps:
       - name: "Check out the project"
         uses: actions/checkout@v4
-
       - uses: ./.github/actions/setup
         with:
           cache-disabled: true
-
       - name: "Publish to MavenCentral"
         run: ./gradlew publishAndReleaseToMavenCentral -Pversion=${{ github.event.release.tag_name }}
         env:
