@@ -1,0 +1,26 @@
+name: "Validate the build"
+
+on:
+  workflow_call
+
+jobs:
+  validate-primary:
+    name: "Validate on primary runner"
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: ./.github/actions/setup
+
+      - name: Validate
+        run: ./gradlew prePublishingTestsAllTests
+
+  validate-secondary:
+    name: "Validate on secondary runners"
+    needs: [ validate-primary ]
+    runs-on: [ macos-latest, windows-latest ]
+
+    steps:
+      - uses: ./.github/actions/setup
+
+      - name: Validate
+        run: ./gradlew prePublishingTestsAllTests
