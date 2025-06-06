@@ -1,0 +1,47 @@
+name: 'Validate the build'
+
+on:
+  workflow_call
+
+jobs:
+  validate-primary:
+    name: 'Validate on primary runner'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 'Check out the project'
+        uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup
+
+      - name: Validate
+        run: ./gradlew prePublishingTestsAllTests
+
+  validate-secondary:
+    name: 'Validate on secondary runners'
+    needs: [ validate-primary ]
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+          - os: windows-latest
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: 'Check out the project'
+        uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup
+
+      - name: 'Validate'
+        run: ./gradlew prePublishingTestsAllTests
+
+      - name: 'Upload build reports'
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-reports-${{ runner.os }}-${{ github.action }}-${{ github.run_id }}
+          path: |
+            **/build/reports/
+          if-no-files-found: ignore

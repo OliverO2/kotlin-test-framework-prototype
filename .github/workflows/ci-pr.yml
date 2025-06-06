@@ -1,0 +1,8 @@
+name: 'CI: Pull request'
+
+on:
+  pull_request
+
+jobs:
+  validate:
+    uses: ./.github/workflows/validate.yml
