@@ -10,9 +10,6 @@ runs:
   using: 'composite'
 
   steps:
-    - name: "Check out the project"
-      uses: actions/checkout@v4
-
     - name: "Set up THE JDK"
       uses: actions/setup-java@v4
       with:
