@@ -1,4 +1,4 @@
-name: "CI: Pull request"
+name: 'CI: Pull request'
 
 on:
   pull_request

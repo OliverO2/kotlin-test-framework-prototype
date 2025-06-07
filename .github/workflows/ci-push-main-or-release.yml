@@ -1,21 +1,21 @@
-name: "CI: Push on main branch"
+name: 'CI: Push on main branch'
 
 on:
   push:
     branches:
       - main
-      - "releases/**"
+      - 'releases/**'
     paths-ignore:
-      - "*.adoc"
-      - "*.md"
-      - "*.txt"
-      - ".editorconfig"
-      - ".gitignore"
-      - ".github/**"
-      - "comparisons/**"
-      - "documentation/**"
-      - "examples/**"
-      - "experiments/**"
+      - '*.adoc'
+      - '*.md'
+      - '*.txt'
+      - '.editorconfig'
+      - '.gitignore'
+      - '.github/**'
+      - 'comparisons/**'
+      - 'documentation/**'
+      - 'examples/**'
+      - 'experiments/**'
 
 jobs:
   validate:
