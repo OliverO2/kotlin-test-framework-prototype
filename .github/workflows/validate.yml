@@ -20,7 +20,7 @@ jobs:
   validate-secondary:
     name: "Validate on secondary runners"
     needs: [ validate-primary ]
-    runs-on: [ macos-latest, windows-latest ]
+    runs-on: macos-latest
 
     steps:
       - name: "Check out the project"
