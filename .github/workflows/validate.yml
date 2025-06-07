@@ -7,10 +7,13 @@ jobs:
   validate-primary:
     name: "Validate on primary runner"
     runs-on: ubuntu-latest
+
     steps:
       - name: "Check out the project"
         uses: actions/checkout@v4
+
       - uses: ./.github/actions/setup
+
       - name: Validate
         run: ./gradlew prePublishingTestsAllTests
 
@@ -18,9 +21,12 @@ jobs:
     name: "Validate on secondary runners"
     needs: [ validate-primary ]
     runs-on: [ macos-latest, windows-latest ]
+
     steps:
       - name: "Check out the project"
         uses: actions/checkout@v4
+
       - uses: ./.github/actions/setup
+
       - name: Validate
         run: ./gradlew prePublishingTestsAllTests
