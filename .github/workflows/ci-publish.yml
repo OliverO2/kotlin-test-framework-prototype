@@ -1,23 +1,28 @@
-# .github/workflows/publish.yml
+name: 'CI: Publish a release'
 
-name: Publish
 on:
   release:
-    types: [released, prereleased]
+    types: [ released, prereleased ]
+
 jobs:
+  validate:
+    uses: ./.github/workflows/validate.yml
+
   publish:
-    name: Release build and publish
+    if: github.repository == 'infix-de/testBalloon'
+    needs: [ validate ]
     runs-on: macOS-latest
+
     steps:
-      - name: Check out code
+      - name: 'Check out the project'
         uses: actions/checkout@v4
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
+
+      - uses: ./.github/actions/setup
         with:
-          distribution: 'zulu'
-          java-version: 17
-      - name: Publish to MavenCentral
-        run: ./gradlew publishToMavenCentral --no-configuration-cache -Pversion=${{ github.event.release.tag_name }}
+          cache-disabled: true
+
+      - name: 'Publish to MavenCentral'
+        run: ./gradlew publishAndReleaseToMavenCentral -Pversion=${{ github.event.release.tag_name }}
         env:
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
