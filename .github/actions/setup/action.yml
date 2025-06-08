@@ -2,9 +2,11 @@ name: setup
 description: Setup project environment
 
 inputs:
-  cache-disabled:
-    description: 'gradle.cache-disabled'
+  gradle-cache-disabled:
+    description: When 'true', all Gradle caching is disabled.
     default: 'false'
+  gradle-cache-encryption-key:
+    description: A base64 encoded AES key used to encrypt the Gradle configuration-cache data.
 
 runs:
   using: 'composite'
@@ -39,8 +41,8 @@ runs:
         build-scan-publish: true
         build-scan-terms-of-use-url: 'https://gradle.com/terms-of-service'
         build-scan-terms-of-use-agree: 'yes'
-        cache-disabled: ${{ inputs.cache-disabled }}
-        cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+        cache-disabled: ${{ inputs.gradle-cache-disabled }}
+        cache-encryption-key: ${{ inputs.gradle-cache-encryption-key }}
 
     - name: 'Cache Kotlin/Native'
       uses: actions/cache@v4
