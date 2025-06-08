@@ -44,9 +44,11 @@ mavenPublishing {
 
 publishing {
     repositories {
-        maven {
-            name = "local"
-            url = uri("${System.getenv("HOME")!!}//.m2/local-repository")
+        System.getProperty("user.home")?.let { home ->
+            maven {
+                name = "local"
+                url = uri("$home/.m2/local-repository")
+            }
         }
     }
 }
