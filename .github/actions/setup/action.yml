@@ -10,9 +10,6 @@ runs:
   using: 'composite'
 
   steps:
-    - name: 'Validate Gradle Wrapper'
-      uses: gradle/actions/wrapper-validation@v3
-
     - name: 'Set up JDK'
       uses: actions/setup-java@v4
       with:
@@ -42,9 +39,8 @@ runs:
         build-scan-publish: true
         build-scan-terms-of-use-url: 'https://gradle.com/terms-of-service'
         build-scan-terms-of-use-agree: 'yes'
-
         cache-disabled: ${{ inputs.cache-disabled }}
-        gradle-home-cache-cleanup: true
+        cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
     - name: 'Cache Kotlin/Native'
       uses: actions/cache@v4
