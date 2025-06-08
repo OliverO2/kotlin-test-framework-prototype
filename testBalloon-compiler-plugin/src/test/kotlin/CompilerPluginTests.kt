@@ -244,5 +244,7 @@ private fun capturedStdout(action: () -> Unit): String {
     action()
 
     System.setOut(originalStdout)
-    return stdoutCapturingStream.toString()
+
+    // Return a string with normalized line separators.
+    return stdoutCapturingStream.toString().lines().joinToString("\n")
 }
