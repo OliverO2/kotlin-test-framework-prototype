@@ -7,6 +7,7 @@ on:
 jobs:
   validate:
     uses: ./.github/workflows/validate.yml
+    secrets: inherit
 
   publish:
     if: github.repository == 'infix-de/testBalloon'
@@ -19,7 +20,7 @@ jobs:
 
       - uses: ./.github/actions/setup
         with:
-          cache-disabled: true
+          gradle-cache-disabled: true
 
       - name: 'Publish to MavenCentral'
         run: ./gradlew publishAndReleaseToMavenCentral -Pversion=${{ github.event.release.tag_name }}
