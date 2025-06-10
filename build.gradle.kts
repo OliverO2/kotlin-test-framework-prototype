@@ -1,3 +1,5 @@
+import org.gradle.kotlin.dsl.support.uppercaseFirstChar
+
 plugins {
     alias(libs.plugins.org.jetbrains.kotlin.multiplatform) apply false
     alias(libs.plugins.org.jetbrains.kotlin.jvm) apply false
@@ -6,7 +8,7 @@ plugins {
 
 tasks {
     for (type in listOf("allTests", "jvmTest")) {
-        register("prePublishingTests${type.capitalize()}") {
+        register("prePublishingTests${type.uppercaseFirstChar()}") {
             group = "verification"
 
             dependsOn(":testBalloon-compiler-plugin:test")
