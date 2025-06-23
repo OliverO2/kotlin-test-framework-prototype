@@ -1,12 +1,10 @@
-import com.vanniktech.maven.publish.SonatypeHost
-
 plugins {
     signing
     id("com.vanniktech.maven.publish.base")
 }
 
 mavenPublishing {
-    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+    publishToMavenCentral()
 
     signAllPublications()
 
