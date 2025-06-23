@@ -22,7 +22,11 @@ io-kotest = "5.9.1"
 ##     ⬆ = "6.0.0.M4"
 
 # https://github.com/JetBrains/kotlin/releases
-org-jetbrains-kotlin = "2.2.0"
+org-jetbrains-kotlin = "2.2.20-dev-6525"
+##                ⬆ = "2.2.20-Beta1-1"
+##                ⬆ = "2.2.20-Beta1-3"
+##                ⬆ = "2.2.20-Beta1-7"
+##                ⬆ = "2.2.20-Beta1-12"
 
 # https://github.com/Kotlin/dokka/releases
 org-jetbrains-kotlin-dokka = "2.0.0"
@@ -46,7 +50,7 @@ com-vanniktech-maven-publish-gradle-plugin = { module = "com.vanniktech:gradle-m
 dev-zacsweers-kctfork = "dev.zacsweers.kctfork:core:0.7.1"
 
 # https://github.com/classgraph/classgraph/releases
-io-github-classgraph = "io.github.classgraph:classgraph:4.8.179"
+io-github-classgraph = "io.github.classgraph:classgraph:4.8.180"
 
 # https://github.com/kotest/kotest/releases
 io-kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "io-kotest" }

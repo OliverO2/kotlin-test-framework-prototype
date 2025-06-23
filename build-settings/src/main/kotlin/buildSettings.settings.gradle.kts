@@ -20,6 +20,7 @@ fun RepositoryHandler.projectRepositories() {
     System.getProperty("user.home")?.let { home ->
         maven(url = uri("$home/.m2/local-repository"))
     }
+    maven("https://redirector.kotlinlang.org/maven/dev")
     gradlePluginPortal()
 }
 
