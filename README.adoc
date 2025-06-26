@@ -59,7 +59,7 @@ val MyFirstTestSuite by testSuite {
 
 . Run tests via the familiar Gradle test targets.
 
-. Coming soon: Install the TestBalloon plugin for IntelliJ IDEA from the marketplace to run individual tests or test suites via the editor's gutter icons.
+. Install the https://plugins.jetbrains.com/plugin/27749-testballoon[TestBalloon plugin for IntelliJ IDEA] from the JetBrains Marketplace to run individual tests or test suites via the editor's gutter icons.
 
 === What to expect
 
