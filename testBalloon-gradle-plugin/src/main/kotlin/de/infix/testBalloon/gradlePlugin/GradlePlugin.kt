@@ -14,12 +14,16 @@ import kotlin.collections.iterator
 class GradlePlugin : KotlinCompilerPluginSupportPlugin {
     override fun apply(target: Project): Unit = with(target) {
         // WORKAROUND https://youtrack.jetbrains.com/issue/KT-53477 – KGP misses transitive compiler plugin dependencies
-        dependencies.add(
-            "kotlinNativeCompilerPluginClasspath",
-            with(BuildConfig) {
-                "$PROJECT_GROUP_ID:$PROJECT_ABSTRACTIONS_ARTIFACT_ID:$PROJECT_VERSION"
+        configurations.configureEach {
+            if (it.name == "kotlinNativeCompilerPluginClasspath") {
+                dependencies.add(
+                    it.name,
+                    with(BuildConfig) {
+                        "$PROJECT_GROUP_ID:$PROJECT_ABSTRACTIONS_ARTIFACT_ID:$PROJECT_VERSION"
+                    }
+                )
             }
-        )
+        }
 
         extensions.create("testBalloon", GradleExtension::class.java)
 
