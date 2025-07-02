@@ -1,0 +1,23 @@
+== Issue Labels
+
+=== Type (Color #D4D4C1)
+
+* Bug 🐛 – Product not working as expected
+* Usage ❓ – Product usage questions and ideas
+* Feature 💡 – New or changed product capabilities
+* Compatibility 💕 – Product compatibility with the ecosystem
+
+=== Section (Color #FFDA2A)
+
+* Documentation 📝
+* IntelliJ plugin 💻 – TestBalloon plugin for IntelliJ IDEA
+* Integration ⚙️ – Integration with a third-party product
+
+=== State (Color #FFB82A)
+
+* Blocked 🛑 – Resolution or progress depends on a third-party action
+* Solved ✅
+* Not planned ⛔ – There are no plans to work on the issue
+* Waiting for clarification ⏳ – Further information is requested
+* Invalid 🚫 – This doesn't seem right
+* Duplicate 🔁 – An equivalent issue or pull request already exists
