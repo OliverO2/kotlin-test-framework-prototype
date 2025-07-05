@@ -15,6 +15,8 @@ tasks {
             dependsOn(":testBalloon-gradle-plugin:test")
             dependsOn(":testBalloon-framework-core:$type")
 
+            // dependsOn(":integration-test:test")
+
             dependsOn(":testBalloon-integration-kotest-assertions:$type")
             dependsOn(":testBalloon-integration-blocking-detection:$type")
         }

@@ -14,6 +14,8 @@ include(":testBalloon-framework-core")
 include(":testBalloon-gradle-plugin")
 include(":testBalloon-compiler-plugin")
 
+include(":integration-test")
+
 include(":testBalloon-integration-kotest-assertions")
 include(":testBalloon-integration-blocking-detection")
 

@@ -48,6 +48,11 @@ publishing {
                 url = uri("$home/.m2/local-repository")
             }
         }
+
+        maven {
+            name = "integrationTest"
+            url = uri(rootProject.layout.buildDirectory.dir("integration-test-repository"))
+        }
     }
 }
 
