@@ -24,7 +24,6 @@ kotlin {
         jvmMain {
             dependencies {
                 implementation(libs.org.junit.platform.engine)
-                implementation(libs.io.github.classgraph)
             }
         }
 

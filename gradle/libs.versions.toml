@@ -40,6 +40,9 @@ org-jetbrains-kotlinx-kover = "0.9.1"
 # https://github.com/jeremymailen/kotlinter-gradle/releases
 org-jmailen-kotlinter = "5.0.2"
 
+# https://github.com/junit-team/junit5/releases
+org-junit-platform = "1.13.1"
+
 [libraries]
 
 com-gradleup-compat-patrouille-gradle-plugin = { module = "com.gradleup.compat.patrouille:compat-patrouille-gradle-plugin", version.ref = "com-gradleup-compat-patrouille" }
@@ -48,9 +51,6 @@ com-vanniktech-maven-publish-gradle-plugin = { module = "com.vanniktech:gradle-m
 
 # https://github.com/ZacSweers/kotlin-compile-testing/releases
 dev-zacsweers-kctfork = "dev.zacsweers.kctfork:core:0.7.1"
-
-# https://github.com/classgraph/classgraph/releases
-io-github-classgraph = "io.github.classgraph:classgraph:4.8.180"
 
 # https://github.com/kotest/kotest/releases
 io-kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "io-kotest" }
@@ -78,7 +78,8 @@ org-jetbrains-kotlinx-datetime = "org.jetbrains.kotlinx:kotlinx-datetime:0.6.2"
 org-jmailen-kotlinter-gradle-plugin = { module = "org.jmailen.kotlinter:org.jmailen.kotlinter.gradle.plugin", version.ref = "org-jmailen-kotlinter" }
 
 # https://github.com/junit-team/junit5/releases
-org-junit-platform-engine = "org.junit.platform:junit-platform-engine:1.13.1"
+org-junit-platform-engine = { module = "org.junit.platform:junit-platform-engine", version.ref = "org-junit-platform" }
+org-junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "org-junit-platform" }
 
 # Self-reference, for illustrative purposes only
 de-infix-testBalloon-framework-core = { module = "de.infix.testBalloon:testBalloon-framework-core", version.ref = "de-infix-testBalloon" }

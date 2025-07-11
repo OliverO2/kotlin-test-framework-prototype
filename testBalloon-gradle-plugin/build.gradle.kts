@@ -1,3 +1,5 @@
+import buildLogic.libraryFromCatalog
+
 plugins {
     id("buildLogic.jvm")
     id("buildLogic.publishing-jvm")
@@ -27,6 +29,11 @@ buildConfig {
         "String",
         "PROJECT_ABSTRACTIONS_ARTIFACT_ID",
         "\"${projects.testBalloonFrameworkAbstractions.name}\""
+    )
+    buildConfigField(
+        "String",
+        "PROJECT_JUNIT_PLATFORM_LAUNCHER",
+        "\"${libraryFromCatalog("org.junit.platform.launcher")}\""
     )
 }
 

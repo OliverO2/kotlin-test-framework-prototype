@@ -14,12 +14,16 @@ import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
+import org.jetbrains.kotlin.backend.jvm.ir.fileParent
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageLocation
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.config.CommonConfigurationKeys
 import org.jetbrains.kotlin.config.CompilerConfiguration
+import org.jetbrains.kotlin.config.lookupTracker
 import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
+import org.jetbrains.kotlin.incremental.components.Position
+import org.jetbrains.kotlin.incremental.components.ScopeKind
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
@@ -40,8 +44,8 @@ import org.jetbrains.kotlin.ir.builders.irNull
 import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.builders.irVararg
 import org.jetbrains.kotlin.ir.declarations.IrClass
-import org.jetbrains.kotlin.ir.declarations.IrDeclaration
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
+import org.jetbrains.kotlin.ir.declarations.IrDeclarationWithName
 import org.jetbrains.kotlin.ir.declarations.IrFile
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
 import org.jetbrains.kotlin.ir.declarations.IrProperty
@@ -50,6 +54,7 @@ import org.jetbrains.kotlin.ir.declarations.IrSymbolOwner
 import org.jetbrains.kotlin.ir.declarations.IrValueParameter
 import org.jetbrains.kotlin.ir.declarations.createBlockBody
 import org.jetbrains.kotlin.ir.declarations.nameWithPackage
+import org.jetbrains.kotlin.ir.declarations.path
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrDelegatingConstructorCall
@@ -143,10 +148,12 @@ private class ModuleProbe(override val pluginContext: IrPluginContext) : IrPlugi
 private class Configuration(compilerConfiguration: CompilerConfiguration, override val pluginContext: IrPluginContext) :
     IrPluginContextOwner {
 
-    private val internalPackageName = "de.infix.testBalloon.framework.internal"
+    val internalPackageName = "de.infix.testBalloon.framework.internal"
+    val entryPointPackageName = "de.infix.testBalloon.framework.internal.entryPoint"
 
     val debugEnabled = Options.debug.value(compilerConfiguration)
     val jvmStandaloneEnabled = Options.jvmStandalone.value(compilerConfiguration)
+    val lookupTracker = compilerConfiguration.lookupTracker
 
     val abstractSuiteSymbol = irClassSymbol(AbstractTestSuite::class)
     val abstractSessionSymbol = irClassSymbol(AbstractTestSession::class)
@@ -173,12 +180,18 @@ private class ModuleTransformer(
 ) : IrElementTransformerVoidWithContext(),
     IrPluginContextOwner {
 
-    val discoveredSuiteExpressions = mutableListOf<IrBuilderWithScope.() -> IrExpression>()
+    class DiscoveredSuite(
+        val referencedDeclaration: IrDeclarationWithName,
+        val valueExpression: IrBuilderWithScope.() -> IrExpression
+    )
+
+    val discoveredSuites = mutableListOf<DiscoveredSuite>()
     var customSessionClass: IrClass? = null
 
     var sourceFileForReporting: IrFile? = null
 
     override fun visitFileNew(declaration: IrFile): IrFile {
+        @Suppress("UnnecessaryVariable", "RedundantSuppression")
         val irFile = declaration
 
         sourceFileForReporting = irFile
@@ -186,6 +199,7 @@ private class ModuleTransformer(
     }
 
     override fun visitClassNew(declaration: IrClass): IrStatement {
+        @Suppress("UnnecessaryVariable", "RedundantSuppression")
         val irClass = declaration
 
         withErrorReporting(irClass, "Could not analyze class '${irClass.fqName()}'") {
@@ -211,7 +225,7 @@ private class ModuleTransformer(
                     }
                 } else {
                     irClass.addNameValueArgumentsToConstructorIfApplicable()
-                    discoveredSuiteExpressions.add { irConstructorCall(irClass.symbol) }
+                    discoveredSuites.add(DiscoveredSuite(irClass) { irConstructorCall(irClass.symbol) })
                 }
             }
         }
@@ -220,6 +234,7 @@ private class ModuleTransformer(
     }
 
     override fun visitPropertyNew(declaration: IrProperty): IrStatement {
+        @Suppress("UnnecessaryVariable", "RedundantSuppression")
         val irProperty = declaration
 
         withErrorReporting(irProperty, "Could not analyze property '${irProperty.fqNameWhenAvailable}'") {
@@ -242,7 +257,7 @@ private class ModuleTransformer(
                     initializerCallFunction
                 )
 
-                discoveredSuiteExpressions.add { irCall(irProperty.getter!!.symbol) }
+                discoveredSuites.add(DiscoveredSuite(irProperty) { irCall(irProperty.getter!!.symbol) })
             }
         }
 
@@ -256,25 +271,20 @@ private class ModuleTransformer(
         // We have left all source files behind.
         sourceFileForReporting = null
 
-        // Add the generated entry points to the first IR source file (return if none exists).
-        val entryPointsFile = moduleFragment.files.firstOrNull() ?: return moduleFragment
-
-        fun addEntryPoint(declaration: IrDeclaration) {
-            entryPointsFile.addChild(declaration)
-            if (configuration.debugEnabled) {
-                reportDebug("Generated:\n${declaration.dump().prependIndent("\t")}")
-            }
-        }
+        val entryPointPackageFqName = FqName(configuration.entryPointPackageName)
+        val entryPointFile = moduleFragment.files.singleOrNull { it.packageFqName == entryPointPackageFqName }
+            ?: return moduleFragment // Do not proceed unless an entry point anchor class is present
+        sourceFileForReporting = entryPointFile
 
         withErrorReporting(
             moduleFragment,
-            "Could not generate entry point code in '${entryPointsFile.nameWithPackage}'"
+            "Could not generate entry point code in '${entryPointFile.nameWithPackage}'"
         ) {
             if (configuration.debugEnabled) {
                 reportDebug(
                     "Generating code in module '${moduleFragment.name}'," +
-                        " file '${entryPointsFile.nameWithPackage}'," +
-                        " for  ${discoveredSuiteExpressions.size} discovered suites," +
+                        " file '${entryPointFile.nameWithPackage}'," +
+                        " for  ${discoveredSuites.size} discovered suites," +
                         " custom session: " +
                         if (customSessionClass == null) "default" else "${customSessionClass?.fqName()}",
                     moduleFragment
@@ -282,24 +292,39 @@ private class ModuleTransformer(
             }
 
             val platform = pluginContext.platform
-            when {
+            val entryPoint = when {
                 platform.isJvm() -> {
                     if (configuration.jvmStandaloneEnabled) {
-                        addEntryPoint(irSuspendMainFunction())
+                        irSuspendMainFunction()
                     } else {
-                        addEntryPoint(irTestFrameworkDiscoveryResultProperty(entryPointsFile))
+                        irTestFrameworkDiscoveryResultProperty(entryPointFile)
                     }
                 }
 
                 platform.isJs() || platform.isWasm() -> {
-                    addEntryPoint(irSuspendMainFunction())
+                    irSuspendMainFunction()
                 }
 
                 platform.isNative() -> {
-                    addEntryPoint(irTestFrameworkEntryPointProperty(entryPointsFile))
+                    irTestFrameworkEntryPointProperty(entryPointFile)
                 }
 
                 else -> throw UnsupportedOperationException("Cannot generate entry points for platform '$platform'")
+            }
+
+            entryPointFile.addChild(entryPoint)
+            if (configuration.debugEnabled) {
+                reportDebug("Generated:\n${declaration.dump().prependIndent("\t")}")
+            }
+
+            // With incremental compilation, the compiler needs to recompile the entry point file if one of its
+            // referenced declarations change. To do so, it needs to be told about such references.
+            // We register the entry point file referencing
+            // - the custom session class (if available), and
+            // - top-level suites.
+            customSessionClass?.let { entryPointFile.registerReference(it) }
+            for (discoveredSuite in discoveredSuites) {
+                entryPointFile.registerReference(discoveredSuite.referencedDeclaration)
             }
         }
 
@@ -339,6 +364,7 @@ private class ModuleTransformer(
                     if (constructorCallProcessed) super.visitDelegatingConstructorCall(expression)
                     constructorCallProcessed = true
 
+                    @Suppress("UnnecessaryVariable", "RedundantSuppression")
                     val originalCall = expression
                     return DeclarationIrBuilder(
                         pluginContext,
@@ -355,7 +381,7 @@ private class ModuleTransformer(
                             originalCall.typeArguments.size
                         ).apply {
                             copyTypeAndValueArgumentsFrom(originalCall)
-                            nameValueArgumentsToAdd.forEach { index, value ->
+                            nameValueArgumentsToAdd.forEach { (index, value) ->
                                 arguments[index] = irString(value)
                                 if (configuration.debugEnabled) {
                                     reportDebug(
@@ -406,6 +432,7 @@ private class ModuleTransformer(
                     if (callProcessed) return super.visitCall(expression)
                     callProcessed = true
 
+                    @Suppress("UnnecessaryVariable", "RedundantSuppression")
                     val originalCall = expression
                     return DeclarationIrBuilder(
                         pluginContext,
@@ -416,7 +443,7 @@ private class ModuleTransformer(
                         @Suppress("DuplicatedCode")
                         irCall(originalCall.symbol).apply {
                             copyTypeAndValueArgumentsFrom(originalCall)
-                            nameValueArgumentsToAdd.forEach { index, value ->
+                            nameValueArgumentsToAdd.forEach { (index, value) ->
                                 arguments[index] = irString(value)
                                 if (configuration.debugEnabled) {
                                     reportDebug(
@@ -460,7 +487,7 @@ private class ModuleTransformer(
     private fun IrProperty.fqName(): String = fqNameWhenAvailable.toString()
 
     /**
-     * Returns a `main` function declaration for [discoveredSuiteExpressions] returning s1...sn:
+     * Returns a `main` function declaration for [discoveredSuites] returning s1...sn:
      *
      * ```
      * suspend fun main(arguments: Array<String>) {
@@ -485,12 +512,15 @@ private class ModuleTransformer(
                 customSessionClass?.let { irConstructorCall(it.symbol) },
                 irGet(irArgumentsValueParameter)
             )
-            +irSimpleFunctionCall(configuration.configureAndExecuteTestsFunctionSymbol, irArrayOfRootSuites())
+            +irSimpleFunctionCall(
+                configuration.configureAndExecuteTestsFunctionSymbol,
+                irArrayOfRootSuites()
+            )
         }
     }
 
     /**
-     * Returns a `testFrameworkEntryPoint` property declaration for [discoveredSuiteExpressions] returning s1...sn:
+     * Returns a `testFrameworkEntryPoint` property declaration for [discoveredSuites] returning s1...sn:
      *
      * ```
      * @EagerInitialization
@@ -500,14 +530,14 @@ private class ModuleTransformer(
      * }
      * ```
      */
-    private fun irTestFrameworkEntryPointProperty(entryPointsTargetFile: IrFile): IrProperty {
+    private fun irTestFrameworkEntryPointProperty(entryPointFile: IrFile): IrProperty {
         val propertyName = Name.identifier("testFrameworkEntryPoint")
 
         return pluginContext.irFactory.buildProperty {
             name = propertyName
             visibility = DescriptorVisibilities.PRIVATE
         }.apply {
-            parent = entryPointsTargetFile
+            parent = entryPointFile
             annotations += irConstructorCall(irClassSymbol("kotlin.native.EagerInitialization"))
 
             initializeWith(propertyName, pluginContext.irBuiltIns.unitType) {
@@ -524,7 +554,7 @@ private class ModuleTransformer(
     }
 
     /**
-     * Returns a `testFrameworkDiscoveryResult` property declaration for [discoveredSuiteExpressions] returning s1...sn:
+     * Returns a `testFrameworkDiscoveryResult` property declaration for [discoveredSuites] returning s1...sn:
      *
      * ```
      * internal val testFrameworkDiscoveryResult: TestFrameworkDiscoveryResult = run {
@@ -533,14 +563,14 @@ private class ModuleTransformer(
      * }
      * ```
      */
-    private fun irTestFrameworkDiscoveryResultProperty(entryPointsFile: IrFile): IrProperty {
+    private fun irTestFrameworkDiscoveryResultProperty(entryPointFile: IrFile): IrProperty {
         val propertyName = configuration.testFrameworkDiscoveryResultPropertyName
 
         return pluginContext.irFactory.buildProperty {
             name = propertyName
             visibility = DescriptorVisibilities.INTERNAL
         }.apply {
-            parent = entryPointsFile
+            parent = entryPointFile
 
             initializeWith(propertyName, configuration.testFrameworkDiscoveryResultSymbol.owner.defaultType) {
                 +irSimpleFunctionCall(
@@ -606,18 +636,20 @@ private class ModuleTransformer(
     }
 
     /**
-     * Returns an array expression containing the list of results from [discoveredSuiteExpressions].
+     * Returns an array expression containing the list of results from [discoveredSuites].
      */
     private fun IrBuilderWithScope.irArrayOfRootSuites(): IrExpression {
         val irElementType = configuration.abstractSuiteSymbol.owner.defaultType
         val irArrayType = pluginContext.irBuiltIns.arrayClass.typeWith(irElementType)
-        val irSuitesVararg: List<IrExpression> = discoveredSuiteExpressions.map { it.invoke(this) }
 
         return irCall(
             callee = pluginContext.irBuiltIns.arrayOf,
             type = irArrayType,
             typeArguments = listOf(irElementType)
         ).apply {
+            val irSuitesVararg: List<IrExpression> = discoveredSuites.map { discoveredSuite ->
+                discoveredSuite.valueExpression.invoke(this@irArrayOfRootSuites)
+            }
             arguments[0] = irVararg(irElementType, irSuitesVararg)
         }
     }
@@ -638,6 +670,25 @@ private class ModuleTransformer(
             irValues.forEachIndexed { index, irValue ->
                 arguments[index] = irValue ?: irNull()
             }
+        }
+    }
+
+    /**
+     * Registers a reference from [this] file to [referencedDeclaration], potentially residing in another file.
+     *
+     * This is required for incremental compilation.
+     */
+    private fun IrFile.registerReference(referencedDeclaration: IrDeclarationWithName) {
+        val lookupTracker = configuration.lookupTracker ?: return
+
+        synchronized(lookupTracker) {
+            lookupTracker.record(
+                filePath = path,
+                position = Position.NO_POSITION,
+                scopeFqName = referencedDeclaration.fileParent.packageFqName.asString(),
+                scopeKind = ScopeKind.CLASSIFIER,
+                name = referencedDeclaration.name.asString()
+            )
         }
     }
 

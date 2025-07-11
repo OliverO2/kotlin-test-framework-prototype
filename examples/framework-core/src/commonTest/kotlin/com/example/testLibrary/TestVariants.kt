@@ -52,6 +52,6 @@ fun TestSuite.databaseTest(name: String, action: suspend Database.() -> Unit) {
 
 class Database(scope: CoroutineScope) : AutoCloseable {
     override fun close() {
-        TODO("Not yet implemented")
+        // Do stuff.
     }
 }

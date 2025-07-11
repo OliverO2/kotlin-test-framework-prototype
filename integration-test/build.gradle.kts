@@ -13,8 +13,8 @@ dependencies {
 
 tasks {
     val integrationTestRepositoryDir = rootProject.layout.buildDirectory.dir("integration-test-repository")
-    val scenariosSourceDirectory = project.layout.projectDirectory.dir("scenarios")
-    val scenariosBuildDirectory = project.layout.buildDirectory.dir("scenarios")
+    val scenariosSourceDirectory = project.layout.projectDirectory.dir("scenarioTemplates")
+    val scenariosBuildDirectory = project.layout.buildDirectory.dir("scenarioTemplates")
 
     val updateIntegrationTestRepository by registering(Exec::class) {
         group = "verification"
