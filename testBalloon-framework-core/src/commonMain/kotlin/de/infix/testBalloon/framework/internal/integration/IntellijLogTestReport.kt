@@ -8,6 +8,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
+import kotlin.time.ExperimentalTime
 
 /**
  * A [TestReport] in IntelliJ IDEA's IjLog format on stdout or via an [outputEntry] function.
@@ -15,6 +16,7 @@ import kotlin.io.encoding.ExperimentalEncodingApi
 internal class IntellijLogTestReport(val outputEntry: (String) -> Unit = ::println) : TestReport() {
     private val outputMutex = Mutex()
 
+    @OptIn(ExperimentalTime::class)
     override suspend fun add(event: TestElementEvent) {
         val elementParent = event.element.testElementParent
 
