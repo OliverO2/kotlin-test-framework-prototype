@@ -17,7 +17,7 @@ jobs:
           gradle-cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       - name: Validate
-        run: ./gradlew prePublishingTestsAllTests
+        run: ./gradlew prePublishingTestsAllTests -Plocal.runs_on_ci=true
 
   validate-secondary:
     name: 'Validate on secondary runners'
@@ -39,7 +39,7 @@ jobs:
           gradle-cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       - name: 'Validate'
-        run: ./gradlew prePublishingTestsAllTests
+        run: ./gradlew prePublishingTestsAllTests -Plocal.runs_on_ci=true
 
       - name: 'Upload build reports'
         if: failure()
