@@ -16,8 +16,17 @@ jobs:
         with:
           gradle-cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
-      - name: Validate
+      - name: 'Validate'
         run: ./gradlew prePublishingTestsAllTests -Plocal.runs_on_ci=true
+
+      - name: 'Upload build reports'
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-reports-${{ runner.os }}-${{ github.action }}-${{ github.run_id }}
+          path: |
+            **/build/reports/
+          if-no-files-found: ignore
 
   validate-secondary:
     name: 'Validate on secondary runners'
