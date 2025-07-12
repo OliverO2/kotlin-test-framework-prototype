@@ -1,3 +1,4 @@
+import de.infix.testBalloon.framework.AbstractTestElement
 import de.infix.testBalloon.framework.TestConfig
 import de.infix.testBalloon.framework.TestDiscoverable
 import de.infix.testBalloon.framework.TestSuite
@@ -15,13 +16,14 @@ import kotlin.io.path.createDirectories
 import kotlin.io.path.deleteRecursively
 import kotlin.io.path.div
 import kotlin.io.path.exists
+import kotlin.io.path.moveTo
 import kotlin.io.path.pathString
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.ExperimentalTime
 
 val IncrementalCompilationTests by testSuite(testConfig = TestConfig.testScope(isEnabled = true, timeout = 3.minutes)) {
-    val kotlinTestConfig = TestConfig // .disable()
+    val kotlinTestConfig = TestConfig.disable()
     val fullCompilationConfig = TestConfig.disable()
 
     testScenario("incremental-compilation-kotlin-test", testConfig = kotlinTestConfig) {
@@ -49,7 +51,7 @@ private fun TestSuite.testScenario(
     scenarioName: String,
     testConfig: TestConfig = TestConfig,
     action: TestScenario.() -> Unit
-) = testSuite("scenario: $scenarioName", testConfig) {
+) = testSuite(scenarioName, displayName = "scenario: $scenarioName", testConfig) {
     val commonTemplateDirectory = Path("build/scenarioTemplates/common")
     val scenarioTemplateDirectory = Path("build/scenarioTemplates/$scenarioName")
     val projectDirectory = Path("build/scenarioProjects/$scenarioName")
@@ -84,7 +86,7 @@ private class TestScenario(private val parentTestSuite: TestSuite, private val p
     }
 
     fun variant(name: String, gradleOptions: Array<String> = arrayOf(), testConfig: TestConfig = TestConfig) =
-        parentTestSuite.testSuite(name, testConfig) {
+        parentTestSuite.testSuite(name, testConfig = testConfig) {
             fun taskExecution(taskName: String) = gradleExecution(projectDirectory, taskName, *gradleOptions)
 
             aroundAll { testSuiteAction ->
@@ -128,7 +130,7 @@ private class TestScenario(private val parentTestSuite: TestSuite, private val p
                 }
             }
 
-            suspend fun verifyResults(taskName: String, exceptIndex: Int? = null) {
+            suspend fun AbstractTestElement.verifyResults(taskName: String, exceptIndex: Int? = null) {
                 val baselineResult = baselineResults()[taskName] ?: return
                 val expectedResults = baselineResult.filterIndexed { index, _ ->
                     index != exceptIndex
@@ -137,37 +139,34 @@ private class TestScenario(private val parentTestSuite: TestSuite, private val p
                 val actualResults = taskExecution.logMessages()
                 if (actualResults != expectedResults) {
                     throw AssertionError(
-                        "Expected: $expectedResults, actual: ${actualResults}\n" + taskExecution.stdoutStderr()
+                        "$taskName: Results do not meet expectations.\n" +
+                            "\tExpected: $expectedResults\n" +
+                            "\tActual: ${actualResults}\n" + taskExecution.stdoutStderr()
                     )
                 }
+                println("$testElementDisplayName: $taskName – OK")
             }
 
             val fileIndex = 0
-            val filePathToMove = Path("File1.kt")
+            val fileNameToMove = "File1.kt"
 
-            testSuite("$filePathToMove") {
-                test("remove") {
-                    filePathToMove.move(enabledSourcesDirectory, disabledSourcesDirectory)
-                    for (taskName in taskNames()) {
-                        verifyResults(taskName, fileIndex)
-                    }
+            test("remove $fileNameToMove") {
+                (enabledSourcesDirectory / fileNameToMove).moveTo(disabledSourcesDirectory / fileNameToMove)
+                for (taskName in taskNames()) {
+                    verifyResults(taskName, fileIndex)
                 }
+            }
 
-                test("restore") {
-                    filePathToMove.move(disabledSourcesDirectory, enabledSourcesDirectory)
-                    for (taskName in taskNames()) {
-                        verifyResults(taskName)
-                    }
+            test("restore $fileNameToMove") {
+                (disabledSourcesDirectory / fileNameToMove).moveTo(enabledSourcesDirectory / fileNameToMove)
+                for (taskName in taskNames()) {
+                    verifyResults(taskName)
                 }
             }
         }
 }
 
 private fun List<String>.asIndentedText(indent: String = "\t") = joinToString(prefix = indent, separator = "\n$indent")
-
-private fun Path.move(source: Path, target: Path) = check((source / this).toFile().renameTo((target / this).toFile())) {
-    "Could not move $this from $source to $target"
-}
 
 private fun gradleExecution(projectDirectory: Path, vararg arguments: String): Execution = execution(
     "${projectDirectory.pathString}/gradlew",
