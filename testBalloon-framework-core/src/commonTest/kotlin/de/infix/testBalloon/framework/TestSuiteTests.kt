@@ -617,6 +617,52 @@ class TestSuiteTests {
     }
 
     @Test
+    fun displayNameTopLevel() = withTestFramework {
+        val suite1 by testSuite("suite1", displayName = "top-level suite #1") {
+            test("test1") {
+            }
+        }
+
+        withTestReport(suite1) {
+            verifyDisplayNames(listOf("suite1.test1", "suite1/top-level suite #1"))
+        }
+    }
+
+    @Test
+    fun displayNameInnerSuite() = withTestFramework {
+        val suite1 by testSuite("suite1") {
+            test("test1") {
+            }
+
+            testSuite("innerSuite1", displayName = "inner suite #1") {
+                test("test1") {
+                }
+            }
+        }
+
+        withTestReport(suite1) {
+            verifyDisplayNames(
+                listOf("suite1.test1", "suite1.innerSuite1.test1", "suite1.innerSuite1/inner suite #1", "suite1")
+            )
+        }
+    }
+
+    private fun InMemoryTestReport.verifyDisplayNames(expectation: List<String>) {
+        assertContentEquals(
+            expectation,
+            finishedEvents().map {
+                with(it.element) {
+                    if (testElementDisplayName != testElementName) {
+                        "$testElementPath/$testElementDisplayName"
+                    } else {
+                        testElementPath
+                    }
+                }
+            }.takeWhile { it.startsWith("suite1") } // ignore compartment and session
+        )
+    }
+
+    @Test
     fun additionalReports() = withTestFramework {
         val eventLog = mutableListOf<String>()
 
