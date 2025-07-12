@@ -19,7 +19,7 @@ include(":integration-test")
 include(":testBalloon-integration-kotest-assertions")
 include(":testBalloon-integration-blocking-detection")
 
-if (providers.gradleProperty("local.runs_on_ci").orNull != "true") {
+if (providers.gradleProperty("runs_on_ci").orNull != "true") {
     include(":examples:framework-core")
 
     include(":examples:integration-kotest-assertions")
