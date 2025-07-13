@@ -6,6 +6,14 @@ plugins {
 description = "Core library for the TestBalloon framework"
 
 kotlin {
+    js {
+        // The core library tests use kotlin-test, which comes with a default timeout of 2 seconds on JS.
+        // This may be too restrictive on slow CI runners, so we are increasing it.
+        val kotlinTestTimeout = "10s"
+        nodejs { testTask { useMocha { timeout = kotlinTestTimeout } } }
+        browser { testTask { useMocha { timeout = kotlinTestTimeout } } }
+    }
+
     sourceSets {
         commonMain {
             dependencies {
