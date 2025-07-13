@@ -5,7 +5,7 @@ on:
 
 jobs:
   validate-primary:
-    name: 'Validate on primary runner'
+    name: 'On primary'
     runs-on: ubuntu-latest
 
     steps:
@@ -29,7 +29,7 @@ jobs:
           if-no-files-found: ignore
 
   validate-secondary:
-    name: 'Validate on secondary runners'
+    name: 'On secondary'
     needs: [ validate-primary ]
     strategy:
       matrix:
@@ -47,7 +47,7 @@ jobs:
         with:
           gradle-cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
-      - name: 'Validate'
+      - name: 'Run tests'
         run: ./gradlew prePublishingTestsAllTests -Pruns_on_ci=true
 
       - name: 'Upload build reports'

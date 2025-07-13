@@ -6,6 +6,7 @@ on:
 
 jobs:
   publish:
+    name: 'Publish a release'
     if: github.repository == 'infix-de/testBalloon'
     runs-on: macOS-latest
 

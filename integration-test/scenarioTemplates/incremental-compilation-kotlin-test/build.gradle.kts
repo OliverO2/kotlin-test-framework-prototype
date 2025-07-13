@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+import org.jetbrains.kotlin.gradle.targets.js.npm.tasks.KotlinNpmInstallTask
 import org.jetbrains.kotlin.gradle.targets.js.testing.KotlinJsTest
 import org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeTest
 
@@ -44,6 +45,11 @@ kotlin {
             }
         }
     }
+}
+
+// WORKAROUND https://youtrack.jetbrains.com/issue/KT-78504 – NpmInstall tasks produce broken build cache entries
+tasks.withType<KotlinNpmInstallTask>().configureEach {
+    args.addAll(listOf("--network-concurrency", "1", "--mutex", "network"))
 }
 
 tasks {

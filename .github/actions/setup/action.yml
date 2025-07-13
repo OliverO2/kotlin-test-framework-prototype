@@ -1,12 +1,12 @@
-name: setup
+name: 'setup'
 description: Setup project environment
 
 inputs:
   gradle-cache-disabled:
-    description: When 'true', all Gradle caching is disabled.
+    description: "When 'true', all Gradle caching is disabled."
     default: 'false'
   gradle-cache-encryption-key:
-    description: A base64 encoded AES key used to encrypt the Gradle configuration-cache data.
+    description: 'A base64 encoded AES key used to encrypt the Gradle configuration-cache data.'
 
 runs:
   using: 'composite'
