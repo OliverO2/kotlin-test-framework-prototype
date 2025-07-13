@@ -1,6 +1,5 @@
 import buildLogic.versionFromCatalog
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
-import org.jetbrains.kotlin.gradle.targets.js.npm.tasks.KotlinNpmInstallTask
 
 plugins {
     id("buildLogic.common")
@@ -55,9 +54,4 @@ kotlin {
     androidNativeX64()
     mingwX64()
     watchosDeviceArm64()
-}
-
-// WORKAROUND https://youtrack.jetbrains.com/issue/KT-78504 – NpmInstall tasks produce broken build cache entries
-tasks.withType<KotlinNpmInstallTask>().configureEach {
-    args.addAll(listOf("--network-concurrency", "1", "--mutex", "network"))
 }

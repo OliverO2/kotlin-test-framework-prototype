@@ -15,7 +15,7 @@ With debugger:
 
 #### Node/JS
 
-* `./gradlew kotlinUpgradeYarnLock`
+* `./gradlew kotlinUpgradePackageLock`
 * `./gradlew jsNodeTest`
 * `./gradlew compileTestKotlinJs`
 * `./gradlew jsNodeTest -Pkotlin.incremental.js=false -Pkotlin.incremental.js.klib=false -Pkotlin.incremental.js.ir=false`
@@ -35,7 +35,7 @@ With debugger:
 
 #### Wasm/JS
 
-* `./gradlew kotlinWasmUpgradeYarnLock`
+* `./gradlew kotlinWasmUpgradePackageLock`
 * `./gradlew wasmJsNodeTest`
 * `./gradlew wasmJsNodeTest -Pkotlin.incremental.js=false -Pkotlin.incremental.js.klib=false -Pkotlin.incremental.js.ir=false`
 

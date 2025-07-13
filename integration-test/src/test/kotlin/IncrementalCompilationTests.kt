@@ -80,10 +80,10 @@ private class TestScenario(private val parentTestSuite: TestSuite, private val p
         gradleExecution(projectDirectory, "listTests", "--quiet").checkedStdout().lines()
     }
 
-    private val yarnLockTasks = parentTestSuite.testFixture {
+    private val npmPackageLockTasks = parentTestSuite.testFixture {
         buildList {
-            if (taskNames().any { it.startsWith("js") }) add("kotlinUpgradeYarnLock")
-            if (taskNames().any { it.startsWith("wasmJs") }) add("kotlinWasmUpgradeYarnLock")
+            if (taskNames().any { it.startsWith("js") }) add("kotlinUpgradePackageLock")
+            if (taskNames().any { it.startsWith("wasmJs") }) add("kotlinWasmUpgradePackageLock")
         }.toTypedArray()
     }
 
@@ -92,7 +92,7 @@ private class TestScenario(private val parentTestSuite: TestSuite, private val p
             fun taskExecution(taskName: String) = gradleExecution(projectDirectory, taskName, *gradleOptions)
 
             aroundAll { testSuiteAction ->
-                gradleExecution(projectDirectory, "clean", *yarnLockTasks()).checked()
+                gradleExecution(projectDirectory, "clean", *npmPackageLockTasks()).checked()
                 testSuiteAction()
             }
 
