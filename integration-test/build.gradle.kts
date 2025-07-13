@@ -1,4 +1,5 @@
 import buildLogic.addTestBalloonPluginFromProject
+import org.apache.tools.ant.taskdefs.condition.Os
 
 plugins {
     id("buildLogic.jvm")
@@ -24,7 +25,11 @@ tasks {
         outputs.upToDateWhen { false }
 
         workingDir = rootDir
-        commandLine = mutableListOf("./gradlew", "publishAllPublicationsToIntegrationTestRepository")
+        commandLine = if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+            mutableListOf("cmd", "/c", "gradlew.bat", "publishAllPublicationsToIntegrationTestRepository")
+        } else {
+            mutableListOf("./gradlew", "publishAllPublicationsToIntegrationTestRepository")
+        }
     }
 
     val syncScenarioBuildGradleConfiguration by registering(Copy::class) {
