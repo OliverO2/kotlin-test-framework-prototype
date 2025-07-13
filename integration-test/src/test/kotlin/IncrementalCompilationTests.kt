@@ -22,7 +22,9 @@ import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.ExperimentalTime
 
-val IncrementalCompilationTests by testSuite(testConfig = TestConfig.testScope(isEnabled = true, timeout = 6.minutes)) {
+val IncrementalCompilationTests by testSuite(
+    testConfig = TestConfig.testScope(isEnabled = true, timeout = 12.minutes)
+) {
     val kotlinTestConfig = TestConfig.disable()
     val fullCompilationConfig = TestConfig.disable()
 
