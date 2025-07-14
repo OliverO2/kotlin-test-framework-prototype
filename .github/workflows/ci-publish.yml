@@ -19,7 +19,7 @@ jobs:
           gradle-cache-disabled: true
 
       - name: 'Publish to MavenCentral'
-        run: ./gradlew publishAndReleaseToMavenCentral --no-configuration-cache -Pversion=${{ github.event.release.tag_name }} -Pruns_on_ci=true
+        run: ./gradlew publishAndReleaseToMavenCentral --no-configuration-cache -Pversion=${{ github.event.release.tag_name }}
         env:
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
