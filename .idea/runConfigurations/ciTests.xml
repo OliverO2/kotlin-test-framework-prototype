@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="ciTests" type="CompoundRunConfigurationType">
+    <toRun name="testBalloon [componentTestsAllTargets]" type="GradleRunConfiguration" />
+    <toRun name="testBalloon [integrationTests]" type="GradleRunConfiguration" />
+    <method v="2" />
+  </configuration>
+</component>

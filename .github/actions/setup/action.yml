@@ -48,6 +48,6 @@ runs:
       uses: actions/cache@v4
       with:
         path: ${{ env.KONAN_DATA_DIR }}
-        key: konan-${{ runner.os }}-gradle-${{ hashFiles('*.gradle.kts', 'gradle/*.versions.toml') }}
+        key: konan-${{ runner.os }}-gradle-${{ hashFiles('*.gradle.kts', 'gradle/*.versions.toml', 'gradle.properties') }}
         restore-keys: |
           konan-${{ runner.os }}-gradle-

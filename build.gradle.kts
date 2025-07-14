@@ -1,5 +1,3 @@
-import org.gradle.kotlin.dsl.support.uppercaseFirstChar
-
 plugins {
     alias(libs.plugins.org.jetbrains.kotlin.multiplatform) apply false
     alias(libs.plugins.org.jetbrains.kotlin.jvm) apply false
@@ -7,23 +5,22 @@ plugins {
 }
 
 tasks {
-    for (type in listOf("allTests", "jvmTest")) {
-        register("prePublishingTests${type.uppercaseFirstChar()}") {
+    for ((targetSubSet, kmpTaskName) in mapOf("AllTargets" to "allTests", "JvmOnly" to "jvmTest")) {
+        register("componentTests$targetSubSet") {
             group = "verification"
 
             dependsOn(":testBalloon-compiler-plugin:test")
             dependsOn(":testBalloon-gradle-plugin:test")
-            dependsOn(":testBalloon-framework-core:$type")
+            dependsOn(":testBalloon-framework-core:$kmpTaskName")
 
-            dependsOn(":integration-test:test")
-
-            dependsOn(":testBalloon-integration-kotest-assertions:$type")
-            dependsOn(":testBalloon-integration-blocking-detection:$type")
+            dependsOn(":testBalloon-integration-kotest-assertions:$kmpTaskName")
+            dependsOn(":testBalloon-integration-blocking-detection:$kmpTaskName")
         }
     }
 
-    register<Exec>("retryTestsUntilFailure") {
+    register("integrationTests") {
         group = "verification"
-        commandLine = listOf("/bin/bash", "-c", "while gradlew -p framework-core cleanAllTests allTests; do true; done")
+
+        dependsOn(":integration-test:test")
     }
 }

@@ -16,8 +16,11 @@ jobs:
         with:
           gradle-cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
-      - name: 'Validate'
-        run: ./gradlew prePublishingTestsAllTests
+      - name: 'Run component tests'
+        run: ./gradlew componentTestsAllTargets
+
+      - name: 'Run integration tests'
+        run: ./gradlew integrationTests
 
       - name: 'Upload build reports'
         if: failure()
@@ -47,8 +50,11 @@ jobs:
         with:
           gradle-cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
-      - name: 'Run tests'
-        run: ./gradlew prePublishingTestsAllTests
+      - name: 'Run component tests'
+        run: ./gradlew componentTestsAllTargets
+
+      - name: 'Run integration tests'
+        run: ./gradlew integrationTests
 
       - name: 'Upload build reports'
         if: failure()
