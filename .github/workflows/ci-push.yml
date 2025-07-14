@@ -3,8 +3,9 @@ name: 'CI: Push on main or release branch'
 on:
   push:
     branches:
-      - main
+      - 'main'
       - 'releases/**'
+      - 'ci-experiments/**'
     paths-ignore:
       - '*.adoc'
       - '*.md'
