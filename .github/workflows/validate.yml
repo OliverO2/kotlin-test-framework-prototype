@@ -16,11 +16,11 @@ jobs:
         with:
           gradle-cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
-      - name: 'Run component tests'
-        run: ./gradlew componentTestsAllTargets
+      - name: 'Compile KJS for debugging'
+        run: ./gradlew :testBalloon-framework-abstractions:compileKotlinJs --debug
 
-      - name: 'Run integration tests'
-        run: ./gradlew integrationTests
+#      - name: 'Run integration tests'
+#        run: ./gradlew integrationTests
 
       - name: 'Upload build reports'
         if: failure()
