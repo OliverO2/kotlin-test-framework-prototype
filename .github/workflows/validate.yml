@@ -4,9 +4,9 @@ on:
   workflow_call
 
 jobs:
-  validate-primary:
-    name: 'On primary'
-    runs-on: ubuntu-latest
+  validate-debug:
+    name: 'On Windows'
+    runs-on: windows-latest
 
     steps:
       - name: 'Check out the project'
@@ -18,43 +18,6 @@ jobs:
 
       - name: 'Compile KJS for debugging'
         run: ./gradlew :testBalloon-framework-abstractions:compileKotlinJs --debug
-
-#      - name: 'Run integration tests'
-#        run: ./gradlew integrationTests
-
-      - name: 'Upload build reports'
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-reports-${{ runner.os }}-${{ github.action }}-${{ github.run_id }}
-          path: |
-            **/build/reports/
-          if-no-files-found: ignore
-
-  validate-secondary:
-    name: 'On secondary'
-    needs: [ validate-primary ]
-    strategy:
-      matrix:
-        include:
-          - os: macos-latest
-          - os: windows-latest
-      fail-fast: false
-    runs-on: ${{ matrix.os }}
-
-    steps:
-      - name: 'Check out the project'
-        uses: actions/checkout@v4
-
-      - uses: ./.github/actions/setup
-        with:
-          gradle-cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
-
-      - name: 'Run component tests'
-        run: ./gradlew componentTestsAllTargets
-
-      - name: 'Run integration tests'
-        run: ./gradlew integrationTests
 
       - name: 'Upload build reports'
         if: failure()
