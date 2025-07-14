@@ -16,7 +16,7 @@ runs:
       uses: actions/setup-java@v4
       with:
         distribution: 'zulu'
-        java-version: 17
+        java-version: 21
 
     - name: 'Redirect caches to fast D: drive on Windows'
       if: runner.os == 'Windows'
