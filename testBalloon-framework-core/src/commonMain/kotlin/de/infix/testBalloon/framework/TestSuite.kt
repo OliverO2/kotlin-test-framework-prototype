@@ -212,6 +212,18 @@ open class TestSuite internal constructor(
     }
 
     internal fun registerChildElement(childElement: TestElement) {
+        check(
+            this == suitesInConfigurationScope.firstOrNull() ||
+                ( // TestCompartments and TestSession accept children without being in configuration scope,
+                    testElementParent?.testElementParent == null &&
+                        // but only if no suite below a compartment is in configuration scope.
+                        suitesInConfigurationScope.isEmpty()
+                    )
+        ) {
+            "$childElement tried to register as a child of $this," +
+                " which currently is not the closest configuration scope.\n" +
+                "\tThe closest configuration scope at this point is ${suitesInConfigurationScope.firstOrNull()}."
+        }
         children.add(childElement)
     }
 
@@ -270,7 +282,9 @@ open class TestSuite internal constructor(
     }
 
     override fun parameterize(selection: Selection) {
-        content()
+        inConfigurationScope {
+            content()
+        }
 
         super.parameterize(selection)
 
@@ -314,6 +328,21 @@ open class TestSuite internal constructor(
                 for (childElement in testElementChildren) {
                     childElement.execute(report)
                 }
+            }
+        }
+    }
+
+    companion object {
+        /** A stack of suites in configuration scope, innermost scope first */
+        private val suitesInConfigurationScope = mutableListOf<TestSuite>()
+
+        /** Executes [action] in the configuration scope of [this] suite. */
+        fun TestSuite.inConfigurationScope(action: () -> Unit) {
+            suitesInConfigurationScope.add(0, this)
+            try {
+                action()
+            } finally {
+                check(suitesInConfigurationScope.removeAt(0) == this)
             }
         }
     }
