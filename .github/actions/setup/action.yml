@@ -18,6 +18,17 @@ runs:
         distribution: 'zulu'
         java-version: 21
 
+    - name: 'Redirect caches to fast D: drive on Windows'
+      if: runner.os == 'Windows'
+      shell: cmd
+      run: |
+        mkdir D:\.gradle
+        mklink /D C:\Users\runneradmin\.gradle D:\.gradle
+        
+        mkdir D:\.konan
+        mklink /D C:\Users\runneradmin\.konan D:\.konan
+        echo KONAN_DATA_DIR=D:\.konan>>%GITHUB_ENV%
+
     - name: 'Setup Kotlin/Native cache on Unix-like systems'
       if: runner.os != 'Windows'
       shell: bash
