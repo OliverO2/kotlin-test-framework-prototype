@@ -18,23 +18,6 @@ runs:
         distribution: 'zulu'
         java-version: 21
 
-    - name: 'Redirect caches to fast D: drive on Windows'
-      if: runner.os == 'Windows'
-      shell: cmd
-      run: |
-        mkdir D:\.gradle
-        mklink /D C:\Users\runneradmin\.gradle D:\.gradle
-        
-        mkdir D:\.konan
-        mklink /D C:\Users\runneradmin\.konan D:\.konan
-        echo KONAN_DATA_DIR=D:\.konan>>%GITHUB_ENV%
-
-    - name: 'Setup Kotlin/Native cache on Unix-like systems'
-      if: runner.os != 'Windows'
-      shell: bash
-      run: |
-        echo "KONAN_DATA_DIR=${HOME}/.konan" >> $GITHUB_ENV
-
     - name: 'Set up Gradle'
       uses: gradle/actions/setup-gradle@v4
       with:
@@ -43,11 +26,3 @@ runs:
         build-scan-terms-of-use-agree: 'yes'
         cache-disabled: ${{ inputs.gradle-cache-disabled }}
         cache-encryption-key: ${{ inputs.gradle-cache-encryption-key }}
-
-    - name: 'Cache Kotlin/Native'
-      uses: actions/cache@v4
-      with:
-        path: ${{ env.KONAN_DATA_DIR }}
-        key: konan-${{ runner.os }}-gradle-${{ hashFiles('*.gradle.kts', 'gradle/*.versions.toml', 'gradle.properties') }}
-        restore-keys: |
-          konan-${{ runner.os }}-gradle-
