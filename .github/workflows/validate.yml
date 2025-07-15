@@ -16,8 +16,8 @@ jobs:
         with:
           gradle-cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
-      - name: 'Compile K/Wasm/WASI for debugging'
-        run: ./gradlew :testBalloon-framework-abstractions:compileKotlinWasmWasi --info --stacktrace
+      - name: 'Compile K/JS for debugging'
+        run: ./gradlew :testBalloon-framework-abstractions:compileKotlinJs --info --stacktrace
 
       - name: 'Upload build reports'
         if: failure()
