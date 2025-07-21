@@ -20,13 +20,15 @@ class Test internal constructor(
 ) : TestElement(parent, name = name, testConfig = testConfig),
     AbstractTest {
 
-    override fun parameterize(selection: Selection) {
-        super.parameterize(selection)
+    override fun parameterize(selection: Selection, report: TestConfigurationReport) {
+        configureReporting(report) {
+            super.parameterize(selection, report)
 
-        if (testElementIsEnabled && !selection.includes(this)) testElementIsEnabled = false
+            if (testElementIsEnabled && !selection.includes(this)) testElementIsEnabled = false
+        }
     }
 
-    override suspend fun execute(report: TestReport) {
+    override suspend fun execute(report: TestExecutionReport) {
         executeReporting(report) {
             if (testElementIsEnabled) {
                 testConfig.executeWrapped(this) {
@@ -72,7 +74,7 @@ class TestCoroutineScope internal constructor(
 
     val testScope: TestScope
         get() = testScopeOrNull
-            ?: throw IllegalArgumentException("$test is not executing in a TestScope.")
+            ?: throw IllegalStateException("$test is not executing in a TestScope.")
 }
 
 /**

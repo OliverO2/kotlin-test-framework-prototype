@@ -647,7 +647,7 @@ class TestSuiteTests {
         }
     }
 
-    private fun InMemoryTestReport.verifyDisplayNames(expectation: List<String>) {
+    private fun InMemoryTestExecutionReport.verifyDisplayNames(expectation: List<String>) {
         assertContentEquals(
             expectation,
             finishedEvents().map {
@@ -666,7 +666,7 @@ class TestSuiteTests {
     fun additionalReports() = withTestFramework {
         val eventLog = mutableListOf<String>()
 
-        class AdditionalReport(val name: String) : TestReport() {
+        class AdditionalExecutionReport(val name: String) : TestExecutionReport() {
             override suspend fun add(event: TestElementEvent) {
                 eventLog.add("$name: $event${if (!event.element.testElementIsEnabled) " [*]" else ""}")
             }
@@ -676,8 +676,8 @@ class TestSuiteTests {
             override fun toString(): String = "IntentionalFailure()"
         }
 
-        val additionalReportA = AdditionalReport("A")
-        val additionalReportB = AdditionalReport("B")
+        val additionalReportA = AdditionalExecutionReport("A")
+        val additionalReportB = AdditionalExecutionReport("B")
 
         val suite1 by testSuite("suite1", testConfig = TestConfig.report(additionalReportA)) {
             test("test1", testConfig = TestConfig.disable()) {

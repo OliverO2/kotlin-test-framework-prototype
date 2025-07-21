@@ -4,9 +4,11 @@ import de.infix.testBalloon.framework.AbstractTestSuite
 import de.infix.testBalloon.framework.InvokedByGeneratedCode
 import de.infix.testBalloon.framework.TestElement
 import de.infix.testBalloon.framework.TestSession
-import de.infix.testBalloon.framework.internal.integration.IntellijLogTestReport
+import de.infix.testBalloon.framework.internal.integration.IntellijLogTestExecutionReport
+import de.infix.testBalloon.framework.internal.integration.ThrowingTestConfigurationReport
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
+import kotlin.system.exitProcess
 import kotlin.time.Duration
 
 @InvokedByGeneratedCode
@@ -17,11 +19,14 @@ internal actual suspend fun configureAndExecuteTests(suites: Array<AbstractTestS
     // On the JVM, tests will be discovered and executed via JUnit Platform, which means that this function
     // will not be used.
 
-    configureTestsCatching {
-        TestSession.global.parameterize(argumentsBasedElementSelection ?: TestElement.AllInSelection)
+    configureTestsWithExceptionHandling {
+        TestSession.global.parameterize(
+            argumentsBasedElementSelection ?: TestElement.AllInSelection,
+            ThrowingTestConfigurationReport()
+        )
     }.onSuccess {
-        executeTestsCatching {
-            TestSession.global.execute(IntellijLogTestReport())
+        executeTestsWithExceptionHandling {
+            TestSession.global.execute(IntellijLogTestExecutionReport())
         }
     }
 }
@@ -31,4 +36,8 @@ internal actual suspend fun TestScope.runTestAwaitingCompletion(
     action: suspend TestScope.() -> Unit
 ) {
     runTest(timeout = timeout) { action() }
+}
+
+internal actual fun handleFrameworkLevelError(throwable: Throwable) {
+    exitProcess(3)
 }

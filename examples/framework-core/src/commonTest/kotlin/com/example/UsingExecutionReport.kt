@@ -4,7 +4,7 @@ import de.infix.testBalloon.framework.Test
 import de.infix.testBalloon.framework.TestConfig
 import de.infix.testBalloon.framework.TestElement
 import de.infix.testBalloon.framework.TestElementEvent
-import de.infix.testBalloon.framework.TestReport
+import de.infix.testBalloon.framework.TestExecutionReport
 import de.infix.testBalloon.framework.disable
 import de.infix.testBalloon.framework.internal.printlnFixed
 import de.infix.testBalloon.framework.report
@@ -17,7 +17,7 @@ import kotlin.time.Duration.Companion.seconds
 
 // Use a test report to print information about disabled tests.
 
-val UsingReport by testSuite(testConfig = TestConfig.report(DisabledTestsReport())) {
+val UsingReport by testSuite(testConfig = TestConfig.report(DisabledTestsExecutionReport())) {
     test("test1") {
         delay(1.seconds)
     }
@@ -33,7 +33,7 @@ val UsingReport by testSuite(testConfig = TestConfig.report(DisabledTestsReport(
     }
 }
 
-private class DisabledTestsReport : TestReport() {
+private class DisabledTestsExecutionReport : TestExecutionReport() {
     private val rootElement = atomic<TestElement?>(null)
     private val lock = reentrantLock()
     private val disabledTestPaths = mutableListOf<String>() // guarded by lock

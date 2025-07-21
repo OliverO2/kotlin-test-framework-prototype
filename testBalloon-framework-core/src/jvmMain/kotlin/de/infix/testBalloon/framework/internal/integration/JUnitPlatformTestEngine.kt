@@ -4,9 +4,10 @@ import de.infix.testBalloon.framework.AbstractTestSuite
 import de.infix.testBalloon.framework.FailFastException
 import de.infix.testBalloon.framework.Test
 import de.infix.testBalloon.framework.TestCompartment
+import de.infix.testBalloon.framework.TestConfigurationReport
 import de.infix.testBalloon.framework.TestElement
 import de.infix.testBalloon.framework.TestElementEvent
-import de.infix.testBalloon.framework.TestReport
+import de.infix.testBalloon.framework.TestExecutionReport
 import de.infix.testBalloon.framework.TestSession
 import de.infix.testBalloon.framework.TestSuite
 import de.infix.testBalloon.framework.internal.EnvironmentBasedElementSelection
@@ -55,34 +56,55 @@ internal class JUnitPlatformTestEngine : TestEngine {
             return EngineDescriptor(engineUniqueId, "${this::class.qualifiedName}")
         }
 
-        try {
-            val frameworkDiscoveryResult = try {
-                frameworkDiscoveryResultFileClass.getMethod(frameworkDiscoveryResultPropertyGetterName).invoke(null)
-                    as TestFrameworkDiscoveryResult
-            } catch (throwable: Throwable) {
-                throw IllegalArgumentException(
-                    "Could not access the test discovery result.\n" +
-                        "\tPlease ensure that the correct version of the framework's compiler plugin was applied.",
-                    throwable
-                )
-            }
+        var discoveryIssueCount = 0
 
-            topLevelTestSuites = frameworkDiscoveryResult.topLevelTestSuites.toSet()
-
-            TestSession.global.parameterize(
-                EnvironmentBasedElementSelection(System.getenv("TEST_INCLUDE"), System.getenv("TEST_EXCLUDE"))
-            )
-        } catch (throwable: Throwable) {
+        fun reportDiscoveryIssue(throwable: Throwable, vararg additionalMessages: String) {
+            discoveryIssueCount++
             discoveryRequest.discoveryListener.issueEncountered(
                 engineUniqueId,
                 DiscoveryIssue.create(
                     DiscoveryIssue.Severity.ERROR,
                     buildString {
-                        append("Could not configure tests.\n")
+                        for (message in additionalMessages) {
+                            append("${message.prependIndent("\t")}\n")
+                        }
                         append(throwable.stackTraceToString().prependIndent("\t"))
                     }
                 )
             )
+        }
+
+        val frameworkDiscoveryResult = try {
+            frameworkDiscoveryResultFileClass.getMethod(frameworkDiscoveryResultPropertyGetterName).invoke(null)
+                as TestFrameworkDiscoveryResult
+        } catch (throwable: Throwable) {
+            reportDiscoveryIssue(
+                throwable,
+                "Could not access the test discovery result.",
+                "Please ensure that the correct version of the framework's compiler plugin was applied."
+            )
+            null
+        }
+
+        if (frameworkDiscoveryResult != null) {
+            topLevelTestSuites = frameworkDiscoveryResult.topLevelTestSuites.toSet()
+
+            TestSession.global.parameterize(
+                EnvironmentBasedElementSelection(System.getenv("TEST_INCLUDE"), System.getenv("TEST_EXCLUDE")),
+                report = object : TestConfigurationReport() {
+                    override fun add(event: TestElementEvent) {
+                        if (event is TestElementEvent.Finished && event.throwable != null) {
+                            reportDiscoveryIssue(
+                                event.throwable,
+                                "Could not configure ${event.element.testElementPath}"
+                            )
+                        }
+                    }
+                }
+            )
+        }
+
+        if (discoveryIssueCount > 0) {
             return EngineDescriptor(engineUniqueId, "${this::class.qualifiedName}")
         }
 
@@ -109,7 +131,7 @@ internal class JUnitPlatformTestEngine : TestEngine {
             // system due to thread starvation. See https://github.com/Kotlin/kotlinx.coroutines/issues/3983
 
             TestSession.global.execute(
-                report = object : TestReport() {
+                report = object : TestExecutionReport() {
                     // A TestReport relaying each TestElementEvent to the JUnit listener.
 
                     override suspend fun add(event: TestElementEvent) {

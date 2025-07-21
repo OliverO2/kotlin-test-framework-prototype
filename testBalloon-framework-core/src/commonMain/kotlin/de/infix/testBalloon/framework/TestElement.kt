@@ -49,7 +49,7 @@ sealed class TestElement(parent: TestSuite?, name: String, displayName: String =
      *
      * The framework invokes this method for all test elements before creating an execution plan.
      */
-    internal open fun parameterize(selection: Selection) {
+    internal open fun parameterize(selection: Selection, report: TestConfigurationReport) {
         testElementParent?.let { parent ->
             if (!parent.testElementIsEnabled) testElementIsEnabled = false // Inherit a 'disabled' state
         }
@@ -61,13 +61,30 @@ sealed class TestElement(parent: TestSuite?, name: String, displayName: String =
      *
      * For proper reporting, this method is also invoked for disabled elements.
      */
-    internal abstract suspend fun execute(report: TestReport)
+    internal abstract suspend fun execute(report: TestExecutionReport)
+
+    /**
+     * Executes the configuration [action], reporting its [TestElementEvent]s to the [report].
+     */
+    internal fun configureReporting(report: TestConfigurationReport, action: () -> Unit) {
+        val startingEvent = TestElementEvent.Starting(this)
+
+        report.add(startingEvent)
+
+        try {
+            action()
+            report.add(TestElementEvent.Finished(this, startingEvent))
+        } catch (throwable: Throwable) {
+            report.add(TestElementEvent.Finished(this, startingEvent, throwable))
+            if (throwable is FailFastException) throw throwable
+        }
+    }
 
     /**
      * Executes [action], reporting its [TestElementEvent]s to the [report].
      */
-    internal suspend fun executeReporting(report: TestReport, action: suspend () -> Unit) {
-        testConfig.withReportSetup(this) { additionalReports ->
+    internal suspend fun executeReporting(report: TestExecutionReport, action: suspend () -> Unit) {
+        testConfig.withExecutionReportSetup(this) { additionalReports ->
             suspend fun TestElementEvent.Finished.addToReports() {
                 // address reports in reverse order for finish events
                 additionalReports?.reversed()?.forEach { it.add(this) }

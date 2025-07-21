@@ -212,7 +212,7 @@ open class TestSuite internal constructor(
     }
 
     internal fun registerChildElement(childElement: TestElement) {
-        check(
+        require(
             this == suitesInConfigurationScope.firstOrNull() ||
                 ( // TestCompartments and TestSession accept children without being in configuration scope,
                     testElementParent?.testElementParent == null &&
@@ -281,23 +281,25 @@ open class TestSuite internal constructor(
         Test(this, name, testConfig = testConfig, action)
     }
 
-    override fun parameterize(selection: Selection) {
-        inConfigurationScope {
-            content()
-        }
+    override fun parameterize(selection: Selection, report: TestConfigurationReport) {
+        configureReporting(report) {
+            inConfigurationScope {
+                content()
+            }
 
-        super.parameterize(selection)
+            super.parameterize(selection, report)
 
-        testElementChildren.forEach {
-            it.parameterize(selection)
-        }
+            testElementChildren.forEach {
+                it.parameterize(selection, report)
+            }
 
-        if (testElementIsEnabled && testElementChildren.none { it.testElementIsEnabled }) {
-            testElementIsEnabled = false
+            if (testElementIsEnabled && testElementChildren.none { it.testElementIsEnabled }) {
+                testElementIsEnabled = false
+            }
         }
     }
 
-    override suspend fun execute(report: TestReport) {
+    override suspend fun execute(report: TestExecutionReport) {
         executeReporting(report) {
             if (testElementIsEnabled) {
                 testConfig.chainedWith(privateConfiguration).executeWrapped(this) {

@@ -2,6 +2,7 @@ package de.infix.testBalloon.framework
 
 import de.infix.testBalloon.framework.internal.TestFramework
 import de.infix.testBalloon.framework.internal.initializeTestFramework
+import de.infix.testBalloon.framework.internal.integration.ThrowingTestConfigurationReport
 import de.infix.testBalloon.framework.internal.logInfo
 import kotlinx.atomicfu.locks.SynchronizedObject
 import kotlinx.atomicfu.locks.synchronized
@@ -67,13 +68,13 @@ internal suspend fun withTestReport(
     vararg suites: TestSuite,
     selection: TestElement.Selection = TestElement.AllInSelection,
     expectFrameworkFailure: Boolean = false,
-    action: suspend InMemoryTestReport.(frameworkFailure: Throwable?) -> Unit
+    action: suspend InMemoryTestExecutionReport.(frameworkFailure: Throwable?) -> Unit
 ) {
     require(suites.isNotEmpty()) { "At least one suite must be provided" }
 
-    TestSession.global.parameterize(selection)
+    TestSession.global.parameterize(selection, ThrowingTestConfigurationReport())
 
-    val report = InMemoryTestReport()
+    val report = InMemoryTestExecutionReport()
     var frameworkFailure: Throwable? = null
     try {
         TestSession.global.execute(report)
@@ -89,7 +90,7 @@ internal suspend fun withTestReport(
 /**
  * An in-memory test report, collecting [TestElementEvent]s for later examination.
  */
-internal class InMemoryTestReport : TestReport() {
+internal class InMemoryTestExecutionReport : TestExecutionReport() {
     private val allEvents = ConcurrentList<TestElementEvent>()
 
     fun allEvents() = allEvents.elements()

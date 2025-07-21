@@ -3,7 +3,7 @@ package de.infix.testBalloon.framework.internal.integration
 import de.infix.testBalloon.framework.FailFastException
 import de.infix.testBalloon.framework.Test
 import de.infix.testBalloon.framework.TestElementEvent
-import de.infix.testBalloon.framework.TestReport
+import de.infix.testBalloon.framework.TestExecutionReport
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.io.encoding.Base64
@@ -11,9 +11,9 @@ import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.time.ExperimentalTime
 
 /**
- * A [TestReport] in IntelliJ IDEA's IjLog format on stdout or via an [outputEntry] function.
+ * A [TestExecutionReport] in IntelliJ IDEA's IjLog format on stdout or via an [outputEntry] function.
  */
-internal class IntellijLogTestReport(val outputEntry: (String) -> Unit = ::println) : TestReport() {
+internal class IntellijLogTestExecutionReport(val outputEntry: (String) -> Unit = ::println) : TestExecutionReport() {
     private val outputMutex = Mutex()
 
     @OptIn(ExperimentalTime::class)

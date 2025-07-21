@@ -3,7 +3,7 @@ package de.infix.testBalloon.framework.internal
 import de.infix.testBalloon.framework.TestPlatformJsHosted
 import de.infix.testBalloon.framework.testPlatform
 
-private val runsInBrowser: Boolean =
+internal val runsInBrowser: Boolean =
     (testPlatform as? TestPlatformJsHosted)?.runtime == TestPlatformJsHosted.Runtime.BROWSER
 
 actual fun printlnFixed(message: Any?) {

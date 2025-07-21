@@ -62,24 +62,3 @@ internal fun Throwable.logErrorWithStacktrace(headline: String, includeStacktrac
         }
     }
 }
-
-/**
- * Performs the test configuration [action], catching any error and logging it.
- */
-internal inline fun <R> configureTestsCatching(action: () -> R): Result<R> =
-    runCatchingLogging("Could not configure tests.", action)
-
-/**
- * Executes tests in [action], catching any error and logging it.
- */
-internal inline fun <R> executeTestsCatching(action: () -> R): Result<R> =
-    runCatchingLogging("Test framework failure during execution.", action)
-
-/**
- * Runs [action], catching any error and logging it with a [headline].
- */
-private inline fun <R> runCatchingLogging(headline: String, action: () -> R): Result<R> = runCatching {
-    action()
-}.onFailure { throwable ->
-    throwable.logErrorWithStacktrace(headline)
-}

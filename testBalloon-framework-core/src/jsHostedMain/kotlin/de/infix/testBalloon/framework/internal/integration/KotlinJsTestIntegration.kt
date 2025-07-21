@@ -4,7 +4,7 @@ import de.infix.testBalloon.framework.Test
 import de.infix.testBalloon.framework.TestCompartment
 import de.infix.testBalloon.framework.TestElement
 import de.infix.testBalloon.framework.TestElementEvent
-import de.infix.testBalloon.framework.TestReport
+import de.infix.testBalloon.framework.TestExecutionReport
 import de.infix.testBalloon.framework.TestSession
 import de.infix.testBalloon.framework.TestSuite
 import de.infix.testBalloon.framework.internal.logError
@@ -119,8 +119,8 @@ private object TestSessionRelay {
     private fun CoroutineScope.launchedSession(): Job = launch {
         try {
             TestSession.global.execute(
-                report = object : TestReport() {
-                    // A TestReport relaying test results to the corresponding test elements' result channel(s).
+                report = object : TestExecutionReport() {
+                    // A TestExecutionReport relaying test results to the corresponding test elements' result channel(s).
 
                     override suspend fun add(event: TestElementEvent) {
                         if (event.element.testElementIsEnabled && event is TestElementEvent.Finished) {

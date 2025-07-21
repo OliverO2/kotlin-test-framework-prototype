@@ -40,7 +40,7 @@ import kotlin.time.Duration.Companion.seconds
 open class TestConfig internal constructor(
     private val parameterizingAction: ParameterizingAction?,
     private val executionWrappingAction: TestExecutionWrappingAction?,
-    private val reportSetupAction: ReportSetupAction?
+    private val executionReportSetupAction: ExecutionReportSetupAction?
 ) {
     /** Returns a [TestConfig] which combines `this` configuration with a parameterizing action. */
     internal fun parameterizing(nextParameterizingAction: ParameterizingAction): TestConfig = TestConfig(
@@ -53,7 +53,7 @@ open class TestConfig internal constructor(
             nextParameterizingAction
         },
         executionWrappingAction = executionWrappingAction,
-        reportSetupAction = reportSetupAction
+        executionReportSetupAction = executionReportSetupAction
     )
 
     /** Returns a [TestConfig] which combines `this` configuration with an execution-wrapping action. */
@@ -68,20 +68,20 @@ open class TestConfig internal constructor(
         } else {
             innerExecutionWrappingAction
         },
-        reportSetupAction = reportSetupAction
+        executionReportSetupAction = executionReportSetupAction
     )
 
     /** Returns a [TestConfig] which combines `this` configuration with a report setup action. */
-    internal fun reportSetup(nextReportSetupAction: ReportSetupAction): TestConfig = TestConfig(
+    internal fun reportSetup(nextExecutionReportSetupAction: ExecutionReportSetupAction): TestConfig = TestConfig(
         parameterizingAction = parameterizingAction,
         executionWrappingAction = executionWrappingAction,
-        reportSetupAction = if (reportSetupAction != null) {
+        executionReportSetupAction = if (executionReportSetupAction != null) {
             { elementAction ->
-                reportSetupAction(elementAction)
-                nextReportSetupAction(elementAction)
+                executionReportSetupAction(elementAction)
+                nextExecutionReportSetupAction(elementAction)
             }
         } else {
-            nextReportSetupAction
+            nextExecutionReportSetupAction
         }
     )
 
@@ -91,7 +91,7 @@ open class TestConfig internal constructor(
 
         otherConfiguration.parameterizingAction?.let { result = result.parameterizing(it) }
         otherConfiguration.executionWrappingAction?.let { result = result.executionWrapping(it) }
-        otherConfiguration.reportSetupAction?.let { result = result.reportSetup(it) }
+        otherConfiguration.executionReportSetupAction?.let { result = result.reportSetup(it) }
 
         return result
     }
@@ -116,16 +116,16 @@ open class TestConfig internal constructor(
         }
     }
 
-    internal suspend fun withReportSetup(
+    internal suspend fun withExecutionReportSetup(
         testElement: TestElement,
-        reportingAction: suspend (additionalReports: Iterable<TestReport>?) -> Unit
+        executionReportingAction: suspend (additionalReports: Iterable<TestExecutionReport>?) -> Unit
     ) {
-        if (reportSetupAction != null) {
-            reportSetupAction(testElement) {
-                reportingAction(ReportContext.additionalReports())
+        if (executionReportSetupAction != null) {
+            executionReportSetupAction(testElement) {
+                executionReportingAction(ReportContext.additionalReports())
             }
         } else {
-            reportingAction(ReportContext.additionalReports())
+            executionReportingAction(ReportContext.additionalReports())
         }
     }
 
@@ -134,7 +134,8 @@ open class TestConfig internal constructor(
 }
 
 private typealias ParameterizingAction = TestElement.() -> Unit
-private typealias ReportSetupAction = suspend TestElement.(elementAction: suspend TestElement.() -> Unit) -> Unit
+private typealias ExecutionReportSetupAction =
+    suspend TestElement.(elementAction: suspend TestElement.() -> Unit) -> Unit
 
 /**
  * An action wrapping the execution for a [TestElement].
@@ -148,7 +149,8 @@ private typealias ReportSetupAction = suspend TestElement.(elementAction: suspen
  * Requirements for [TestElement]s of type [Test]:
  * - If `elementAction` throws, it is considered a test failure. If [TestExecutionWrappingAction] catches the exception,
  *   it should re-throw, or the test failure will be muted.
- * - [TestExecutionWrappingAction] may throw an exception on its own initiative, which will be considered a test failure.
+ * - [TestExecutionWrappingAction] may throw an exception on its own initiative, which will be considered a test
+ *   failure.
  *
  * Requirements for [TestElement]s of types other than [Test]:
  * - If `elementAction` throws, it is considered a failure of the test framework.
@@ -451,11 +453,11 @@ suspend fun withMainDispatcher(dispatcher: CoroutineDispatcher? = null, action: 
 private val mainDispatcherChanged = atomic(false)
 
 /**
- * Returns a test configuration chaining [this] with a [TestReport] for a test element tree.
+ * Returns a test configuration chaining [this] with a [TestExecutionReport] for a test element tree.
  *
  * The report covers the [TestElement] it is configured for and all of its child elements.
  */
-fun TestConfig.report(report: TestReport): TestConfig = reportSetup { elementAction ->
+fun TestConfig.report(report: TestExecutionReport): TestConfig = reportSetup { elementAction ->
     val testElement = this
     withContext(ReportContext(report)) {
         elementAction(testElement)
@@ -463,15 +465,15 @@ fun TestConfig.report(report: TestReport): TestConfig = reportSetup { elementAct
 }
 
 private class ReportContext private constructor(
-    /** [TestReport]s in definition order. */
-    val additionalReports: List<TestReport>
+    /** [TestExecutionReport]s in definition order. */
+    val additionalReports: List<TestExecutionReport>
 ) : AbstractCoroutineContextElement(Key) {
 
     companion object {
         private val Key = object : CoroutineContext.Key<ReportContext> {}
 
         /** Returns a new [ReportContext], adding [additionalReport] to the current ones. */
-        suspend operator fun invoke(additionalReport: TestReport): ReportContext {
+        suspend operator fun invoke(additionalReport: TestExecutionReport): ReportContext {
             val additionalReports = additionalReports()
             return ReportContext(
                 if (additionalReports != null) {
@@ -482,6 +484,7 @@ private class ReportContext private constructor(
             )
         }
 
-        suspend fun additionalReports(): Iterable<TestReport>? = currentCoroutineContext()[Key]?.additionalReports
+        suspend fun additionalReports(): Iterable<TestExecutionReport>? =
+            currentCoroutineContext()[Key]?.additionalReports
     }
 }

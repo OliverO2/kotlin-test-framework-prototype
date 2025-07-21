@@ -7,6 +7,10 @@ plugins {
 addTestBalloonPluginFromProject(projects.testBalloonCompilerPlugin, projects.testBalloonFrameworkAbstractions)
 
 kotlin {
+    compilerOptions {
+        // freeCompilerArgs.addAll("-P", "plugin:de.infix.testBalloon:debug=true")
+    }
+
     sourceSets {
         commonTest {
             dependencies {

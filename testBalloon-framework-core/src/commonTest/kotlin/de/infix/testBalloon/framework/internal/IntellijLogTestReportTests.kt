@@ -2,7 +2,7 @@ package de.infix.testBalloon.framework.internal
 
 import de.infix.testBalloon.framework.ConcurrentList
 import de.infix.testBalloon.framework.assertContainsInOrder
-import de.infix.testBalloon.framework.internal.integration.IntellijLogTestReport
+import de.infix.testBalloon.framework.internal.integration.IntellijLogTestExecutionReport
 import de.infix.testBalloon.framework.testSuite
 import de.infix.testBalloon.framework.withTestFramework
 import de.infix.testBalloon.framework.withTestReport
@@ -31,7 +31,7 @@ class IntellijLogTestReportTests {
 
         withTestReport(suite) {
             val output = ConcurrentList<String>()
-            val report = IntellijLogTestReport { output.add(it) }
+            val report = IntellijLogTestExecutionReport { output.add(it) }
             allEvents().forEach { report.add(it) }
 
             val timeRegex = Regex("""(?<= (start|end))Time='\d+'""")

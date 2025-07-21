@@ -57,3 +57,36 @@ internal var argumentsBasedElementSelection: TestElement.Selection? = null
  * the Promise before returning.
  */
 internal expect suspend fun TestScope.runTestAwaitingCompletion(timeout: Duration, action: suspend TestScope.() -> Unit)
+
+/**
+ * Executes [action] to configure tests, handling errors at the framework level.
+ *
+ * On failure, this function will attempt to exit the process or throw an exception. However, this may not be
+ * possible on all platforms. It is the invoker's responsibility to return immediately if this function
+ * returns a failure result.
+ */
+internal inline fun <R> configureTestsWithExceptionHandling(action: () -> R): Result<R> = runCatching {
+    action()
+}.onFailure { throwable ->
+    throwable.logErrorWithStacktrace("Could not configure tests.")
+    handleFrameworkLevelError(throwable)
+}
+
+/**
+ * Executes [action] to run tests, handling errors at the framework level.
+ *
+ * On failure, this function will attempt to exit the process or throw an exception. However, this may not be
+ * possible on all platforms. It is the invoker's responsibility to return immediately if this function
+ * returns a failure result.
+ */
+internal inline fun <R> executeTestsWithExceptionHandling(action: () -> R): Result<R> = runCatching {
+    action()
+}.onFailure { throwable ->
+    throwable.logErrorWithStacktrace("Test framework failure during execution.")
+    handleFrameworkLevelError(throwable)
+}
+
+/**
+ * Handles a framework-level error, aborting the execution with a failure status if possible.
+ */
+internal expect fun handleFrameworkLevelError(throwable: Throwable)
