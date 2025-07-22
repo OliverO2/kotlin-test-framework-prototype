@@ -2,21 +2,6 @@
 
 === Limitations
 
-==== Incremental compilation causes failing tests
-
-When running tests, you may see the error
-
-* _There were failing tests. See the report at: ..._
-
-with the test report showing a stack trace with an original failure like these:
-
-* _The module has been initialized with a TestSession before. There must be only one TestSession per compilation module._
-* _The test framework was not initialized. A TestSession must exist before creating any top-level TestSuite._
-
-This is caused by the TestBalloon compiler plugin's current inability to support incremental compilation. The workaround is to https://kotlinlang.org/docs/gradle-compilation-and-caches.html#incremental-compilation[turn off incremental compilation] in these cases (e.g. `gradlew -Pkotlin.incremental=false -Pkotlin.incremental.js=false ...`).
-
-Running tests with the first build (like it is done on CI) always works.
-
 ==== Test reporting
 
 * The IDE does not report more than one level of suite nesting for tests using the Kotlin/JS infra (JS/Browser, JS/Node, Wasm/JS/Browser). While all suites appear, they are not properly nested, because the names of intermediate levels are cut out on their way from the test framework to the IDE.
