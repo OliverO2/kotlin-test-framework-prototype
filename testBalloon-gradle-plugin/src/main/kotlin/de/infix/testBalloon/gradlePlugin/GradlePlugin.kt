@@ -80,15 +80,13 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
                 isScanForTestClasses = false
 
                 // Pass TEST_* environment variables from the Gradle invocation to the test JVM.
-                for ((name, value) in System.getenv()) {
-                    if (name.startsWith("TEST_")) environment(name, value)
+                for ((name, value) in providers.environmentVariablesPrefixedBy("TEST_").get()) {
+                    environment(name, value)
                 }
 
                 // Pass TEST_* system properties as environment variables. NOTE: Doesn't help with K/Native.
-                for ((name, value) in System.getProperties()) {
-                    if (name is String && name.startsWith("TEST_")) {
-                        environment(name, value)
-                    }
+                for ((name, value) in providers.systemPropertiesPrefixedBy("TEST_").get()) {
+                    environment(name, value)
                 }
             }
         }
