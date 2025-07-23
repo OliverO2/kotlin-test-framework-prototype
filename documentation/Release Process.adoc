@@ -28,7 +28,7 @@ Each TestBallon version should produce releases for the most recent stable Kotli
 . Run CI tests via the IntelliJ IDEA run configuration `ciTests`.
 . Check in the integration test project that no newer Kotlin artifacts sneak in:
 ** `bash -c "cd integration-test/build/scenarioProjects/incremental-compilation-testBalloon; ./gradlew dependencies"`
-** Search for (regex) `kotlin-stdlib:(?!(.*)2.2.0)`
+** Search for (regex) `kotlin-stdlib:(?!(.*)2\.2\.0([^\d]*)$)`
 ** `bash -c "cd integration-test/build/scenarioProjects/incremental-compilation-testBalloon; ./gradlew buildEnvironment"`
 . Commit changes
 . Tag the release commit like `0.4.0-K2.2.0`.
