@@ -6,6 +6,7 @@ import de.infix.testBalloon.framework.disable
 import de.infix.testBalloon.framework.testPlatform
 import de.infix.testBalloon.framework.testScope
 import de.infix.testBalloon.framework.testSuite
+import kotlinx.datetime.Clock
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.collections.buildList
@@ -18,9 +19,7 @@ import kotlin.io.path.div
 import kotlin.io.path.exists
 import kotlin.io.path.moveTo
 import kotlin.io.path.pathString
-import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
-import kotlin.time.ExperimentalTime
 
 val IncrementalCompilationTests by testSuite(
     testConfig = TestConfig.testScope(isEnabled = true, timeout = 12.minutes)
@@ -235,6 +234,5 @@ private fun log(message: String) {
         logFile.appendText("\n––– Session Starting –––\n")
     }
 
-    @OptIn(ExperimentalTime::class)
     logFile.appendText("${Clock.System.now()} [${testPlatform.threadId()}] $message\n")
 }

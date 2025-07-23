@@ -24,6 +24,7 @@ kotlin {
                 implementation(kotlin("test"))
                 api(libs.org.jetbrains.kotlinx.coroutines.core)
                 api(libs.org.jetbrains.kotlinx.coroutines.test)
+                implementation(libs.org.jetbrains.kotlinx.datetime)
                 implementation(libs.org.jetbrains.kotlinx.atomicfu)
             }
         }

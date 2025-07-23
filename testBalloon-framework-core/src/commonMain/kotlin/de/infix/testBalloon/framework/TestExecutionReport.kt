@@ -1,7 +1,6 @@
 package de.infix.testBalloon.framework
 
-import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
+import kotlinx.datetime.Clock
 
 /**
  * A report containing a sequence of test events, each of which will be [add]ed during configuration.
@@ -27,7 +26,6 @@ abstract class TestExecutionReport {
  * An event occurring as part of a test element's execution.
  */
 sealed class TestElementEvent(val element: TestElement) {
-    @OptIn(ExperimentalTime::class)
     val instant = Clock.System.now()
 
     class Starting(element: TestElement) : TestElementEvent(element)

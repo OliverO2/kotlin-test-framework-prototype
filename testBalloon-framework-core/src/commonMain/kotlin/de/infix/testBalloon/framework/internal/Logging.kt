@@ -1,8 +1,7 @@
 package de.infix.testBalloon.framework.internal
 
 import de.infix.testBalloon.framework.testPlatform
-import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
+import kotlinx.datetime.Clock
 
 enum class LogLevel { DEBUG, INFO, ERROR }
 
@@ -22,7 +21,6 @@ internal fun logError(message: () -> String) {
 
 internal fun log(messageLevel: LogLevel, message: () -> String) {
     if (messageLevel >= testFrameworkLogLevel) {
-        @OptIn(ExperimentalTime::class)
         printlnFixed("${Clock.System.now()} [${testPlatform.threadId()}] ${message()}")
     }
 }

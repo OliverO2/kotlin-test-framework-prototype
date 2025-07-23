@@ -23,10 +23,7 @@ io-kotest = "5.9.1"
 ##     ⬆ = "6.0.0.M5"
 
 # https://github.com/JetBrains/kotlin/releases
-org-jetbrains-kotlin = "2.1.20"
-##                ⬆ = "2.1.21-RC"
-##                ⬆ = "2.1.21-RC2"
-##                ⬆ = "2.1.21"
+org-jetbrains-kotlin = "2.1.0"
 ##                ⬆ = "2.2.0-Beta1"
 ##                ⬆ = "2.2.0-Beta2"
 ##                ⬆ = "2.2.0-RC"
@@ -82,6 +79,9 @@ org-jetbrains-kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlin
 org-jetbrains-kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "org-jetbrains-kotlinx-coroutines" }
 org-jetbrains-kotlinx-coroutines-debug = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-debug", version.ref = "org-jetbrains-kotlinx-coroutines" }
 org-jetbrains-kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "org-jetbrains-kotlinx-coroutines" }
+
+# https://github.com/Kotlin/kotlinx-datetime/blob/master/CHANGELOG.md
+org-jetbrains-kotlinx-datetime = "org.jetbrains.kotlinx:kotlinx-datetime:0.6.2"
 
 org-jmailen-kotlinter-gradle-plugin = { module = "org.jmailen.kotlinter:org.jmailen.kotlinter.gradle.plugin", version.ref = "org-jmailen-kotlinter" }
 
