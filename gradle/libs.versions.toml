@@ -23,13 +23,9 @@ io-kotest = "5.9.1"
 ##     ⬆ = "6.0.0.M5"
 
 # https://github.com/JetBrains/kotlin/releases
-org-jetbrains-kotlin = "2.2.20-Beta1"
-##                ⬆ = "2.2.20-Beta1-32"
-##                ⬆ = "2.2.20-Beta1-33"
-##                ⬆ = "2.2.20-Beta1-41"
-##                ⬆ = "2.2.20-Beta2-1"
-##                ⬆ = "2.2.20-Beta2-3"
-##                ⬆ = "2.2.20-Beta2-5"
+org-jetbrains-kotlin = "2.2.0"
+##                ⬆ = "2.2.10-RC"
+##                ⬆ = "2.2.20-Beta1"
 
 # https://github.com/Kotlin/dokka/releases
 org-jetbrains-kotlin-dokka = "2.0.0"
@@ -45,7 +41,9 @@ org-jmailen-kotlinter = "5.0.2"
 
 # https://github.com/junit-team/junit5/releases
 org-junit-platform = "1.13.3"
+##              ⬆ = "1.13.4"
 ##              ⬆ = "6.0.0-M1"
+##              ⬆ = "6.0.0-M2"
 
 [libraries]
 
