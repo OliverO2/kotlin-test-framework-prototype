@@ -3,8 +3,6 @@ package buildLogic
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.tasks.testing.Test
-import org.gradle.kotlin.dsl.dependencies
-import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.dsl.KotlinBaseExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.NATIVE_COMPILER_PLUGIN_CLASSPATH_CONFIGURATION_NAME
@@ -21,7 +19,7 @@ import kotlin.io.path.writeText
  * This enables the project's compiler plugin without loading it from a repository.
  */
 fun Project.addTestBalloonPluginFromProject(compilerPluginDependency: Dependency, abstractionsDependency: Dependency) {
-    dependencies {
+    with(dependencies) {
         add(PLUGIN_CLASSPATH_CONFIGURATION_NAME, compilerPluginDependency)
         add(NATIVE_COMPILER_PLUGIN_CLASSPATH_CONFIGURATION_NAME, compilerPluginDependency)
         // WORKAROUND https://youtrack.jetbrains.com/issue/KT-53477 – KGP misses transitive compiler plugin dependencies
@@ -62,7 +60,7 @@ fun Project.addTestBalloonPluginFromProject(compilerPluginDependency: Dependency
         }
     }
 
-    tasks.withType<Test>().configureEach {
+    tasks.withType(Test::class.java).configureEach {
         // https://docs.gradle.org/current/userguide/java_testing.html
         useJUnitPlatform()
 
