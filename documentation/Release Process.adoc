@@ -1,0 +1,47 @@
+:icons: font
+
+=== Release Process
+
+==== Choose Kotlin versions
+
+Each TestBallon version should produce releases for the most recent stable Kotlin versions, plus the most recent EAP version. Those versions are listed at https://kotlinlang.org/docs/home.html[Kotlin Docs] under _What's new in Kotlin_.
+
+==== Prepare a release branch for a Kotlin version
+
+. For each Kotlin version, choose a branch under `releases`, like `releases/0.4.0-K2.2.0`, where `0.4.0` is the TestBalloon version and `2.2.0` is the Kotlin version.
+. Prepare the release branch from `main` or a previous release branch.
+. Check out the release branch.
+. Change the version in `gradle.properties`, like `version=0.4.0-K2.2.0-SNAPSHOT`.
+. Adapt versions in `gradle/libs.versions.toml`.
+. Make necessary source code changes.
+. Update package lock files:
+.. Run `./gradlew clean`
+.. Delete lock files
+*** `kotlin-js-store/package-lock.json`
+*** `kotlin-js-store/wasm/package-lock.json`
+.. Recreate lock files:
++
+[source,bash]
+----
+./gradlew kotlinUpgradePackageLock kotlinWasmUpgradePackageLock
+----
+. Run CI tests via the IntelliJ IDEA run configuration `ciTests`.
+. Check in the integration test project that no newer Kotlin artifacts sneak in:
+** `bash -c "cd integration-test/build/scenarioProjects/incremental-compilation-testBalloon; ./gradlew dependencies"`
+** Search for (regex) `kotlin-stdlib:(?!(.*)2\.2\.0([^\d]*)$)`
+** `bash -c "cd integration-test/build/scenarioProjects/incremental-compilation-testBalloon; ./gradlew buildEnvironment"`
+. Commit changes
+. Tag the release commit like `0.4.0-K2.2.0`.
+. Push commits to GitHub.
+
+==== Release on GitHub
+
+. Wait for CI validation.
+. https://github.com/infix-de/testBalloon/releases/new[Create a new release], selecting
+** The current release tag, and
+** The previous release tag for comparison.
+. Generate release notes.
+. Adapt release notes.
+. Adapt the comparison link as necessary.
+. Check or clear _Set as a pre-release_ and _Set as the latest release_.
+. Publish the release.
