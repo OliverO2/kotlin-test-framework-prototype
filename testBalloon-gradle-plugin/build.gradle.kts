@@ -3,6 +3,8 @@ import buildLogic.libraryFromCatalog
 plugins {
     id("buildLogic.jvm")
     id("buildLogic.publishing-jvm")
+    alias(libs.plugins.org.jetbrains.kotlin.sam.with.receiver)
+    alias(libs.plugins.org.jetbrains.kotlin.assignment)
     alias(libs.plugins.com.github.gmazzo.buildconfig)
     `java-gradle-plugin`
 }
@@ -11,6 +13,14 @@ description = "Gradle plugin for the TestBalloon framework"
 
 dependencies {
     implementation(kotlin("gradle-plugin-api"))
+}
+
+samWithReceiver {
+    annotation(HasImplicitReceiver::class.qualifiedName!!)
+}
+
+assignment {
+    annotation(SupportsKotlinAssignmentOverloading::class.qualifiedName!!)
 }
 
 buildConfig {

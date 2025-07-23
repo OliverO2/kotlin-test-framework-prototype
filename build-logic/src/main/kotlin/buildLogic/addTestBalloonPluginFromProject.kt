@@ -54,13 +54,13 @@ fun Project.addTestBalloonPluginFromProject(compilerPluginDependency: Dependency
         }
     }
 
-    tasks.configureEach {
-        if (this is KotlinCompilationTask<*> && name.contains("Test")) {
+    tasks.withType(KotlinCompilationTask::class.java) {
+        if (name.contains("Test")) {
             dependsOn(generateTestBalloonInitializationTask)
         }
     }
 
-    tasks.withType(Test::class.java).configureEach {
+    tasks.withType(Test::class.java) {
         // https://docs.gradle.org/current/userguide/java_testing.html
         useJUnitPlatform()
 

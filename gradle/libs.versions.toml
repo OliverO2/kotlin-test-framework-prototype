@@ -95,7 +95,11 @@ com-github-gmazzo-buildconfig = "com.github.gmazzo.buildconfig:5.6.7"
 
 com-vanniktech-maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "com-vanniktech-maven-publish" }
 
+org-jetbrains-kotlin-assignment = { id = "org.jetbrains.kotlin.plugin.assignment", version.ref = "org-jetbrains-kotlin" }
+
 org-jetbrains-kotlin-atomicfu = { id = "org.jetbrains.kotlin.plugin.atomicfu", version.ref = "org-jetbrains-kotlin" }
+
+org-jetbrains-kotlin-sam-with-receiver = { id = "org.jetbrains.kotlin.plugin.sam.with.receiver", version.ref = "org-jetbrains-kotlin" }
 
 org-jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "org-jetbrains-kotlin" }
 

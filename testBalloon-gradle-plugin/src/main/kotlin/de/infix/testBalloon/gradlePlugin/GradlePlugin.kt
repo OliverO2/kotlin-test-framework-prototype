@@ -21,15 +21,14 @@ import kotlin.io.path.writeText
 class GradlePlugin : KotlinCompilerPluginSupportPlugin {
     override fun apply(target: Project): Unit = with(target) {
         // WORKAROUND https://youtrack.jetbrains.com/issue/KT-53477 – KGP misses transitive compiler plugin dependencies
-        configurations.configureEach { configuration ->
-            if (configuration.name == "kotlinNativeCompilerPluginClasspath") {
-                dependencies.add(
-                    configuration.name,
+        configurations.named("kotlinNativeCompilerPluginClasspath") {
+            dependencies.add(
+                project.dependencies.create(
                     with(BuildConfig) {
                         "$PROJECT_GROUP_ID:$PROJECT_ABSTRACTIONS_ARTIFACT_ID:$PROJECT_VERSION"
                     }
                 )
-            }
+            )
         }
 
         extensions.create("testBalloon", GradleExtension::class.java)
@@ -37,17 +36,17 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
         val testSourceSetNames = setOf("test", KotlinSourceSet.COMMON_TEST_SOURCE_SET_NAME)
         val generatedCommonTestDir = layout.buildDirectory.dir("generated/testBalloon/src/commonTest")
 
-        extensions.configure<KotlinBaseExtension>("kotlin") { kotlin ->
-            kotlin.sourceSets.configureEach { sourceSet ->
-                if (sourceSet.name in testSourceSetNames) {
-                    sourceSet.kotlin.srcDir(generatedCommonTestDir)
+        extensions.configure<KotlinBaseExtension>("kotlin") {
+            sourceSets.configureEach {
+                if (name in testSourceSetNames) {
+                    kotlin.srcDir(generatedCommonTestDir)
                 }
             }
         }
 
-        val generateTestBalloonInitializationTask = tasks.register("generateTestBalloonInitialization") { task ->
-            task.outputs.dir(generatedCommonTestDir)
-            task.doLast {
+        val generateTestBalloonInitializationTask = tasks.register("generateTestBalloonInitialization") {
+            outputs.dir(generatedCommonTestDir)
+            doLast {
                 val directory = Path("${generatedCommonTestDir.get()}/kotlin")
                 check(directory.exists() || directory.toFile().mkdirs()) { "Could not create directory '$directory'" }
                 with(BuildConfig) {
@@ -64,38 +63,36 @@ class GradlePlugin : KotlinCompilerPluginSupportPlugin {
             }
         }
 
-        tasks.configureEach { task ->
-            if (task is KotlinCompilationTask<*> && task.name.contains("Test")) {
-                task.dependsOn(generateTestBalloonInitializationTask)
+        tasks.withType(KotlinCompilationTask::class.java) {
+            if (name.contains("Test")) {
+                dependsOn(generateTestBalloonInitializationTask)
             }
         }
 
-        tasks.withType(Test::class.java).configureEach { testTask ->
-            with(testTask) {
-                // https://docs.gradle.org/current/userguide/java_testing.html
-                useJUnitPlatform()
+        tasks.withType(Test::class.java) {
+            // https://docs.gradle.org/current/userguide/java_testing.html
+            useJUnitPlatform()
 
-                // Ask Gradle to skip scanning for test classes. We don't need it as our compiler plugin already
-                // knows. Does this make a difference? I don't know.
-                isScanForTestClasses = false
+            // Ask Gradle to skip scanning for test classes. We don't need it as our compiler plugin already
+            // knows. Does this make a difference? I don't know.
+            isScanForTestClasses = false
 
-                // Pass TEST_* environment variables from the Gradle invocation to the test JVM.
-                for ((name, value) in providers.environmentVariablesPrefixedBy("TEST_").get()) {
-                    environment(name, value)
-                }
+            // Pass TEST_* environment variables from the Gradle invocation to the test JVM.
+            for ((name, value) in providers.environmentVariablesPrefixedBy("TEST_").get()) {
+                environment(name, value)
+            }
 
-                // Pass TEST_* system properties as environment variables. NOTE: Doesn't help with K/Native.
-                for ((name, value) in providers.systemPropertiesPrefixedBy("TEST_").get()) {
-                    environment(name, value)
-                }
+            // Pass TEST_* system properties as environment variables. NOTE: Doesn't help with K/Native.
+            for ((name, value) in providers.systemPropertiesPrefixedBy("TEST_").get()) {
+                environment(name, value)
             }
         }
 
         val testRuntimeOnlyConfigurations = setOf("testRuntimeOnly", "jvmTestRuntimeOnly")
 
-        configurations.configureEach { configuration ->
-            if (configuration.name in testRuntimeOnlyConfigurations) {
-                configuration.dependencies.add(project.dependencies.create(BuildConfig.PROJECT_JUNIT_PLATFORM_LAUNCHER))
+        configurations.configureEach {
+            if (name in testRuntimeOnlyConfigurations) {
+                dependencies.add(project.dependencies.create(BuildConfig.PROJECT_JUNIT_PLATFORM_LAUNCHER))
             }
         }
     }
