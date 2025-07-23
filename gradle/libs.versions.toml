@@ -23,7 +23,16 @@ io-kotest = "5.9.1"
 ##     ⬆ = "6.0.0.M5"
 
 # https://github.com/JetBrains/kotlin/releases
-org-jetbrains-kotlin = "2.2.0"
+org-jetbrains-kotlin = "2.1.20"
+##                ⬆ = "2.1.21-RC"
+##                ⬆ = "2.1.21-RC2"
+##                ⬆ = "2.1.21"
+##                ⬆ = "2.2.0-Beta1"
+##                ⬆ = "2.2.0-Beta2"
+##                ⬆ = "2.2.0-RC"
+##                ⬆ = "2.2.0-RC2"
+##                ⬆ = "2.2.0-RC3"
+##                ⬆ = "2.2.0"
 ##                ⬆ = "2.2.10-RC"
 ##                ⬆ = "2.2.20-Beta1"
 
@@ -52,7 +61,7 @@ com-gradleup-compat-patrouille-gradle-plugin = { module = "com.gradleup.compat.p
 com-vanniktech-maven-publish-gradle-plugin = { module = "com.vanniktech:gradle-maven-publish-plugin", version.ref = "com-vanniktech-maven-publish" }
 
 # https://github.com/ZacSweers/kotlin-compile-testing/releases
-dev-zacsweers-kctfork = "dev.zacsweers.kctfork:core:0.8.0"
+dev-zacsweers-kctfork = "dev.zacsweers.kctfork:core:0.7.1"
 
 # https://github.com/kotest/kotest/releases
 io-kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "io-kotest" }
@@ -67,7 +76,7 @@ org-jetbrains-kotlin-dokka-gradle-plugin = { module = "org.jetbrains.dokka:dokka
 org-jetbrains-kotlinx-kover-gradle-plugin = { module = "org.jetbrains.kotlinx:kover-gradle-plugin", version.ref = "org-jetbrains-kotlinx-kover" }
 
 # https://github.com/Kotlin/kotlinx-atomicfu/releases
-org-jetbrains-kotlinx-atomicfu = "org.jetbrains.kotlinx:atomicfu:0.29.0"
+org-jetbrains-kotlinx-atomicfu = "org.jetbrains.kotlinx:atomicfu:0.27.0"
 
 org-jetbrains-kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "org-jetbrains-kotlinx-coroutines" }
 org-jetbrains-kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "org-jetbrains-kotlinx-coroutines" }

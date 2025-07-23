@@ -83,7 +83,6 @@ private class TestScenario(private val parentTestSuite: TestSuite, private val p
     private val npmPackageLockTasks = parentTestSuite.testFixture {
         buildList {
             if (taskNames().any { it.startsWith("js") }) add("kotlinUpgradePackageLock")
-            if (taskNames().any { it.startsWith("wasmJs") }) add("kotlinWasmUpgradePackageLock")
         }.toTypedArray()
     }
 

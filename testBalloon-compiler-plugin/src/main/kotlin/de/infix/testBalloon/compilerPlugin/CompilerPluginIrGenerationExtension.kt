@@ -27,6 +27,7 @@ import org.jetbrains.kotlin.incremental.components.ScopeKind
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
+import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
 import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.IrSingleStatementBuilder
@@ -341,8 +342,8 @@ private class ModuleTransformer(
         val primaryConstructor = irClass.primaryConstructor ?: return
         val superClassConstructorCall =
             primaryConstructor.body?.statements?.firstOrNull() as IrDelegatingConstructorCall? ?: return
-        val valueParameters = superClassConstructorCall.symbol.owner.parameters
-        val valueArguments = superClassConstructorCall.arguments
+        val valueParameters = superClassConstructorCall.symbol.owner.valueParameters
+        val valueArguments = superClassConstructorCall.valueArguments
 
         val nameValueArgumentsToAdd = nameValueArgumentsToAdd(
             mapOf(
@@ -378,11 +379,11 @@ private class ModuleTransformer(
                             originalCall.endOffset,
                             originalCall.type,
                             originalCall.symbol,
-                            originalCall.typeArguments.size
+                            originalCall.typeArgumentsCount
                         ).apply {
                             copyTypeAndValueArgumentsFrom(originalCall)
                             nameValueArgumentsToAdd.forEach { (index, value) ->
-                                arguments[index] = irString(value)
+                                putValueArgument(index, irString(value))
                                 if (configuration.debugEnabled) {
                                     reportDebug(
                                         "${irClass.fqName()}: Setting parameter '${valueParameters[index].name}'" +
@@ -409,8 +410,8 @@ private class ModuleTransformer(
         initializerCallFunction: IrSimpleFunction
     ) {
         val irProperty = this
-        val valueParameters = initializerCallFunction.parameters
-        val valueArguments = initializerCall.arguments
+        val valueParameters = initializerCallFunction.valueParameters
+        val valueArguments = initializerCall.valueArguments
 
         val nameValueArgumentsToAdd = nameValueArgumentsToAdd(
             mapOf(
@@ -444,7 +445,7 @@ private class ModuleTransformer(
                         irCall(originalCall.symbol).apply {
                             copyTypeAndValueArgumentsFrom(originalCall)
                             nameValueArgumentsToAdd.forEach { (index, value) ->
-                                arguments[index] = irString(value)
+                                putValueArgument(index, irString(value))
                                 if (configuration.debugEnabled) {
                                     reportDebug(
                                         "${irProperty.fqName()}: Setting parameter '${valueParameters[index].name}'" +
@@ -474,10 +475,8 @@ private class ModuleTransformer(
     ): Map<Int, String> = valueParameters.mapNotNull { valueParameter ->
         generatedValuesByAnnotation.firstNotNullOfOrNull { (annotationSymbol, value) ->
             // Annotated parameters with a missing value argument only.
-            if (valueParameter.hasAnnotation(annotationSymbol) &&
-                valueArguments[valueParameter.indexInParameters] == null
-            ) {
-                Pair(valueParameter.indexInParameters, value())
+            if (valueParameter.hasAnnotation(annotationSymbol) && valueArguments[valueParameter.index] == null) {
+                Pair(valueParameter.index, value())
             } else {
                 null
             }
@@ -650,7 +649,7 @@ private class ModuleTransformer(
             val irSuitesVararg: List<IrExpression> = discoveredSuites.map { discoveredSuite ->
                 discoveredSuite.valueExpression.invoke(this@irArrayOfRootSuites)
             }
-            arguments[0] = irVararg(irElementType, irSuitesVararg)
+            putValueArgument(0, irVararg(irElementType, irSuitesVararg))
         }
     }
 
@@ -668,7 +667,7 @@ private class ModuleTransformer(
 
         return irCall(irConstructor).apply {
             irValues.forEachIndexed { index, irValue ->
-                arguments[index] = irValue ?: irNull()
+                putValueArgument(index, irValue ?: irNull())
             }
         }
     }
@@ -730,7 +729,7 @@ private fun IrBuilderWithScope.irSimpleFunctionCall(
     vararg irValues: IrExpression?
 ) = irCall(irFunctionSymbol).apply {
     irValues.forEachIndexed { index, irValue ->
-        arguments[index] = irValue ?: irNull()
+        putValueArgument(index, irValue ?: irNull())
     }
 }
 
