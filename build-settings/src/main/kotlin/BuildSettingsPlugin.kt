@@ -3,6 +3,8 @@ import org.gradle.api.artifacts.dsl.RepositoryHandler
 import org.gradle.api.initialization.Settings
 import org.gradle.kotlin.dsl.refreshVersions
 import java.net.URI
+import kotlin.io.path.Path
+import kotlin.io.path.invariantSeparatorsPathString
 
 @Suppress("unused")
 class BuildSettingsPlugin : Plugin<Settings> {
@@ -46,5 +48,13 @@ class BuildSettingsPlugin : Plugin<Settings> {
         }
     }
 
-    private fun uri(path: String) = URI("file://$path")
+    private fun uri(pathOrUri: String) = URI(
+        if (pathOrUri.matches(uriSchemeRegex)) {
+            pathOrUri
+        } else {
+            "file://${Path(pathOrUri).invariantSeparatorsPathString}"
+        }
+    )
+
+    private val uriSchemeRegex = Regex("""^\w+://.*""")
 }
