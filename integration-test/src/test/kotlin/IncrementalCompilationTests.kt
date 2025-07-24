@@ -53,9 +53,9 @@ private fun TestSuite.testScenario(
     testConfig: TestConfig = TestConfig,
     action: TestScenario.() -> Unit
 ) = testSuite(scenarioName, displayName = "scenario: $scenarioName", testConfig) {
-    val commonTemplateDirectory = Path("build/scenarioTemplates/common")
-    val scenarioTemplateDirectory = Path("build/scenarioTemplates/$scenarioName")
-    val projectDirectory = Path("build/scenarioProjects/$scenarioName")
+    val commonTemplateDirectory = Path("build") / "scenarioTemplates" / "common"
+    val scenarioTemplateDirectory = Path("build") / "scenarioTemplates" / scenarioName
+    val projectDirectory = Path("build") / "scenarioProjects" / scenarioName
 
     @OptIn(ExperimentalPathApi::class)
     aroundAll { testSuiteAction ->
@@ -71,11 +71,15 @@ private fun TestSuite.testScenario(
 }
 
 private class TestScenario(private val parentTestSuite: TestSuite, private val projectDirectory: Path) {
-    private val commonTestSourceDirectory = projectDirectory / "src/commonTest"
+    private val commonTestSourceDirectory = projectDirectory / "src" / "commonTest"
     private val enabledSourcesDirectory = commonTestSourceDirectory / "kotlin"
     private val disabledSourcesDirectory = commonTestSourceDirectory / "disabled"
 
     private val taskNames = parentTestSuite.testFixture {
+        // Invoking `gradlew --version` does nothing meaningful, but it does trigger a Gradle distribution
+        // download if necessary. This ensures that the download info on stdout does not interfere with the
+        // output of `gradlew listTests` we are looking for.
+        gradleExecution(projectDirectory, "--version").checked()
         gradleExecution(projectDirectory, "listTests", "--quiet").checkedStdout().lines()
     }
 
@@ -169,11 +173,13 @@ private class TestScenario(private val parentTestSuite: TestSuite, private val p
 private fun List<String>.asIndentedText(indent: String = "\t") = joinToString(prefix = indent, separator = "\n$indent")
 
 private fun gradleExecution(projectDirectory: Path, vararg arguments: String): Execution = execution(
-    "${projectDirectory.pathString}/gradlew",
+    (projectDirectory / (if (runsOnWindows) "gradlew.bat" else "gradlew")).pathString,
     "-p",
     projectDirectory.pathString,
     *arguments
 )
+
+private val runsOnWindows = System.getProperty("os.name").startsWith("Windows", ignoreCase = true)
 
 private fun execution(vararg arguments: String): Execution {
     val process = ProcessBuilder(*arguments).also {
@@ -222,7 +228,7 @@ private data class Execution(val arguments: List<String>, val exitCode: Int, val
 }
 
 private const val LOG_ENABLED = true
-private val logDirectory = Path("build/reports").also { it.toFile().mkdirs() }
+private val logDirectory = (Path("build") / "reports").also { it.toFile().mkdirs() }
 private val logFile = (logDirectory / "TestScenario.log").toFile()
 private val logInitialized = AtomicBoolean(false)
 
