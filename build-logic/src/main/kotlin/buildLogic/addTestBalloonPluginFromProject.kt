@@ -3,8 +3,8 @@ package buildLogic
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.tasks.testing.Test
-import org.jetbrains.kotlin.gradle.dsl.KotlinBaseExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
+import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetContainer
 import org.jetbrains.kotlin.gradle.plugin.NATIVE_COMPILER_PLUGIN_CLASSPATH_CONFIGURATION_NAME
 import org.jetbrains.kotlin.gradle.plugin.PLUGIN_CLASSPATH_CONFIGURATION_NAME
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
@@ -29,7 +29,7 @@ fun Project.addTestBalloonPluginFromProject(compilerPluginDependency: Dependency
     val testSourceSetNames = setOf("test", KotlinSourceSet.COMMON_TEST_SOURCE_SET_NAME)
     val generatedCommonTestDir = layout.buildDirectory.dir("generated/testBalloon/src/commonTest")
 
-    extensions.configure<KotlinBaseExtension>("kotlin") {
+    extensions.configure<KotlinSourceSetContainer>("kotlin") {
         sourceSets.configureEach {
             if (name in testSourceSetNames) {
                 kotlin.srcDir(generatedCommonTestDir)
