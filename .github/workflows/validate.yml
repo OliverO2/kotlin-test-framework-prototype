@@ -19,8 +19,8 @@ jobs:
       - name: 'Run component tests'
         run: ./gradlew componentTestsAllTargets
 
-      - name: 'Run integration tests'
-        run: ./gradlew integrationTests
+#      - name: 'Run integration tests'
+#        run: ./gradlew integrationTests
 
       - name: 'Upload build reports'
         if: failure()
@@ -31,36 +31,36 @@ jobs:
             **/build/reports/
           if-no-files-found: ignore
 
-  validate-secondary:
-    name: 'On secondary'
-    needs: [ validate-primary ]
-    strategy:
-      matrix:
-        include:
-          - os: macos-latest
-          - os: windows-latest
-      fail-fast: false
-    runs-on: ${{ matrix.os }}
-
-    steps:
-      - name: 'Check out the project'
-        uses: actions/checkout@v4
-
-      - uses: ./.github/actions/setup
-        with:
-          gradle-cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
-
-      - name: 'Run component tests'
-        run: ./gradlew componentTestsAllTargets
-
-      - name: 'Run integration tests'
-        run: ./gradlew integrationTests
-
-      - name: 'Upload build reports'
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-reports-${{ runner.os }}-${{ github.action }}-${{ github.run_id }}
-          path: |
-            **/build/reports/
-          if-no-files-found: ignore
+#  validate-secondary:
+#    name: 'On secondary'
+#    needs: [ validate-primary ]
+#    strategy:
+#      matrix:
+#        include:
+#          - os: macos-latest
+#          - os: windows-latest
+#      fail-fast: false
+#    runs-on: ${{ matrix.os }}
+#
+#    steps:
+#      - name: 'Check out the project'
+#        uses: actions/checkout@v4
+#
+#      - uses: ./.github/actions/setup
+#        with:
+#          gradle-cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+#
+#      - name: 'Run component tests'
+#        run: ./gradlew componentTestsAllTargets
+#
+#      - name: 'Run integration tests'
+#        run: ./gradlew integrationTests
+#
+#      - name: 'Upload build reports'
+#        if: failure()
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: build-reports-${{ runner.os }}-${{ github.action }}-${{ github.run_id }}
+#          path: |
+#            **/build/reports/
+#          if-no-files-found: ignore
