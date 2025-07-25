@@ -35,11 +35,32 @@ runs:
       #
       # endregion
 
-    - name: 'Setup Kotlin/Native cache on Unix-like systems'
+    - name: 'Setup Kotlin/Native cache directory on Unix-like systems'
       if: runner.os != 'Windows'
       shell: bash
       run: |
         echo "KONAN_DATA_DIR=${HOME}/.konan" >> $GITHUB_ENV
+
+    - name: 'Cache Kotlin/Native'
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.KONAN_DATA_DIR }}
+        key: konan-${{ runner.os }}-gradle-${{ hashFiles('*.gradle.kts', 'gradle/*.versions.toml', 'gradle.properties') }}
+        restore-keys: |
+          konan-${{ runner.os }}-gradle-
+
+    # Enable configuration-cache reuse with included builds – https://github.com/gradle/actions/issues/21
+    - name: 'Cache build-settings/build'
+      uses: actions/cache@v4
+      with:
+        path: build-settings/build
+        key: build-settings-${{ hashFiles('build-settings/src/**', 'build-settings/*.kts') }}
+
+    - name: 'Cache build-logic/build'
+      uses: actions/cache@v4
+      with:
+        path: build-logic/build
+        key: build-logic-${{ hashFiles('build-logic/src/**', 'build-logic/*.kts') }}
 
     - name: 'Set up Gradle'
       uses: gradle/actions/setup-gradle@v4
@@ -49,11 +70,5 @@ runs:
         build-scan-terms-of-use-agree: 'yes'
         cache-disabled: ${{ inputs.gradle-cache-disabled }}
         cache-encryption-key: ${{ inputs.gradle-cache-encryption-key }}
-
-    - name: 'Cache Kotlin/Native'
-      uses: actions/cache@v4
-      with:
-        path: ${{ env.KONAN_DATA_DIR }}
-        key: konan-${{ runner.os }}-gradle-${{ hashFiles('*.gradle.kts', 'gradle/*.versions.toml', 'gradle.properties') }}
-        restore-keys: |
-          konan-${{ runner.os }}-gradle-
+        # Enable cache writes for branches other than 'main'.
+        cache-read-only: ${{ !(github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/releases/') || startsWith(github.ref, 'refs/heads/ci-experiments/')) }}
